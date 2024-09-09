@@ -1,0 +1,4 @@
+- Ideas:
+    - Rotate images, Normalize them to make the system more robust
+    - Include dropout layers to prevent overfitting
+    - Use different optimizers and learning rates to improve the model
