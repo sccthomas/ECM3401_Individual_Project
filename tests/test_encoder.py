@@ -1,7 +1,8 @@
-from model.encoder import Encoder, _SkipConnections
+from model.encoder import Encoder
 from model.config import ModelConfig
 import unittest
 from torch.nn import ModuleList, Linear
+import torch
 
 
 class TestEncoder(unittest.TestCase):
@@ -35,56 +36,55 @@ class TestEncoder(unittest.TestCase):
 
         self.assertEqual(len(skip_connections), 3)
 
-        expected_skip_connections_scale_1 = ModuleList(
+        expected_skip_connections_scales = [
             [
-                Linear(in_features=768, out_features=1024, bias=True),
-                Linear(in_features=512, out_features=1024, bias=True),
-                Linear(in_features=256, out_features=1024, bias=True),
-                Linear(in_features=64, out_features=1024, bias=True),
+                (768, 1024),
+                (512, 1024),
+                (256, 1024),
+                (64, 1024),
+            ], [
+                (1024, 768),
+                (512, 768),
+                (256, 768),
+                (64, 768),
+            ], [
+                (1024, 512),
+                (768, 512),
+                (256, 512),
+                (64, 512),
+            ], [
+                (1024, 256),
+                (768, 256),
+                (512, 256),
+                (64, 256),
+            ], [
+                (1024, 64),
+                (768, 64),
+                (512, 64),
+                (256, 64),
             ]
-        )
-
-        expected_skip_connections_scale_2 = ModuleList(
-            [
-                Linear(in_features=1024, out_features=768, bias=True),
-                Linear(in_features=512, out_features=768, bias=True),
-                Linear(in_features=256, out_features=768, bias=True),
-                Linear(in_features=64, out_features=768, bias=True),
-            ]
-        )
-
-        expected_skip_connections_scale_3 = ModuleList(
-            [
-                Linear(in_features=1024, out_features=512, bias=True),
-                Linear(in_features=768, out_features=512, bias=True),
-                Linear(in_features=256, out_features=512, bias=True),
-                Linear(in_features=64, out_features=512, bias=True),
-            ]
-        )
-
-        expected_skip_connections_scale_4 = ModuleList(
-            [
-                Linear(in_features=1024, out_features=256, bias=True),
-                Linear(in_features=768, out_features=256, bias=True),
-                Linear(in_features=512, out_features=256, bias=True),
-                Linear(in_features=64, out_features=256, bias=True),
-            ]
-        )
-
-        expected_skip_connections_scale_5 = ModuleList(
-            [
-                Linear(in_features=1024, out_features=64, bias=True),
-                Linear(in_features=768, out_features=64, bias=True),
-                Linear(in_features=512, out_features=64, bias=True),
-                Linear(in_features=256, out_features=64, bias=True),
-            ]
-        )
+        ]
 
         for i in range(3):
             self.assertEqual(len(skip_connections[i]), 5)
             for j in range(5):
-                for linear_operation in skip_connections[i][j].linear_operations:
-
+                actual_skip_connection_scales = [
+                    (linear_operation.in_features, linear_operation.out_features)
+                    for linear_operation in skip_connections[i][j].linear_operations
+                ]
+                self.assertEqual(actual_skip_connection_scales, expected_skip_connections_scales[j])
 
     def test_forward(self) -> None:
-        pass
+        encoder = self.encoder
+
+        # Test forward pass
+        batch_size = 1
+        patch_embeddings = [
+            torch.rand(batch_size, 16, 1024),
+            torch.rand(batch_size, 64, 768),
+            torch.rand(batch_size, 256, 512),
+            torch.rand(batch_size, 1024, 256),
+            torch.rand(batch_size, 4096, 64),
+        ]
+
+        output = encoder(patch_embeddings)

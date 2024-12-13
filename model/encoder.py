@@ -83,8 +83,8 @@ class Encoder(_nn.Module):
         for i in range(1, num_stages):
             # - Fuse together patch embedding outputs from different scales
             patch_embeddings = [
-                skip_connection(patch_embedding, _iter.chain(patch_embeddings[:i], patch_embeddings[i + 1:]))
-                for skip_connection, patch_embedding in zip(skip_connections[i], patch_embeddings)
+                skip_connection(patch_embedding, patch_embeddings[:j] + patch_embeddings[j + 1:])
+                for j, (skip_connection, patch_embedding) in enumerate(zip(skip_connections[i], patch_embeddings))
             ]
             # - Feed the fused patch embeddings to the next stage of the encoder
             patch_embeddings = [
@@ -148,9 +148,12 @@ class _SkipConnections(_nn.Module):
         patch_len = self.__patch_len
         norm = self.__norm
 
-        kwargs = {'size': patch_len, 'mode': 'nearest'}
+        kwargs = {'size': (patch_len,), 'mode': 'nearest'}
         for patch_embedding, linear_operation in zip(patch_embeddings, linear_operations):
-            target_patch_embedding += _F.interpolate(linear_operation(patch_embedding), **kwargs)
+            target_patch_embedding += _F.interpolate(
+                linear_operation(patch_embedding).permute(0, 2, 1),
+                **kwargs
+            ).permute(0, 2, 1)
 
         target_patch_embedding = norm(target_patch_embedding)
 
