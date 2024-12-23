@@ -88,3 +88,7 @@ class TestEncoder(unittest.TestCase):
         ]
 
         output = encoder(patch_embeddings)
+
+        self.assertEqual(len(output), 5)
+        for i in range(5):
+            self.assertEqual(output[i].shape, patch_embeddings[i].shape)
