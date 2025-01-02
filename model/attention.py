@@ -11,6 +11,11 @@ import typing as _t
 
 
 class SwinTransformerAttention(_nn.Module):
+    """
+    The Swin Transformer attention module that applies self-attention to non-overlapping windows of patch embeddings.
+    Attention can either be standard or shifted, where shifted attention is used to attend neighboring patches.
+    """
+
     def __init__(
             self,
             *,
@@ -21,6 +26,15 @@ class SwinTransformerAttention(_nn.Module):
             vector_len: int,
             window_size: _t.Tuple[int, int],
     ) -> None:
+        """
+
+        :param dropout: If True, apply dropout to the attention weights
+        :param num_heads: Number of attention heads.
+        :param patch_resolution: The resolution of the image after patching.
+        :param shifted_window: If True, use shifted window attention to attend neighboring patches.
+        :param vector_len: The length of the patch embeddings.
+        :param window_size: The size of the window used for attention.
+        """
         super().__init__()
         self.__patch_resolution = patch_resolution
         self.__window_attention = _WindowAttention(vector_len, window_size, num_heads, dropout)
@@ -57,6 +71,12 @@ class SwinTransformerAttention(_nn.Module):
         self.__shift_size = shift_size
 
     def forward(self, patch_embeddings: _torch.Tensor) -> _torch.Tensor:
+        """
+        Apply self-attention to non-overlapping windows of patch embeddings.
+
+        :param patch_embeddings: The patch embeddings, shape (B, L, C).
+        :return: The attended patch embeddings, shape (B, L, C).
+        """
         attn_mask = self.__attn_mask
         H, W = self.__patch_resolution
         shift_size = self.__shift_size
@@ -185,12 +205,11 @@ class _WindowAttention(_nn.Module):
 
 def _window_partition(x: _torch.Tensor, window_size: _t.Tuple[int, int]) -> _torch.Tensor:
     """
-    Args:
-        x: (B, H, W, C)
-        window_size (int): window size
+    Partition the input tensor into non-overlapping windows of size `window_size`.
 
-    Returns:
-        windows: (num_windows*B, window_size, window_size, C)
+    :param x: Patch embeddings to partition, shape (B, H, W, C).
+    :param window_size: The size of the window used for partitioning.
+    :return: Partitioned windows, shape (num_windows*B, window_size, window_size, C).
     """
     B, H, W, C = x.shape
     x = x.view(B, H // window_size[0], window_size[0], W // window_size[1], window_size[1], C)
@@ -199,16 +218,15 @@ def _window_partition(x: _torch.Tensor, window_size: _t.Tuple[int, int]) -> _tor
     return windows
 
 
-def _window_reverse(x: _torch.Tensor, window_size: _t.Tuple[int, int], H, W):
+def _window_reverse(x: _torch.Tensor, window_size: _t.Tuple[int, int], H: int, W: int) -> _torch.Tensor:
     """
-    Args:
-        x: (num_windows*B, window_size, window_size, C)
-        window_size (int): Window size
-        H (int): Height of image
-        W (int): Width of image
-
-    Returns:
-        x: (B, H, W, C)
+    Reverse the operation of `_window_partition`.
+    
+    :param x: Windowed patch embeddings of shape (num_windows*B, window_size, window_size, C). 
+    :param window_size: The size of the windows.
+    :param H: The height of the image after patching. 
+    :param W: The width of the image after patching.
+    :return: Non-windowed patch embeddings of shape (B, H, W, C).
     """
     B = int(x.shape[0] / (H * W / window_size[0] / window_size[1]))
     x = x.view(B, H // window_size[0], W // window_size[1], window_size[0], window_size[1], -1)
