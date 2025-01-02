@@ -9,36 +9,83 @@ import typing as _t
 # License - MIT License
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 class SwinTransformerAttention(_nn.Module):
     def __init__(
             self,
+            *,
             dropout: bool,
             num_heads: int,
-            num_patches: int,
+            patch_resolution: _t.Tuple[int, int],
             shifted_window: bool,
             vector_len: int,
             window_size: _t.Tuple[int, int],
     ) -> None:
         super().__init__()
-        self.__vector_len = vector_len
-        self.__num_patches = num_patches
+        self.__patch_resolution = patch_resolution
         self.__window_attention = _WindowAttention(vector_len, window_size, num_heads, dropout)
         self.__window_size = window_size
 
+        # Shifted Window Attention
+        attn_mask = None
+        shift_size = None
+        if shifted_window:
+            # calculate attention mask for SW-MSA
+            H, W = patch_resolution
+            img_mask = _torch.zeros((1, H, W, 1))  # 1 H W 1
+
+            window_size_h, window_size_w = window_size
+            shift_size = window_size_h // 2
+            h_slices = (slice(0, -window_size_h),
+                        slice(-window_size_h, -shift_size),
+                        slice(-shift_size, None))
+            w_slices = (slice(0, -window_size_w),
+                        slice(-window_size_w, -shift_size),
+                        slice(-shift_size, None))
+            cnt = 0
+            for h in h_slices:
+                for w in w_slices:
+                    img_mask[:, h, w, :] = cnt
+                    cnt += 1
+
+            mask_windows = _window_partition(img_mask, window_size)  # nW, window_size, window_size, 1
+            mask_windows = mask_windows.view(-1, window_size_h * window_size_w)
+            attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
+            attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
+
+        self.__attn_mask = attn_mask
+        self.__shift_size = shift_size
+
     def forward(self, patch_embeddings: _torch.Tensor) -> _torch.Tensor:
-        vector_len = self.__vector_len
-        num_patches = self.__num_patches
+        attn_mask = self.__attn_mask
+        H, W = self.__patch_resolution
+        shift_size = self.__shift_size
         window_attention = self.__window_attention
         window_size = self.__window_size
 
+        B, L, C = patch_embeddings.shape
+        patch_embeddings = patch_embeddings.view(B, H, W, C)
+
+        shifted_window_attention = attn_mask is not None
+        if shifted_window_attention:
+            patch_embeddings = _torch.roll(patch_embeddings, shifts=(-shift_size, -shift_size), dims=(1, 2))
+
         # Partition the patch embeddings into non-overlapping windows
         patch_embeddings = _window_partition(patch_embeddings, window_size)
+        patch_embeddings = patch_embeddings.view(-1, window_size[0] * window_size[1], C)
 
         # Apply the window attention mechanism
-        patch_embeddings = window_attention(patch_embeddings)
+        patch_embeddings = window_attention(patch_embeddings, mask=attn_mask)
+        patch_embeddings = patch_embeddings.view(-1, window_size[0], window_size[1], C)
 
         # Reconstruct the patch embeddings
-        patch_embeddings = _window_reverse(patch_embeddings, window_size, num_patches, vector_len)
+        patch_embeddings = _window_reverse(patch_embeddings, window_size, H, W)
+
+        # Reverse Cyclic Shift
+        if shifted_window_attention:
+            patch_embeddings = _torch.roll(patch_embeddings, shifts=(shift_size, shift_size), dims=(1, 2))
+
+        patch_embeddings = patch_embeddings.view(B, H * W, C)
 
         return patch_embeddings
 
@@ -137,52 +184,32 @@ class _WindowAttention(_nn.Module):
 
 def _window_partition(x: _torch.Tensor, window_size: _t.Tuple[int, int]) -> _torch.Tensor:
     """
-    Partition patch embeddings into non-overlapping windows along the patch sequence.
+    Args:
+        x: (B, H, W, C)
+        window_size (int): window size
 
-    :param x: The patch embeddings, shape (B, num_patches, embed_len)
-    :param window_size: The size of the window
-    :return: The partitioned windows, shape (num_windows*B, window_size, embed_len)
+    Returns:
+        windows: (num_windows*B, window_size, window_size, C)
     """
-    B, num_patches, embed_len = x.shape
-    window_size_h, window_size_w = window_size
-    amount_windows = window_size_h * window_size_w
-
-    # Calculate the number of windows per batch
-    num_windows = num_patches // amount_windows  # This assumes num_patches is divisible by window_size
-
-    # Reshape the tensor to (B, num_windows, window_size, embed_len)
-    x = x.view(B, num_windows, amount_windows, embed_len)  # Shape: (B, num_windows, window_size, embed_len)
-
-    # Reshape to get the final output shape (num_windows * B, window_size, embed_len)
-    windows = x.view(-1, amount_windows, embed_len)
+    B, H, W, C = x.shape
+    x = x.view(B, H // window_size[0], window_size[0], W // window_size[1], window_size[1], C)
+    windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size[0], window_size[1], C)
 
     return windows
 
 
-def _window_reverse(
-        x: _torch.Tensor,
-        window_size: _t.Tuple[int, int],
-        patch_len: int,
-        embed_len: int,
-) -> _torch.Tensor:
+def _window_reverse(x: _torch.Tensor, window_size: _t.Tuple[int, int], H, W):
     """
-    Reverse the window partition operation and reconstruct the original patch embeddings.
+    Args:
+        x: (num_windows*B, window_size, window_size, C)
+        window_size (int): Window size
+        H (int): Height of image
+        W (int): Width of image
 
-    :param x: The partitioned windows, shape (num_windows*B, window_size, embed_len)
-    :param window_size: The size of the window (i.e., number of patches per window)
-    :param patch_len: The total number of patches per batch (B, num_patches, embed_len)
-    :param embed_len: The embedding length of each patch
-    :return: The reconstructed patch embeddings, shape (B, num_patches, embed_len)
+    Returns:
+        x: (B, H, W, C)
     """
-    window_size_h, window_size_w = window_size
-    amount_windows = window_size_h * window_size_w
-
-    B = x.shape[0] // (patch_len // amount_windows)  # Recalculate batch size from the number of windows and patches
-
-    # Reshape the windows to (B, num_windows, window_size, embed_len)
-    x = x.view(B, -1, amount_windows, embed_len)
-
-    # Reassemble the windows back into patches (B, num_patches, embed_len)
-    x_reconstructed = x.view(B, patch_len, embed_len)  # Reshape to (B, patch_len, embed_len)
-
-    return x_reconstructed
+    B = int(x.shape[0] / (H * W / window_size[0] / window_size[1]))
+    x = x.view(B, H // window_size[0], W // window_size[1], window_size[0], window_size[1], -1)
+    x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
+    return x
