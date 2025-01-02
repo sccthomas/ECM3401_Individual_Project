@@ -48,15 +48,17 @@ class Encoder(_nn.Module):
             transformer_blocks_stage = _nn.ModuleList()
             skip_connections_stage = _nn.ModuleList()
             for i, patch_embedding_config in enumerate(patch_embedding_configs):
+                vector_len = patch_embedding_config.vector_len
+                patch_resolution = patch_embedding_config.patch_resolution
                 transformer_block_config = patch_embedding_config.transformer_block_configs[stage]
                 transformer_block = _TransformerBlock(
-                    vector_len=patch_embedding_config.vector_len,
-                    num_patches=patch_embedding_config.num_patches,
-                    iterations=transformer_block_config.iterations,
-                    window_size=transformer_block_config.window_size,
-                    num_heads=transformer_block_config.num_heads,
                     dropout=transformer_block_config.dropout,
+                    iterations=transformer_block_config.iterations,
+                    num_heads=transformer_block_config.num_heads,
+                    patch_resolution=patch_resolution,
                     shifted_window=transformer_block_config.shifted_window,
+                    vector_len=vector_len,
+                    window_size=transformer_block_config.window_size,
                 )
                 transformer_blocks_stage.append(transformer_block)
                 skip_connections_dims = {
@@ -137,8 +139,8 @@ class _SkipConnections(_nn.Module):
 
     def __init__(
             self,
-            target_patch_embedding_dim: _config.PatchEmbeddingConfig,
-            patch_embedding_dims: _t.Iterable[_config.PatchEmbeddingConfig]
+            target_patch_embedding_dim: _config.PatchEmbeddingConfigEncoder,
+            patch_embedding_dims: _t.Iterable[_config.PatchEmbeddingConfigEncoder]
     ) -> None:
         """
 
@@ -201,7 +203,7 @@ class _TransformerBlock(_nn.Module):
             dropout: bool,
             iterations: int,
             num_heads: int,
-            num_patches: int,
+            patch_resolution: _t.Tuple[int, int],
             shifted_window: bool,
             vector_len: int,
             window_size: _t.Tuple[int, int],
@@ -211,7 +213,6 @@ class _TransformerBlock(_nn.Module):
         :param dropout:
         :param iterations:
         :param num_heads:
-        :param num_patches:
         :param shifted_window:
         :param vector_len:
         :param window_size:
@@ -225,12 +226,12 @@ class _TransformerBlock(_nn.Module):
                 _nn.ModuleDict(
                     {
                         'attention': _attention.SwinTransformerAttention(
-                            dropout,
-                            num_heads,
-                            num_patches,
-                            shifted_window,
-                            vector_len,
-                            window_size,
+                            dropout=dropout,
+                            num_heads=num_heads,
+                            patch_resolution=patch_resolution,
+                            shifted_window=shifted_window,
+                            vector_len=vector_len,
+                            window_size=window_size,
                         ),
                         'norm1': _nn.LayerNorm(vector_len),
                         'norm2': _nn.LayerNorm(vector_len),
@@ -259,9 +260,7 @@ class _TransformerBlock(_nn.Module):
         iterations = self.__iterations
 
         for iteration in iterations:
-            attn_output = iteration['attention'](patch_embeddings)
-            patch_embeddings = iteration['norm1'](attn_output + patch_embeddings)
-            ffn_output = iteration['mlp'](patch_embeddings)
-            patch_embeddings = iteration['norm2'](ffn_output + patch_embeddings)
+            patch_embeddings += iteration['attention'](iteration['norm1'](patch_embeddings))
+            patch_embeddings += iteration['mlp'](iteration['norm2'](patch_embeddings))
 
         return patch_embeddings

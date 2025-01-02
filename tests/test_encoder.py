@@ -8,10 +8,11 @@ class TestEncoder(unittest.TestCase):
     def setUp(self):
         self.config = EncoderConfig(
             num_stages=2,
+            input_dims=(512, 512, 3),
             patch_embedding_configs=[
                 {
                     "patch_embedding_info": {
-                        'num_patches': 16,
+                        'patch_size': 128,
                         'vector_len': 1024,
                     },
                     "transformer_block_configs": [
@@ -33,7 +34,7 @@ class TestEncoder(unittest.TestCase):
                 },
                 {
                     "patch_embedding_info": {
-                        'num_patches': 64,
+                        'patch_size': 64,
                         'vector_len': 768,
                     },
                     "transformer_block_configs": [
@@ -55,7 +56,7 @@ class TestEncoder(unittest.TestCase):
                 },
                 {
                     "patch_embedding_info": {
-                        'num_patches': 256,
+                        'patch_size': 32,
                         'vector_len': 512,
                     },
                     "transformer_block_configs": [
@@ -77,7 +78,7 @@ class TestEncoder(unittest.TestCase):
                 },
                 {
                     "patch_embedding_info": {
-                        'num_patches': 1024,
+                        'patch_size': 16,
                         'vector_len': 256,
                     },
                     "transformer_block_configs": [
@@ -99,7 +100,7 @@ class TestEncoder(unittest.TestCase):
                 },
                 {
                     "patch_embedding_info": {
-                        'num_patches': 4096,
+                        'patch_size': 8,
                         'vector_len': 64,
                     },
                     "transformer_block_configs": [

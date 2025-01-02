@@ -5,8 +5,9 @@ import torch.nn as _nn
 class PatchEmbedding(_nn.Module):
     """
     Patch Embedding layer.
-    - Converts image into patche embeddings.
+    - Converts image into patch embeddings.
     """
+
     def __init__(self, *, in_channels: int, embed_dim: int, patch_size: int, image_size: int) -> None:
         """
 

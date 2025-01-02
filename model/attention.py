@@ -72,11 +72,12 @@ class SwinTransformerAttention(_nn.Module):
 
         # Partition the patch embeddings into non-overlapping windows
         patch_embeddings = _window_partition(patch_embeddings, window_size)
-        patch_embeddings = patch_embeddings.view(-1, window_size[0] * window_size[1], C)
+        window_size_h, window_size_w = window_size
+        patch_embeddings = patch_embeddings.view(-1, window_size_h * window_size_w, C)
 
         # Apply the window attention mechanism
         patch_embeddings = window_attention(patch_embeddings, mask=attn_mask)
-        patch_embeddings = patch_embeddings.view(-1, window_size[0], window_size[1], C)
+        patch_embeddings = patch_embeddings.view(-1, window_size_h, window_size_w, C)
 
         # Reconstruct the patch embeddings
         patch_embeddings = _window_reverse(patch_embeddings, window_size, H, W)
