@@ -19,25 +19,29 @@ class SwinTransformerAttention(_nn.Module):
     def __init__(
             self,
             *,
+            in_patches: int,
+            in_channels: int,
             dropout: bool,
-            num_heads: int,
+            num_attention_heads: int,
             patch_resolution: _t.Tuple[int, int],
             shifted_window: bool,
-            vector_len: int,
             window_size: _t.Tuple[int, int],
     ) -> None:
         """
 
+        :param in_channels: The length of the patch embeddings.
+        :param in_patches: The number of patch embeddings.
         :param dropout: If True, apply dropout to the attention weights
-        :param num_heads: Number of attention heads.
+        :param num_attention_heads: Number of attention heads.
         :param patch_resolution: The resolution of the image after patching.
         :param shifted_window: If True, use shifted window attention to attend neighboring patches.
-        :param vector_len: The length of the patch embeddings.
         :param window_size: The size of the window used for attention.
         """
         super().__init__()
+
+        self.__in_patches, self.__in_channels = in_patches, in_channels
         self.__patch_resolution = patch_resolution
-        self.__window_attention = _WindowAttention(vector_len, window_size, num_heads, dropout)
+        self.__window_attention = _WindowAttention(in_channels, window_size, num_attention_heads, dropout)
         self.__window_size = window_size
 
         # Shifted Window Attention
@@ -77,6 +81,7 @@ class SwinTransformerAttention(_nn.Module):
         :param patch_embeddings: The patch embeddings, shape (B, L, C).
         :return: The attended patch embeddings, shape (B, L, C).
         """
+        in_patches, in_channels = self.__in_patches, self.__in_channels
         attn_mask = self.__attn_mask
         H, W = self.__patch_resolution
         shift_size = self.__shift_size
@@ -84,6 +89,8 @@ class SwinTransformerAttention(_nn.Module):
         window_size = self.__window_size
 
         B, L, C = patch_embeddings.shape
+        assert L == in_patches and C == in_channels, "Input shape is not valid before `SwinTransformerAttention`."
+
         patch_embeddings = patch_embeddings.view(B, H, W, C)
 
         shifted_window_attention = attn_mask is not None
@@ -108,6 +115,9 @@ class SwinTransformerAttention(_nn.Module):
 
         patch_embeddings = patch_embeddings.view(B, H * W, C)
 
+        assert patch_embeddings.shape[1:] == (in_patches, in_channels) \
+            , "Output shape is not valid after `SwinTransformerAttention`."
+
         return patch_embeddings
 
 
@@ -121,31 +131,32 @@ class _WindowAttention(_nn.Module):
     The window attention module that applies self-attention to non-overlapping windows of patch embeddings.
     """
 
-    def __init__(self, vector_len: int, window_size: _t.Tuple[int, int], num_heads: int, dropout: bool) -> None:
+    def __init__(self, in_channels: int, window_size: _t.Tuple[int, int], num_attention_heads: int,
+                 dropout: bool) -> None:
         """
 
-        :param vector_len: Patch embedding length
+        :param in_channels: Patch embedding length
         :param window_size: Window size (height, width), patches are contained within each window
-        :param num_heads: Number of attention heads
+        :param num_attention_heads: Number of attention heads
         :param dropout: Whether to apply dropout to the attention weights
         """
         super().__init__()
-        head_dim = vector_len // num_heads
+        head_dim = in_channels // num_attention_heads
         window_size_h, window_size_w = window_size
         dropout_rate = 0.0 if dropout is False else 0.1
 
         self.__window_size = window_size  # Wh, Ww
-        self.__num_heads = num_heads
+        self.__num_heads = num_attention_heads
         self.__scale = head_dim ** -0.5
-        self.__qkv = _nn.Linear(vector_len, vector_len * 3, bias=True)
+        self.__qkv = _nn.Linear(in_channels, in_channels * 3, bias=True)
         self.__attn_drop = _nn.Dropout(dropout_rate)
-        self.__proj = _nn.Linear(vector_len, vector_len)
+        self.__proj = _nn.Linear(in_channels, in_channels)
         self.__proj_drop = _nn.Dropout(dropout_rate)
         self.__softmax = _nn.Softmax(dim=-1)
 
         # Define a parameter table of relative position bias
         relative_position_bias_table = _nn.Parameter(
-            _torch.zeros((2 * window_size_h - 1) * (2 * window_size_w - 1), num_heads)
+            _torch.zeros((2 * window_size_h - 1) * (2 * window_size_w - 1), num_attention_heads)
         )  # 2*Wh-1 * 2*Ww-1, nH
         _nn.init.trunc_normal_(relative_position_bias_table, std=.02)
         self.__relative_position_bias_table = relative_position_bias_table
@@ -166,11 +177,11 @@ class _WindowAttention(_nn.Module):
     def forward(self, windowed_patch_embeddings: _torch.Tensor, mask: _torch.Tensor = None):
         """
 
-        :param windowed_patch_embeddings: The windowed patch embeddings, shape (num_windows*B, window_size, embed_len)
+        :param windowed_patch_embeddings: The windowed patch embeddings, shape (num_windows*B, window_size, in_channels)
         :param mask: The attention mask used for shifted window attention, shape (num_windows*B, window_size, window_size)
-        :return: The attended windowed patch embeddings, shape (num_windows*B, window_size, embed_len)
+        :return: The attended windowed patch embeddings, shape (num_windows*B, window_size, in_channels)
         """
-        b, n, c = windowed_patch_embeddings.shape  # num_windows*B, window_size, embed_len
+        b, n, c = windowed_patch_embeddings.shape  # num_windows*B, window_size, in_channels
         q, k, v = (
             self.__qkv(windowed_patch_embeddings)
             .reshape(b, n, 3, self.__num_heads, c // self.__num_heads)
@@ -196,7 +207,8 @@ class _WindowAttention(_nn.Module):
 
         attn = self.__attn_drop(attn)
 
-        windowed_patch_embeddings = (attn @ v).transpose(1, 2).reshape(b, n, c)  # num_windows*B, window_size, embed_len
+        windowed_patch_embeddings = ((attn @ v).transpose(1, 2)
+                                     .reshape(b, n, c))  # num_windows*B, window_size, in_channels
         windowed_patch_embeddings = self.__proj(windowed_patch_embeddings)
         windowed_patch_embeddings = self.__proj_drop(windowed_patch_embeddings)
 

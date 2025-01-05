@@ -3,7 +3,7 @@ import torch.nn as _nn
 import torch.nn.functional as _F
 import typing as _t
 import model.config as _config
-import model.attention as _attention
+import model.transformer as _transformer
 
 
 class Encoder(_nn.Module):
@@ -15,7 +15,7 @@ class Encoder(_nn.Module):
             self,
             *,
             num_stages: int,
-            transformer_blocks: '_nn.ModuleList[_nn.ModuleList[_TransformerBlock]]',
+            transformer_blocks: '_nn.ModuleList[_nn.ModuleList[_transformer.TransformerBlockEncoder]]',
             skip_connections: '_nn.ModuleList[_nn.ModuleList[_SkipConnections]]'
     ) -> None:
         """
@@ -25,6 +25,7 @@ class Encoder(_nn.Module):
         :param skip_connections:
         """
         super(Encoder, self).__init__()
+
         self.__num_stages = num_stages
         self.__skip_connections = skip_connections
         self.__transformer_blocks = transformer_blocks
@@ -37,36 +38,52 @@ class Encoder(_nn.Module):
 
         :param config: Configuration object containing all semantic segmentation model hyperparameters.
         """
-
         num_stages = config.num_stages
         patch_embedding_configs = config.patch_embedding_configs
 
+        # Create Skip Connection dimension information for each Patch Embedding.
+        skip_connection_in_dimensions = tuple([
+            tuple([
+                (patch_embedding_config.in_patches, patch_embedding_config.in_channels)
+                for patch_embedding_config in patch_embedding_configs[:i] + patch_embedding_configs[i + 1:]
+            ])
+            for i, _ in enumerate(patch_embedding_configs)
+        ])
+
+        # Create Transformer Block and Skip Connection for each Patch Embedding in the Stage.
         transformer_blocks = _nn.ModuleList()
         skip_connections = _nn.ModuleList()
-
         for stage in range(num_stages):
             transformer_blocks_stage = _nn.ModuleList()
             skip_connections_stage = _nn.ModuleList()
+            # - Create Transformer Block and Skip Connection for each Patch Embedding in the Stage.
             for i, patch_embedding_config in enumerate(patch_embedding_configs):
-                vector_len = patch_embedding_config.vector_len
+                # - Patch Embedding information
+                in_patches = patch_embedding_config.in_patches
+                in_channels = patch_embedding_config.in_channels
                 patch_resolution = patch_embedding_config.patch_resolution
+
+                # - Create Transformer Block for Patch Embedding Stage.
                 transformer_block_config = patch_embedding_config.transformer_block_configs[stage]
-                transformer_block = _TransformerBlock(
-                    dropout=transformer_block_config.dropout,
-                    iterations=transformer_block_config.iterations,
-                    num_heads=transformer_block_config.num_heads,
+                transformer_block = _transformer.TransformerBlockEncoder(
+                    # - Patch Embedding information
+                    in_patches=in_patches,
+                    in_channels=in_channels,
                     patch_resolution=patch_resolution,
-                    shifted_window=transformer_block_config.shifted_window,
-                    vector_len=vector_len,
+                    # - Transformer Block information
                     window_size=transformer_block_config.window_size,
+                    num_attention_heads=transformer_block_config.num_attention_heads,
+                    shifted_window=transformer_block_config.shifted_window,
+                    iterations=transformer_block_config.iterations,
+                    dropout=transformer_block_config.dropout,
                 )
                 transformer_blocks_stage.append(transformer_block)
-                skip_connections_dims = {
-                    "target_patch_embedding_dim": patch_embedding_config,
-                    "patch_embedding_dims": patch_embedding_configs[:i] + patch_embedding_configs[i + 1:]
-                }
+
+                # - Create Skip connection for Transformer Block in Patch Embedding Stage.
                 skip_connection = _SkipConnections(
-                    **skip_connections_dims
+                    out_patches=in_patches,
+                    out_channels=in_channels,
+                    in_dimensions=skip_connection_in_dimensions[i],
                 )
                 skip_connections_stage.append(skip_connection)
 
@@ -76,7 +93,7 @@ class Encoder(_nn.Module):
         return cls(num_stages=num_stages, transformer_blocks=transformer_blocks, skip_connections=skip_connections)
 
     @property
-    def transformer_blocks(self) -> '_nn.ModuleList[_nn.ModuleList[_TransformerBlock]]':
+    def transformer_blocks(self) -> '_nn.ModuleList[_nn.ModuleList[_transformer.TransformerBlockEncoder]]':
         """
         :return: List of transformer blocks in each stage of the encoder.
         """
@@ -89,7 +106,7 @@ class Encoder(_nn.Module):
         """
         return self.__skip_connections
 
-    def forward(self, patch_embeddings: _t.Iterable[_torch.Tensor]) -> _t.Iterable[_torch.Tensor]:
+    def forward(self, patch_embeddings: _t.List[_torch.Tensor]) -> _t.List[_torch.Tensor]:
         """
         Forward pass of the encoder module.
         - Feed the patch embeddings to the first stage of the encoder
@@ -103,6 +120,8 @@ class Encoder(_nn.Module):
         num_stages = self.__num_stages
         skip_connections = self.__skip_connections
         transformer_blocks = self.__transformer_blocks
+
+        len_patch_embeddings = len(patch_embeddings)
 
         # - Manually feed the patch embeddings to the first stage of the encoder
         patch_embeddings = [
@@ -124,11 +143,15 @@ class Encoder(_nn.Module):
                 for transformer_block, patch_embedding in zip(transformer_blocks[i], patch_embeddings)
             ]
 
+        assert len_patch_embeddings == len(
+            patch_embeddings), ("Number of patch embeddings should be the same after passing through all stages of the "
+                                "encoder.")
+
         return patch_embeddings
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Private Helpers
+# Protected Helpers
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
@@ -139,25 +162,27 @@ class _SkipConnections(_nn.Module):
 
     def __init__(
             self,
-            target_patch_embedding_dim: _config.PatchEmbeddingConfigEncoder,
-            patch_embedding_dims: _t.Iterable[_config.PatchEmbeddingConfigEncoder]
+            out_patches: int,
+            out_channels: int,
+            in_dimensions: _t.Tuple[int, int],
     ) -> None:
         """
 
-        :param target_patch_embedding_dim: The target patch embedding dimension to which all patch embeddings will be
-               transformed to.
-        :param patch_embedding_dims: Iterable of patch embedding dimensions to translate to the target patch embedding
-               dimension.
+        :param out_patches: Number of patches to output.
+        :param out_channels: Number of channels in each patch embedding output.
+        :param in_dimensions: List of tuples containing the number of patches and channels in each secondary patch
+                              embedding (in_patches, in_channels).
         """
         super(_SkipConnections, self).__init__()
 
-        # Define Linear operations to convert patch embeddings to target patch embedding dimension
         self.__linear_operations = _nn.ModuleList([
-            _nn.Linear(patch_embedding_dim.vector_len, target_patch_embedding_dim.vector_len)
-            for patch_embedding_dim in patch_embedding_dims
+            _nn.Linear(in_features=in_channels, out_features=out_channels)
+            for (_, in_channels) in in_dimensions
         ])
-        self.__num_patches = target_patch_embedding_dim.num_patches
-        self.__norm = _nn.LayerNorm(target_patch_embedding_dim.vector_len)
+        self.__out_patches = out_patches
+        self.__out_channels = out_channels
+        self.__in_dimensions = in_dimensions
+        self.__norm = _nn.LayerNorm(out_channels)
 
     @property
     def linear_operations(self) -> '_nn.ModuleList[_nn.Linear]':
@@ -166,101 +191,49 @@ class _SkipConnections(_nn.Module):
         """
         return self.__linear_operations
 
-    def forward(self, target_patch_embedding: _torch.Tensor, patch_embeddings: _torch.Tensor) -> _torch.Tensor:
+    def forward(
+            self,
+            primary_patch_embedding: _torch.Tensor,
+            secondary_patch_embeddings: _torch.Tensor,
+    ) -> _torch.Tensor:
         """
         Forward pass of the skip connections module.
         - Convert all patch embeddings to the target patch embedding dimension.
         - Fuse together the converted patch embeddings with the target patch embedding.
 
-        :param target_patch_embedding: The target patch embedding to fuse with the converted patch embeddings.
-        :param patch_embeddings: A list of patch embeddings to convert to the target patch embedding dimension.
+        :param primary_patch_embedding: Primary patch embedding to fuse with the secondary patch embeddings.
+        :param secondary_patch_embeddings: List of secondary patch embeddings to fuse with the primary patch embedding.
         :return: The fused patch embeddings.
         """
         linear_operations = self.__linear_operations
-        num_patches = self.__num_patches
+        out_patches = self.__out_patches
+        out_channels = self.__out_channels
+        in_dimensions = self.__in_dimensions
         norm = self.__norm
 
-        kwargs = {'size': (num_patches,), 'mode': 'nearest'}
-        for patch_embedding, linear_operation in zip(patch_embeddings, linear_operations):
-            target_patch_embedding += _F.interpolate(
+        expected_shape = (out_patches, out_channels)
+
+        kwargs = {'size': (out_patches,), 'mode': 'nearest'}
+        for patch_embedding, linear_operation, in_dimension in zip(
+                secondary_patch_embeddings,
+                linear_operations,
+                in_dimensions,
+        ):
+            # - Assert that the patch embedding aligns with the linear operation
+            assert patch_embedding.shape[1:] == in_dimension, (
+                "Patch embedding dimension does not align with the linear operation."
+            )
+            translated_patch_embeddings = _F.interpolate(
                 linear_operation(patch_embedding).permute(0, 2, 1),
                 **kwargs
             ).permute(0, 2, 1)
+            # - Assert that the translated patch embedding aligns with the target patch embedding
+            assert translated_patch_embeddings.shape[1:] == expected_shape, (
+                "Translated patch embedding dimension does not align with the target patch embedding."
+            )
+            primary_patch_embedding += translated_patch_embeddings
 
-        target_patch_embedding = norm(target_patch_embedding)
+        # - Normalize the fused patch embeddings to reduce over active neurons.
+        primary_patch_embedding = norm(primary_patch_embedding)
 
-        return target_patch_embedding
-
-
-class _TransformerBlock(_nn.Module):
-    """
-    Transformer block module for the encoder stage in the HRViT-Swin-Segmentation model.
-
-    """
-
-    def __init__(
-            self,
-            dropout: bool,
-            iterations: int,
-            num_heads: int,
-            patch_resolution: _t.Tuple[int, int],
-            shifted_window: bool,
-            vector_len: int,
-            window_size: _t.Tuple[int, int],
-    ) -> None:
-        """
-
-        :param dropout:
-        :param iterations:
-        :param num_heads:
-        :param shifted_window:
-        :param vector_len:
-        :param window_size:
-        """
-        super(_TransformerBlock, self).__init__()
-        hidden_dim = vector_len * 2
-        self.__vector_len = vector_len
-
-        self.__iterations = _nn.ModuleList(
-            [
-                _nn.ModuleDict(
-                    {
-                        'attention': _attention.SwinTransformerAttention(
-                            dropout=dropout,
-                            num_heads=num_heads,
-                            patch_resolution=patch_resolution,
-                            shifted_window=shifted_window,
-                            vector_len=vector_len,
-                            window_size=window_size,
-                        ),
-                        'norm1': _nn.LayerNorm(vector_len),
-                        'norm2': _nn.LayerNorm(vector_len),
-                        'mlp': _nn.Sequential(
-                            _nn.Linear(vector_len, hidden_dim),
-                            _nn.GELU(),
-                            _nn.Linear(hidden_dim, vector_len)
-                        )
-                    }
-                )
-                for _ in range(iterations)
-            ]
-        )
-
-    @property
-    def vector_len(self) -> int:
-        return self.__vector_len
-
-    def forward(self, patch_embeddings: _torch.Tensor) -> _torch.Tensor:
-        """
-        Forward pass of the transformer block module.
-
-        :param patch_embeddings: Patch embeddings to pass through the transformer block.
-        :return: Transformed patch embeddings.
-        """
-        iterations = self.__iterations
-
-        for iteration in iterations:
-            patch_embeddings += iteration['attention'](iteration['norm1'](patch_embeddings))
-            patch_embeddings += iteration['mlp'](iteration['norm2'](patch_embeddings))
-
-        return patch_embeddings
+        return primary_patch_embedding

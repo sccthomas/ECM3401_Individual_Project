@@ -1,0 +1,123 @@
+import torch as _torch
+import model.transformer as _transformer
+import typing as _t
+import torch.nn as _nn
+import torch.nn.functional as _F
+import model.config as _config
+
+import math as _math
+
+
+class Decoder(_nn.Module):
+    def __init__(
+            self,
+            *,
+            max_in_channels: int,
+            num_classes: int,
+            output_dimensions: _t.Tuple[int, int],
+            transformer_blocks: '_nn.ModuleList[_transformer.TransformerBlockDecoder]',
+    ) -> None:
+        super(Decoder, self).__init__()
+        self.__output_height, self.__output_width = output_dimensions
+        self.__transformer_blocks = transformer_blocks
+        self.__prediction_head = _nn.Conv2d(
+            in_channels=max_in_channels,
+            out_channels=num_classes,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+        )
+
+    @classmethod
+    def from_config(cls, config: _config.DecoderConfig) -> 'Decoder':
+        """
+
+        :param config:
+        :return:
+        """
+        max_in_channels = config.max_in_channels
+        num_classes = config.num_classes
+        output_dimensions = config.output_dimensions
+
+        # Create the transformer blocks.
+        transformer_block_configs = config.transformer_block_configs
+        transformer_blocks = _nn.ModuleList([
+            _transformer.TransformerBlockDecoder(
+                in_patches=transformer_block_config.in_patches,
+                in_channels=transformer_block_config.in_channels,
+                patch_resolution=transformer_block_config.patch_resolution,
+                output_dims=(next_item.in_patches, next_item.in_channels),
+                iterations=transformer_block_config.iterations,
+                num_attention_heads=transformer_block_config.num_attention_heads,
+                window_size=transformer_block_config.window_size,
+                shifted_window=transformer_block_config.shifted_window,
+                dropout=transformer_block_config.dropout,
+            )
+            for i, transformer_block_config in enumerate(transformer_block_configs[:-1])
+            if (next_item := transformer_block_configs[i + 1])  # Assign the next item
+        ])
+        final_transformer_block_config = transformer_block_configs[-1]
+        in_patches = final_transformer_block_config.in_patches
+        in_channels = final_transformer_block_config.in_channels
+        transformer_blocks.append(
+            _transformer.TransformerBlockDecoder(
+                in_patches=in_patches,
+                in_channels=in_channels,
+                patch_resolution=final_transformer_block_config.patch_resolution,
+                output_dims=(in_patches, in_channels),
+                iterations=final_transformer_block_config.iterations,
+                num_attention_heads=final_transformer_block_config.num_attention_heads,
+                window_size=final_transformer_block_config.window_size,
+                shifted_window=final_transformer_block_config.shifted_window,
+                dropout=final_transformer_block_config.dropout
+            )
+        )
+
+        return cls(
+            max_in_channels=max_in_channels,
+            num_classes=num_classes,
+            output_dimensions=output_dimensions,
+            transformer_blocks=transformer_blocks,
+        )
+
+    def forward(self, patch_embeddings: _t.List[_torch.Tensor]) -> _torch.Tensor:
+        """
+        Forward pass of the decoder.
+
+        :param patch_embeddings: List of patch embeddings to decode and upsample into the output dimensions.
+        :return: A tensor of shape (batch_size, number_classes, output_dims_h, output_dims_w).
+        """
+        output_height, output_width = self.__output_height, self.__output_width
+        transformer_blocks = self.__transformer_blocks
+        prediction_head = self.__prediction_head
+
+        # Feed the patch embeddings through the transformer blocks.
+        patch_embeddings = list(reversed(patch_embeddings))
+        output = patch_embeddings[0].clone().zero_()
+        for patch_embedding, transformer_block in zip(patch_embeddings, transformer_blocks):
+            # - Include the previous decoded patch embedding in the input of the next transformer block.
+            output = transformer_block(output + patch_embedding)
+
+        # Project the final patch embeddings to the output dimensions.
+        batch_size, num_patches, vector_len = output.shape
+
+        grid_size = int(_math.sqrt(num_patches))
+        assert grid_size ** 2 == num_patches
+
+        # Upsample to the output dimensions.
+        output = output.reshape(batch_size, vector_len, grid_size, grid_size)
+        output = _F.interpolate(
+            input=output,
+            size=(output_height, output_width),
+            mode='bilinear',
+            align_corners=False,
+        )
+
+        # Apply the prediction head.
+        output = prediction_head(output)
+        output = _torch.sigmoid(output)
+
+        # Assert the output dimensions.
+        assert output.shape[1:] == (1, output_height, output_width)
+
+        return output

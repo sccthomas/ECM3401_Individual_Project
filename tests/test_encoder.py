@@ -8,25 +8,25 @@ class TestEncoder(unittest.TestCase):
     def setUp(self):
         self.config = EncoderConfig(
             num_stages=2,
-            input_dims=(512, 512, 3),
+            input_dimensions=(3, 512, 512),
             patch_embedding_configs=[
                 {
                     "patch_embedding_info": {
                         'patch_size': 128,
-                        'vector_len': 1024,
+                        'in_channels': 1024,
                     },
                     "transformer_block_configs": [
                         {
                             'dropout': False,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
@@ -35,20 +35,20 @@ class TestEncoder(unittest.TestCase):
                 {
                     "patch_embedding_info": {
                         'patch_size': 64,
-                        'vector_len': 768,
+                        'in_channels': 768,
                     },
                     "transformer_block_configs": [
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
@@ -57,20 +57,20 @@ class TestEncoder(unittest.TestCase):
                 {
                     "patch_embedding_info": {
                         'patch_size': 32,
-                        'vector_len': 512,
+                        'in_channels': 512,
                     },
                     "transformer_block_configs": [
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
@@ -79,20 +79,20 @@ class TestEncoder(unittest.TestCase):
                 {
                     "patch_embedding_info": {
                         'patch_size': 16,
-                        'vector_len': 256,
+                        'in_channels': 256,
                     },
                     "transformer_block_configs": [
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
@@ -101,20 +101,20 @@ class TestEncoder(unittest.TestCase):
                 {
                     "patch_embedding_info": {
                         'patch_size': 8,
-                        'vector_len': 64,
+                        'in_channels': 64,
                     },
                     "transformer_block_configs": [
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
                         {
                             'dropout': True,
                             'iterations': 3,
-                            'num_heads': 8,
+                            'num_attention_heads': 8,
                             'shifted_window': False,
                             'window_size': (2, 2)
                         },
@@ -133,7 +133,7 @@ class TestEncoder(unittest.TestCase):
         for i in range(2):
             self.assertEqual(len(transformer_blocks[i]), 5)
             for j in range(5):
-                self.assertEqual(transformer_blocks[i][j].vector_len, patch_embedding_configs[j].vector_len)
+                self.assertEqual(transformer_blocks[i][j].in_channels, patch_embedding_configs[j].in_channels)
 
     def test_skip_connections(self) -> None:
         encoder = self.encoder
@@ -187,7 +187,7 @@ class TestEncoder(unittest.TestCase):
         # Test forward pass
         batch_size = 1
         patch_embeddings = [
-            torch.rand(batch_size, patch_embedding_config.num_patches, patch_embedding_config.vector_len)
+            torch.rand(batch_size, patch_embedding_config.in_patches, patch_embedding_config.in_channels)
             for patch_embedding_config in patch_embedding_configs
         ]
 
@@ -196,3 +196,7 @@ class TestEncoder(unittest.TestCase):
         self.assertEqual(len(output), 5)
         for i in range(5):
             self.assertEqual(output[i].shape, patch_embeddings[i].shape)
+
+
+if __name__ == '__main__':
+    unittest.main()

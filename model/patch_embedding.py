@@ -8,18 +8,18 @@ class PatchEmbedding(_nn.Module):
     - Converts image into patch embeddings.
     """
 
-    def __init__(self, *, in_channels: int, embed_dim: int, patch_size: int, image_size: int) -> None:
+    def __init__(self, *, in_channels: int, out_channels: int, patch_size: int, image_size: int) -> None:
         """
 
         :param in_channels: The number of input channels, i.e. RGB channels for image.
-        :param embed_dim: The length to project patches into.
+        :param out_channels: The length to project patches into.
         :param patch_size: The size of each patch in the image.
         """
         super(PatchEmbedding, self).__init__()
         num_patches = (image_size // patch_size) ** 2
 
-        self.__projection = _nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
-        self.__positional_encoding = _nn.Parameter(_torch.randn(1, num_patches, embed_dim))
+        self.__projection = _nn.Conv2d(in_channels, out_channels, kernel_size=patch_size, stride=patch_size)
+        self.__positional_encoding = _nn.Parameter(_torch.randn(1, num_patches, out_channels))
 
     def forward(self, image: _torch.Tensor) -> _torch.Tensor:
         """

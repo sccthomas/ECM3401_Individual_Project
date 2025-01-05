@@ -12,14 +12,14 @@ class ModelConfig:
     Model config class that defines encoder, decoder and patch embedding configurables and behaviours.
     """
 
-    def __init__(self, input_dims: _t.Tuple[int, int, int], config: _t.Dict[str, _t.Any]) -> None:
+    def __init__(self, input_dimensions: _t.Tuple[int, int, int], config: _t.Dict[str, _t.Any]) -> None:
         """
 
         :param config: A config dictionary containing all configurable information.
         """
-        self.__input_dims = input_dims
+        self.__input_dims = input_dimensions
         self.__encoder = EncoderConfig(
-            input_dims=input_dims,
+            input_dimensions=input_dimensions,
             num_stages=config['num_stages'],
             patch_embedding_configs=config['encoder'],
         )
@@ -56,19 +56,20 @@ class EncoderConfig:
     def __init__(
             self,
             *,
-            input_dims: _t.Tuple[int, int, int],
+            input_dimensions: _t.Tuple[int, int, int],
             num_stages: int,
             patch_embedding_configs: _t.List[_t.Dict[str, _t.Any]]
     ) -> None:
         """
 
+        :param input_dimensions: Input dimensions.
         :param num_stages: Number of stages in the encoder stage.
         :param patch_embedding_configs: Patch embedding configs, specifying the patch size and feed forward network.
         """
-        self.__input_dims = input_dims
+        self.__input_dimensions = input_dimensions
         self.__num_stages = num_stages
         self.__patch_embedding_configs = [
-            PatchEmbeddingConfigEncoder(input_dims=input_dims, **patch_embedding_config)
+            PatchEmbeddingConfigEncoder(input_dimensions=input_dimensions, **patch_embedding_config)
             for patch_embedding_config in patch_embedding_configs
         ]
 
@@ -104,6 +105,10 @@ class EncoderConfig:
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+class DecoderConfig:
+    pass
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Patch Embedding Config
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -113,15 +118,16 @@ class PatchEmbeddingConfig:
     def __init__(
             self,
             *,
-            input_dims: _t.Tuple[int, int, int],
+            input_dimensions: _t.Tuple[int, int, int],
             patch_size: int,
-            vector_len: int,
+            in_channels: int,
     ) -> None:
-        patch_resolution = tuple(dim // patch_size for dim in input_dims[:2])
+        patch_resolution = tuple([int(dim // patch_size) for dim in input_dimensions[1:]])
+
+        self.__in_patches = int(_np.prod(patch_resolution))
+        self.__in_channels = in_channels
         self.__patch_resolution = patch_resolution
         self.__patch_size = patch_size
-        self.__num_patches = int(_np.prod(patch_resolution))
-        self.__vector_len = vector_len
 
     @property
     def patch_resolution(self) -> _t.Tuple[int, int]:
@@ -132,38 +138,42 @@ class PatchEmbeddingConfig:
         return self.__patch_size
 
     @property
-    def num_patches(self) -> int:
+    def in_patches(self) -> int:
         """
 
         :return: The number of Patch Embeddings.
         """
-        return self.__num_patches
+        return self.__in_patches
 
     @property
-    def vector_len(self) -> int:
+    def in_channels(self) -> int:
         """
 
         :return: The length of each Patch Embedding.
         """
-        return self.__vector_len
+        return self.__in_channels
 
 
 class PatchEmbeddingConfigEncoder(PatchEmbeddingConfig):
     def __init__(
             self,
             *,
-            input_dims: _t.Tuple[int, int, int],
+            input_dimensions: _t.Tuple[int, int, int],
             patch_embedding_info: _t.Dict[str, int],
             transformer_block_configs: _t.List[_t.Dict[str, int]],
     ) -> None:
         """
 
+        :param input_dimensions: Input dimensions.
         :param patch_embedding_info: Patch Embedding size information.
         :param transformer_block_configs: Feed forward transformer information and parameters.
         """
-        kwargs = {"patch_size": patch_embedding_info['patch_size'], "vector_len": patch_embedding_info['vector_len']}
 
-        super(PatchEmbeddingConfigEncoder, self).__init__(input_dims=input_dims, **kwargs)
+        super(PatchEmbeddingConfigEncoder, self).__init__(
+            input_dimensions=input_dimensions,
+            patch_size=patch_embedding_info['patch_size'],
+            in_channels=patch_embedding_info['in_channels'],
+        )
 
         self.__transformer_block_configs = [
             TransformerBlockConfig(**transformer_block_config)
@@ -191,25 +201,25 @@ class TransformerBlockConfig:
 
     def __init__(
             self,
-            dropout: bool,
             iterations: int,
-            num_heads: int,
-            shifted_window: bool,
+            num_attention_heads: int,
             window_size: _t.Tuple[int, int],
+            shifted_window: bool,
+            dropout: bool,
     ) -> None:
         """
 
-        :param dropout: Include dropout.
         :param iterations: Iterations inside ViT block.
-        :param num_heads: Number of heads during attention.
-        :param shifted_window: Shift windows.
+        :param num_attention_heads: Number of heads during attention.
         :param window_size: Window size.
+        :param shifted_window: Shift windows.
+        :param dropout: Include dropout.
         """
-        self.__dropout = dropout
         self.__iterations = iterations
-        self.__num_heads = num_heads
-        self.__shifted_window = shifted_window
+        self.__num_attention_heads = num_attention_heads
         self.__window_size = window_size
+        self.__shifted_window = shifted_window
+        self.__dropout = dropout
 
     @property
     def window_size(self) -> _t.Tuple[int, int]:
@@ -236,12 +246,12 @@ class TransformerBlockConfig:
         return self.__dropout
 
     @property
-    def num_heads(self) -> int:
+    def num_attention_heads(self) -> int:
         """
 
-        :return: Number of heads.
+        :return: Number of attention heads.
         """
-        return self.__num_heads
+        return self.__num_attention_heads
 
     @property
     def iterations(self) -> int:
