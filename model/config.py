@@ -1,5 +1,5 @@
-import typing as _t
 import numpy as _np
+import typing as _t
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -12,34 +12,52 @@ class ModelConfig:
     Model config class that defines encoder, decoder and patch embedding configurables and behaviours.
     """
 
-    def __init__(self, input_dimensions: _t.Tuple[int, int, int], config: _t.Dict[str, _t.Any]) -> None:
+    def __init__(
+            self,
+            *,
+            input_dimensions: _t.Tuple[int, int, int],
+            output_dimensions: _t.Tuple[int, int, int],
+            num_classes: int,
+            patch_embedding_configs,
+            encoder_config,
+            decoder_config,
+    ) -> None:
         """
 
-        :param config: A config dictionary containing all configurable information.
+        :param input_dimensions: Input dimensions, (B, C, H, W).
+        :param output_dimensions: Output dimensions, (B, C, H, W).
+        :param num_classes: Number of classes.
+        :param patch_embedding_configs: Patch embedding configurations.
+        :param encoder_config: Encoder configuration.
+        :param decoder_config: Decoder configuration.
         """
-        self.__input_dims = input_dimensions
-        self.__encoder = EncoderConfig(
-            input_dimensions=input_dimensions,
-            num_stages=config['num_stages'],
-            patch_embedding_configs=config['encoder'],
-        )
+        self.__input_dimensions = input_dimensions
+        self.__output_dimensions = output_dimensions
+        self.__num_classes = num_classes
+        self.__patch_embedding_configs = patch_embedding_configs
+        self.__encoder_config = encoder_config
+        self.__decoder_config = decoder_config
 
-    @property
-    def encoder(self) -> 'EncoderConfig':
-        """
-
-        :return: The encoder config.
-        """
-        return self.__encoder
-
-    @staticmethod
-    def __assert_config(config: _t.Dict[str, _t.Any]) -> bool:
-        """
-        Static method to assert if a config is valid.
-
-        :param config: The config being checked.
-        :return: Boolean truth value.
-        """
+    @classmethod
+    def create(
+            cls,
+            input_dimensions: _t.Tuple[int, int, int],
+            output_dimensions: _t.Tuple[int, int, int],
+            num_encoder_stages: int,
+            num_classes: int,
+            patch_embedding_configs: _t.List[
+                _t.Dict[
+                    str, _t.Union[
+                        _t.Dict[str, _t.Union[int, bool]],
+                        _t.List[
+                            _t.Dict[
+                                str, _t.Union[int, bool]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+    ) -> 'ModelConfig':
         pass
 
 
@@ -56,22 +74,19 @@ class EncoderConfig:
     def __init__(
             self,
             *,
-            input_dimensions: _t.Tuple[int, int, int],
             num_stages: int,
-            patch_embedding_configs: _t.List[_t.Dict[str, _t.Any]]
+            transformer_block_configs: _t.List[_t.List['TransformerBlockConfig']],
+            patch_embedding_configs: _t.List['PatchEmbeddingConfig'],
     ) -> None:
         """
 
-        :param input_dimensions: Input dimensions.
-        :param num_stages: Number of stages in the encoder stage.
-        :param patch_embedding_configs: Patch embedding configs, specifying the patch size and feed forward network.
+        :param num_stages: The number of stages.
+        :param transformer_block_configs: The transformer block configurations.
+        :param patch_embedding_configs:  The patch embedding configurations.
         """
-        self.__input_dimensions = input_dimensions
         self.__num_stages = num_stages
-        self.__patch_embedding_configs = [
-            PatchEmbeddingConfigEncoder(input_dimensions=input_dimensions, **patch_embedding_config)
-            for patch_embedding_config in patch_embedding_configs
-        ]
+        self.__transformer_block_configs = transformer_block_configs
+        self.__patch_embedding_configs = patch_embedding_configs
 
     @property
     def num_stages(self) -> int:
@@ -82,22 +97,20 @@ class EncoderConfig:
         return self.__num_stages
 
     @property
-    def patch_embedding_configs(self) -> _t.List['PatchEmbeddingConfigEncoder']:
+    def transformer_block_configs(self) -> _t.List[_t.List['TransformerBlockConfig']]:
+        """
+
+        :return: List of transformer block configs.
+        """
+        return self.__transformer_block_configs
+
+    @property
+    def patch_embedding_configs(self) -> _t.List['PatchEmbeddingConfig']:
         """
 
         :return: List of patch embedding configs.
         """
         return self.__patch_embedding_configs
-
-    @staticmethod
-    def __assert_config(config: _t.Dict[str, _t.Any]) -> bool:
-        """
-        Assert that an encoder config is valid.
-
-        :param config: Encoder config.
-        :return: Boolean truth value.
-        """
-        pass
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -106,79 +119,56 @@ class EncoderConfig:
 
 
 class DecoderConfig:
-    pass
+    """
+    Decoder stage config class.
+    """
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Patch Embedding Config
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-class PatchEmbeddingConfig:
     def __init__(
             self,
             *,
-            input_dimensions: _t.Tuple[int, int, int],
-            patch_size: int,
-            in_channels: int,
-    ) -> None:
-        patch_resolution = tuple([int(dim // patch_size) for dim in input_dimensions[1:]])
-
-        self.__in_patches = int(_np.prod(patch_resolution))
-        self.__in_channels = in_channels
-        self.__patch_resolution = patch_resolution
-        self.__patch_size = patch_size
-
-    @property
-    def patch_resolution(self) -> _t.Tuple[int, int]:
-        return self.__patch_resolution
-
-    @property
-    def patch_size(self) -> int:
-        return self.__patch_size
-
-    @property
-    def in_patches(self) -> int:
-        """
-
-        :return: The number of Patch Embeddings.
-        """
-        return self.__in_patches
-
-    @property
-    def in_channels(self) -> int:
-        """
-
-        :return: The length of each Patch Embedding.
-        """
-        return self.__in_channels
-
-
-class PatchEmbeddingConfigEncoder(PatchEmbeddingConfig):
-    def __init__(
-            self,
-            *,
-            input_dimensions: _t.Tuple[int, int, int],
-            patch_embedding_info: _t.Dict[str, int],
-            transformer_block_configs: _t.List[_t.Dict[str, int]],
+            num_classes: int,
+            output_dimensions: _t.Tuple[int, int, int],
+            max_in_channels: int,
+            transformer_block_configs: _t.List['TransformerBlockConfig'],
+            patch_embedding_configs: _t.List['PatchEmbeddingConfig'],
     ) -> None:
         """
 
-        :param input_dimensions: Input dimensions.
-        :param patch_embedding_info: Patch Embedding size information.
-        :param transformer_block_configs: Feed forward transformer information and parameters.
+        :param num_classes: The number of classes.
+        :param output_dimensions: The output dimensions.
+        :param max_in_channels: The maximum number of input channels.
+        :param transformer_block_configs: The transformer block configurations.
+        :param patch_embedding_configs: The patch embedding configurations.
+        """
+        self.__num_classes = num_classes
+        self.__output_dimensions = output_dimensions
+        self.__max_in_channels = max_in_channels
+        self.__transformer_block_configs = transformer_block_configs
+        self.__patch_embedding_configs = sorted(patch_embedding_configs, key=lambda x: x.in_channels)
+
+    @property
+    def num_classes(self) -> int:
         """
 
-        super(PatchEmbeddingConfigEncoder, self).__init__(
-            input_dimensions=input_dimensions,
-            patch_size=patch_embedding_info['patch_size'],
-            in_channels=patch_embedding_info['in_channels'],
-        )
+        :return: The number of classes.
+        """
+        return self.__num_classes
 
-        self.__transformer_block_configs = [
-            TransformerBlockConfig(**transformer_block_config)
-            for transformer_block_config in transformer_block_configs
-        ]
+    @property
+    def output_dimensions(self) -> _t.Tuple[int, int, int]:
+        """
+
+        :return: The output dimensions.
+        """
+        return self.__output_dimensions
+
+    @property
+    def max_in_channels(self) -> int:
+        """
+
+        :return: The maximum number of input channels.
+        """
+        return self.__max_in_channels
 
     @property
     def transformer_block_configs(self) -> _t.List['TransformerBlockConfig']:
@@ -187,6 +177,14 @@ class PatchEmbeddingConfigEncoder(PatchEmbeddingConfig):
         :return: List of transformer block configs.
         """
         return self.__transformer_block_configs
+
+    @property
+    def patch_embedding_configs(self) -> _t.List['PatchEmbeddingConfig']:
+        """
+
+        :return: List of patch embedding configs.
+        """
+        return self.__patch_embedding_configs
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -257,6 +255,79 @@ class TransformerBlockConfig:
     def iterations(self) -> int:
         """
 
-        :return: Iterations.
+        :return: Number of iterations.
         """
         return self.__iterations
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Patch Embedding Config
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+class PatchEmbeddingConfig:
+    """
+    Patch Embedding config class.
+    """
+
+    def __init__(
+            self,
+            *,
+            in_patches: int,
+            in_channels: int,
+            patch_resolution: _t.Tuple[int, int],
+            patch_size: int,
+    ) -> None:
+        self.__in_patches = in_patches
+        self.__in_channels = in_channels
+        self.__patch_resolution = patch_resolution
+        self.__patch_size = patch_size
+
+    @classmethod
+    def create(
+            cls,
+            input_dimensions: _t.Tuple[int, int, int],
+            patch_size: int,
+            in_channels: int,
+    ) -> 'PatchEmbeddingConfig':
+        patch_resolution = tuple([int(dim // patch_size) for dim in input_dimensions[1:]])
+        in_patches = int(_np.prod(patch_resolution))
+
+        return cls(
+            in_patches=in_patches,
+            in_channels=in_channels,
+            patch_resolution=patch_resolution,
+            patch_size=patch_size,
+        )
+
+    @property
+    def patch_resolution(self) -> _t.Tuple[int, int]:
+        """
+
+        :return: The resolution of the image after patching.
+        """
+        return self.__patch_resolution
+
+    @property
+    def patch_size(self) -> int:
+        """
+
+        :return: The patch size.
+        """
+        return self.__patch_size
+
+    @property
+    def in_patches(self) -> int:
+        """
+
+        :return: The number of Patch Embeddings.
+        """
+        return self.__in_patches
+
+    @property
+    def in_channels(self) -> int:
+        """
+
+        :return: The length of each Patch Embedding.
+        """
+        return self.__in_channels

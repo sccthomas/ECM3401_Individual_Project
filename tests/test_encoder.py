@@ -1,5 +1,5 @@
 from model.encoder import Encoder
-from model.config import EncoderConfig
+from model.config import EncoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
 import unittest
 import torch
 
@@ -8,119 +8,120 @@ class TestEncoder(unittest.TestCase):
     def setUp(self):
         self.config = EncoderConfig(
             num_stages=2,
-            input_dimensions=(3, 512, 512),
-            patch_embedding_configs=[
-                {
-                    "patch_embedding_info": {
-                        'patch_size': 128,
-                        'in_channels': 1024,
-                    },
-                    "transformer_block_configs": [
-                        {
-                            'dropout': False,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                    ],
-                },
-                {
-                    "patch_embedding_info": {
-                        'patch_size': 64,
-                        'in_channels': 768,
-                    },
-                    "transformer_block_configs": [
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                    ],
-                },
-                {
-                    "patch_embedding_info": {
-                        'patch_size': 32,
-                        'in_channels': 512,
-                    },
-                    "transformer_block_configs": [
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                    ],
-                },
-                {
-                    "patch_embedding_info": {
-                        'patch_size': 16,
-                        'in_channels': 256,
-                    },
-                    "transformer_block_configs": [
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                    ],
-                },
-                {
-                    "patch_embedding_info": {
-                        'patch_size': 8,
-                        'in_channels': 64,
-                    },
-                    "transformer_block_configs": [
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                        {
-                            'dropout': True,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                    ],
-                },
+            transformer_block_configs=[
+                [
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=False,
+                    ),
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                ],
+                [
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                ],
+                [
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                ],
+                [
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                ],
+                [
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                    TransformerBlockConfig(
+                        iterations=3,
+                        num_attention_heads=8,
+                        window_size=(2, 2),
+                        shifted_window=False,
+                        dropout=True,
+                    ),
+                ],
             ],
+            patch_embedding_configs=[
+                PatchEmbeddingConfig(
+                    in_patches=16,
+                    in_channels=1024,
+                    patch_resolution=(4, 4),
+                    patch_size=128,
+                ),
+                PatchEmbeddingConfig(
+                    in_patches=64,
+                    in_channels=768,
+                    patch_resolution=(8, 8),
+                    patch_size=64,
+                ),
+                PatchEmbeddingConfig(
+                    in_patches=256,
+                    in_channels=512,
+                    patch_resolution=(16, 16),
+                    patch_size=32,
+                ),
+                PatchEmbeddingConfig(
+                    in_patches=1024,
+                    in_channels=256,
+                    patch_resolution=(32, 32),
+                    patch_size=16,
+                ),
+                PatchEmbeddingConfig(
+                    in_patches=4096,
+                    in_channels=64,
+                    patch_resolution=(64, 64),
+                    patch_size=8,
+                ),
+            ]
         )
         self.encoder = Encoder.from_config(self.config)
 

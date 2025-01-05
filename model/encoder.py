@@ -1,9 +1,9 @@
+import model.config as _config
+import model.transformer as _transformer
 import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 import typing as _t
-import model.config as _config
-import model.transformer as _transformer
 
 
 class Encoder(_nn.Module):
@@ -40,6 +40,7 @@ class Encoder(_nn.Module):
         """
         num_stages = config.num_stages
         patch_embedding_configs = config.patch_embedding_configs
+        transformer_block_configs = config.transformer_block_configs
 
         # Create Skip Connection dimension information for each Patch Embedding.
         skip_connection_in_dimensions = tuple([
@@ -64,7 +65,7 @@ class Encoder(_nn.Module):
                 patch_resolution = patch_embedding_config.patch_resolution
 
                 # - Create Transformer Block for Patch Embedding Stage.
-                transformer_block_config = patch_embedding_config.transformer_block_configs[stage]
+                transformer_block_config = transformer_block_configs[i][stage]
                 transformer_block = _transformer.TransformerBlockEncoder(
                     # - Patch Embedding information
                     in_patches=in_patches,
