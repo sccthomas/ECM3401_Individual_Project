@@ -44,6 +44,30 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
 
         return cls(patch_embedding_modules, encoder_module, decoder_module)
 
+    @property
+    def patch_embedding_modules(self) -> '_nn.ModuleList[_patch_embedding.PatchEmbedding]':
+        """
+
+        :return: The patch embedding modules.
+        """
+        return self.__patch_embedding_modules
+
+    @property
+    def encoder_module(self) -> '_encoder.Encoder':
+        """
+
+        :return: The encoder module.
+        """
+        return self.__encoder_module
+
+    @property
+    def decoder_module(self) -> '_decoder.Decoder':
+        """
+
+        :return: The decoder module.
+        """
+        return self.__decoder_module
+
     def forward(self, x: '_torch.Tensor') -> '_torch.Tensor':
         patch_embedding_modules = self.__patch_embedding_modules
         encoder_module = self.__encoder_module
