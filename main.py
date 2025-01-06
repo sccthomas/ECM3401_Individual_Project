@@ -198,7 +198,7 @@ if __name__ == '__main__':
     # Create Optimizer, Loss function and Device
     optimizer = _optim.Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)
     criterion = _nn.BCEWithLogitsLoss()
-    device = _torch.device('')  # Fallback to CUDA if MPS is not available
+    device = _torch.device('cuda')  # Fallback to CUDA if MPS is not available
 
     # Train model
     num_epochs = 15
