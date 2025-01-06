@@ -16,80 +16,50 @@ class TestEncoder(unittest.TestCase):
                         iterations=3,
                         num_attention_heads=8,
                         window_size=(2, 2),
-                        shifted_window=False,
-                        dropout=False,
-                    ),
-                    TransformerBlockConfig(
-                        iterations=3,
-                        num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
+                        shifted_window=True,
                         dropout=True,
-                    ),
+                    )
+                    for _ in range(2)
                 ],
                 [
                     TransformerBlockConfig(
                         iterations=3,
                         num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
+                        window_size=(4, 4),
+                        shifted_window=True,
                         dropout=True,
-                    ),
-                    TransformerBlockConfig(
-                        iterations=3,
-                        num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
-                        dropout=True,
-                    ),
+                    )
+                    for _ in range(2)
                 ],
                 [
                     TransformerBlockConfig(
                         iterations=3,
                         num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
+                        window_size=(4, 4),
+                        shifted_window=True,
                         dropout=True,
-                    ),
-                    TransformerBlockConfig(
-                        iterations=3,
-                        num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
-                        dropout=True,
-                    ),
+                    )
+                    for _ in range(2)
                 ],
                 [
                     TransformerBlockConfig(
                         iterations=3,
                         num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
+                        window_size=(8, 8),
+                        shifted_window=True,
                         dropout=True,
-                    ),
-                    TransformerBlockConfig(
-                        iterations=3,
-                        num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
-                        dropout=True,
-                    ),
+                    )
+                    for _ in range(2)
                 ],
                 [
                     TransformerBlockConfig(
                         iterations=3,
                         num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
+                        window_size=(16, 16),
+                        shifted_window=True,
                         dropout=True,
-                    ),
-                    TransformerBlockConfig(
-                        iterations=3,
-                        num_attention_heads=8,
-                        window_size=(2, 2),
-                        shifted_window=False,
-                        dropout=True,
-                    ),
+                    )
+                    for _ in range(2)
                 ],
             ],
             patch_embedding_configs=[

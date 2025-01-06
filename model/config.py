@@ -248,7 +248,7 @@ class DecoderConfig:
         self.__num_classes = num_classes
         self.__output_dimensions = output_dimensions
         self.__max_in_channels = max_in_channels
-        self.__transformer_block_configs = transformer_block_configs
+        self.__transformer_block_configs = list(reversed(transformer_block_configs))
         self.__patch_embedding_configs = sorted(patch_embedding_configs, key=lambda x: x.in_channels)
 
     @property

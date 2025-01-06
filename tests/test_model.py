@@ -14,6 +14,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
             num_encoder_stages=2,
             num_classes=1,
             patch_embedding_config_dicts=[
+                # Patch Embedding Config 1
                 {
                     "patch_embedding_info": {
                         'patch_size': 128,
@@ -21,55 +22,44 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
                     },
                     "encoder_block_configs": [
                         {
-                            'dropout': False,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
-                        {
                             'dropout': True,
                             'iterations': 3,
                             'num_attention_heads': 8,
-                            'shifted_window': False,
+                            'shifted_window': True,
                             'window_size': (2, 2)
-                        },
+                        }
+                        for _ in range(3)
                     ],
                     "decoder_block_config": {
                         'dropout': True,
                         'iterations': 3,
                         'num_attention_heads': 8,
-                        'shifted_window': False,
+                        'shifted_window': True,
                         'window_size': (2, 2)
                     }
                 },
+                # Patch Embedding Config 2
                 {
                     "patch_embedding_info": {
-                        'patch_size': 64,
-                        'in_channels': 768,
+                        'patch_size': 8,
+                        'in_channels': 64,
                     },
                     "encoder_block_configs": [
-                        {
-                            'dropout': False,
-                            'iterations': 3,
-                            'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
                         {
                             'dropout': True,
                             'iterations': 3,
                             'num_attention_heads': 8,
-                            'shifted_window': False,
-                            'window_size': (2, 2)
-                        },
+                            'shifted_window': True,
+                            'window_size': (16, 16)
+                        }
+                        for _ in range(3)
                     ],
                     "decoder_block_config": {
                         'dropout': True,
                         'iterations': 3,
                         'num_attention_heads': 8,
-                        'shifted_window': False,
-                        'window_size': (2, 2)
+                        'shifted_window': True,
+                        'window_size': (16, 16)
                     }
                 },
             ],
