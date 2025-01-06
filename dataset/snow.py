@@ -1,0 +1,68 @@
+import os as _os
+from typing import Tuple
+from PIL import Image as _Image
+import torch as _torch
+from torch.utils.data import Dataset as _Dataset
+import torchvision.transforms.v2 as _transforms
+
+
+class SnowDataset(_Dataset):
+    def __init__(self) -> None:
+        dataset_dir_path = _os.path.join(_os.path.dirname(_os.getcwd()), _DIR_NAME)
+        images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
+        targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
+        image_target_paths = tuple(
+            tuple([_os.path.join(images_dir_path, file_name), _os.path.join(targets_dir_path, file_name)])
+            for file_name in set(_os.listdir(targets_dir_path)).intersection(set(_os.listdir(images_dir_path)))
+        )
+
+        self.__count = len(image_target_paths)
+        self.__image_target_paths = image_target_paths
+        self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD)
+        self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
+        self.__random_vertical_flip = _transforms.RandomVerticalFlip()
+        self.__to_tensor = _transforms.ToTensor()
+
+    def __len__(self) -> int:
+        count = self.__count
+        return count
+
+    def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
+        image_target_paths = self.__image_target_paths
+
+        image_path, target_path = image_target_paths[idx]
+
+        image = _Image.open(image_path).convert('RGB')
+        target = _Image.open(target_path).convert('L')
+
+        image, target = self.transform(image, target)
+
+        return image, target
+
+    def transform(self, image: _Image, target: _Image) -> Tuple[_torch.Tensor, _torch.Tensor]:
+        normalize = self.__normalize
+        random_horizontal_flip = self.__random_horizontal_flip
+        random_vertical_flip = self.__random_vertical_flip
+        to_tensor = self.__to_tensor
+
+        # Random horizontal and vertical flip
+        image, target = random_horizontal_flip(image, target)
+        image, target = random_vertical_flip(image, target)
+
+        # To Tensor and Normalize
+        image = to_tensor(image)
+        image = normalize(image)
+        target = to_tensor(target).float()
+        return image, target
+
+
+# --------------------------------------------
+# Private Constants
+# --------------------------------------------
+
+
+_DIR_NAME = 'snow_dataset'
+_IMAGES_DIR_NAME = 'image'
+_TARGETS_DIR_NAME = 'mask'
+_MEAN = [0.4808, 0.4178, 0.5046]
+_STD = [0.2637, 0.2751, 0.2425]
