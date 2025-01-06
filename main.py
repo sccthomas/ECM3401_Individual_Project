@@ -202,6 +202,7 @@ if __name__ == '__main__':
 
     # Train model
     num_epochs = 15
+    semantic_segmentation_model = semantic_segmentation_model.to(device)
     semantic_segmentation_model = train_model(
         semantic_segmentation_model,
         training_dataset_loader,
