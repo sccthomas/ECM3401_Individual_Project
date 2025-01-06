@@ -1,3 +1,6 @@
+import datetime as _datetime
+import os as _os
+
 import torch as _torch
 import torch.nn as _nn
 import torch.optim as _optim
@@ -216,4 +219,7 @@ if __name__ == '__main__':
     )
 
     # Save model
-    _torch.save(semantic_segmentation_model.state_dict(), 'semantic_segmentation_model.pth')
+    data_str = _datetime.datetime.now().strftime('%Y-%m-%d')
+    folder_path = f'trained_model/'
+    _os.makedirs(folder_path, exist_ok=True)
+    _torch.save(semantic_segmentation_model.state_dict(), f'{folder_path}{data_str}_semantic_segmentation_model.pth')
