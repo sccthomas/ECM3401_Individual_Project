@@ -198,13 +198,7 @@ if __name__ == '__main__':
     # Create Optimizer, Loss function and Device
     optimizer = _optim.Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)
     criterion = _nn.BCEWithLogitsLoss()
-    try:
-        device = _torch.device('mps')  # Try using Apple Metal Performance Shaders (MPS)
-    except RuntimeError:
-        try:
-            device = _torch.device('cuda')  # Fallback to CUDA if MPS is not available
-        except RuntimeError:
-            device = _torch.device('cpu')  # Default to CPU if neither MPS nor CUDA is available
+    device = _torch.device('')  # Fallback to CUDA if MPS is not available
 
     # Train model
     num_epochs = 15
