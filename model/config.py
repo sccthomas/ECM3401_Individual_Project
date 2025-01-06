@@ -45,7 +45,7 @@ class ModelConfig:
             output_dimensions: _t.Tuple[int, int, int],
             num_encoder_stages: int,
             num_classes: int,
-            patch_embedding_configs: _t.List[
+            patch_embedding_config_dicts: _t.List[
                 _t.Dict[
                     str, _t.Union[
                         _t.Dict[str, _t.Union[int, bool]],
@@ -58,7 +58,111 @@ class ModelConfig:
                 ]
             ],
     ) -> 'ModelConfig':
-        pass
+        """
+        Create model configuration from dictionary and input parameters.
+
+        :param input_dimensions: Input image dimensions. (B, C, H, W)
+        :param output_dimensions: Output image dimensions. (B, C, H, W)
+        :param num_encoder_stages: Number of encoder stages.
+        :param num_classes: Number of classes.
+        :param patch_embedding_config_dicts: List of dictionaries containing patch embedding and transformer block
+               configurations.
+        :return: Model configuration instance.
+        """
+        # Create `PatchEmbeddingConfig` and `TransformerBlockConfig` instances.
+        encoder_transformer_block_configs = []
+        decoder_transformer_block_configs = []
+        patch_embedding_configs = []
+        max_in_channels = 0
+        for patch_embedding_config_dict in patch_embedding_config_dicts:
+            # - Patch Embedding Config
+            patch_embedding_info = patch_embedding_config_dict["patch_embedding_info"]
+            patch_embedding_configs.append(
+                PatchEmbeddingConfig.create(input_dimensions, **patch_embedding_info)
+            )
+            max_in_channels = max(max_in_channels, patch_embedding_info["in_channels"])
+            # - Encoder Transformer Block Configs
+            encoder_transformer_block_configs.append(
+                [
+                    TransformerBlockConfig(**transformer_block_config)
+                    for transformer_block_config in patch_embedding_config_dict["encoder_block_configs"]
+                ]
+            )
+            # - Decoder Transformer Block Config
+            decoder_transformer_block_configs.append(
+                TransformerBlockConfig(**patch_embedding_config_dict["decoder_block_config"])
+            )
+
+        # Create `EncoderConfig` and `DecoderConfig` instances.
+        encoder_config = EncoderConfig(
+            num_stages=num_encoder_stages,
+            transformer_block_configs=encoder_transformer_block_configs,
+            patch_embedding_configs=patch_embedding_configs
+        )
+        decoder_config = DecoderConfig(
+            num_classes=num_classes,
+            output_dimensions=output_dimensions,
+            max_in_channels=max_in_channels,
+            transformer_block_configs=decoder_transformer_block_configs,
+            patch_embedding_configs=patch_embedding_configs
+        )
+
+        return cls(
+            input_dimensions=input_dimensions,
+            output_dimensions=output_dimensions,
+            num_classes=num_classes,
+            patch_embedding_configs=patch_embedding_configs,
+            encoder_config=encoder_config,
+            decoder_config=decoder_config,
+        )
+
+    @property
+    def input_dimensions(self) -> _t.Tuple[int, int, int]:
+        """
+
+        :return: Input Dimensions.
+        """
+        return self.__input_dimensions
+
+    @property
+    def output_dimensions(self) -> _t.Tuple[int, int, int]:
+        """
+
+        :return: Output Dimensions.
+        """
+        return self.__output_dimensions
+
+    @property
+    def num_classes(self) -> int:
+        """
+
+        :return: Number of Encoder Stages
+        """
+        return self.__num_classes
+
+    @property
+    def patch_embedding_configs(self) -> _t.List['PatchEmbeddingConfig']:
+        """
+
+        :return: Patch Embedding Configs
+        """
+        return self.__patch_embedding_configs
+
+    @property
+    def encoder_config(self) -> 'EncoderConfig':
+        """
+
+        :return: Encoder Config
+        """
+        return self.__encoder_config
+
+    @property
+    def decoder_config(self) -> 'DecoderConfig':
+        """
+
+        :return: Decoder Config
+        """
+        return self.__decoder_config
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
