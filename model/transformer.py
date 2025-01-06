@@ -59,8 +59,10 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
                         'norm2': _nn.LayerNorm(in_channels),
                         'mlp': _nn.Sequential(
                             _nn.Linear(in_channels, hidden_channels),
+                            _nn.Dropout(0.1) if dropout else _nn.Identity(),
                             _nn.GELU(),
-                            _nn.Linear(hidden_channels, in_channels)
+                            _nn.Linear(hidden_channels, in_channels),
+                            _nn.Dropout(0.1) if dropout else _nn.Identity(),
                         )
                     }
                 )

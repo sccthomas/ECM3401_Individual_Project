@@ -144,7 +144,7 @@ class _WindowAttention(_nn.Module):
         super().__init__()
         head_dim = in_channels // num_attention_heads
         window_size_h, window_size_w = window_size
-        dropout_rate = 0.0 if dropout is False else 0.1
+        dropout_rate = 0.1 if dropout else 0.0
 
         self.__window_size = window_size  # Wh, Ww
         self.__num_heads = num_attention_heads
