@@ -1,11 +1,12 @@
 import math as _math
-import model.config as _config
-import model.transformer as _transformer
+import typing as _t
+
 import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 
-import typing as _t
+import model.config as _config
+import model.transformer as _transformer
 
 
 class Decoder(_nn.Module):

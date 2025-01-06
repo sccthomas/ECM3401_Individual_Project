@@ -1,6 +1,8 @@
-from model.transformer import TransformerBlockEncoder, TransformerBlockDecoder
-import torch
 import unittest
+
+import torch
+
+from model.transformer import TransformerBlockEncoder, TransformerBlockDecoder
 
 
 class TestTransformerBlockEncoder(unittest.TestCase):

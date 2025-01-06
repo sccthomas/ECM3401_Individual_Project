@@ -1,7 +1,9 @@
-from model.model import SemanticSegmentationVisionTransformer
-from model.config import ModelConfig
-import torch
 import unittest
+
+import torch
+
+from model.config import ModelConfig
+from model.model import SemanticSegmentationVisionTransformer
 
 
 class TestSemanticSegmentationVisionTransformer(unittest.TestCase):

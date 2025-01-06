@@ -1,6 +1,8 @@
-from model.patch_embedding import PatchEmbedding
-import torch
 import unittest
+
+import torch
+
+from model.patch_embedding import PatchEmbedding
 
 
 class MyTestCase(unittest.TestCase):

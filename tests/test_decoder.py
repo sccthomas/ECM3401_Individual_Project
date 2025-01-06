@@ -1,7 +1,9 @@
 import unittest
-from model.decoder import Decoder
+
 import torch
+
 from model.config import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from model.decoder import Decoder
 
 
 class TestDecoder(unittest.TestCase):

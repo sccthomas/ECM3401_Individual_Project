@@ -1,6 +1,8 @@
-from model.attention import SwinTransformerAttention
 import unittest
+
 import torch
+
+from model.attention import SwinTransformerAttention
 
 
 class TestSwinTransformerAttention(unittest.TestCase):
