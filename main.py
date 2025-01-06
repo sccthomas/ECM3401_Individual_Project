@@ -200,10 +200,10 @@ if __name__ == '__main__':
     criterion = _nn.BCEWithLogitsLoss()
     try:
         device = _torch.device('mps')  # Try using Apple Metal Performance Shaders (MPS)
-    except AssertionError:
+    except RuntimeError:
         try:
             device = _torch.device('cuda')  # Fallback to CUDA if MPS is not available
-        except AssertionError:
+        except RuntimeError:
             device = _torch.device('cpu')  # Default to CPU if neither MPS nor CUDA is available
 
     # Train model
