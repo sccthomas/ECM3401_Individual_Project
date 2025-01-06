@@ -92,7 +92,7 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
         in_patches = self.in_patches
         in_channels = self.in_channels
         assert patch_embeddings.shape[1:] == (in_patches, in_channels), \
-            (f"Expected shape {(in_patches, in_channels)}, got {patch_embeddings.shape[1:]} before "
+            (f"Expected shape {(in_patches, in_channels)}, got {tuple(patch_embeddings.shape[1:])} before "
              f"`TransformerBlock`.")
 
         iterations = self._iterations
