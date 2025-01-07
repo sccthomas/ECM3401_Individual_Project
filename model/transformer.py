@@ -103,8 +103,11 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
 
         # Pass the patch embeddings through the transformer block iterations.
         for iteration in iterations:
-            patch_embeddings += iteration['attention'](iteration['norm1'](patch_embeddings))
-            patch_embeddings += iteration['mlp'](iteration['norm2'](patch_embeddings))
+            attention_output = iteration['attention'](iteration['norm1'](patch_embeddings))
+            patch_embeddings = patch_embeddings + attention_output  # Add out-of-place
+
+            mlp_output = iteration['mlp'](iteration['norm2'](patch_embeddings))
+            patch_embeddings = patch_embeddings + mlp_output  # Add out-of-place
 
         patch_embeddings = self._post_process(patch_embeddings)
 
@@ -232,8 +235,9 @@ class TransformerBlockDecoder(_TransformerBlock):
 
         # Linear operation to project the patch embeddings to the output dimensions.
         if output_num_patches != patch_embeddings.shape[1] and output_vector_len != patch_embeddings.shape[2]:
+            patch_embeddings = linear_operation(patch_embeddings)
             patch_embeddings = _F.interpolate(
-                input=linear_operation(patch_embeddings).permute(0, 2, 1),
+                input=patch_embeddings.permute(0, 2, 1),
                 size=(output_num_patches,),
                 mode='nearest',
             ).permute(0, 2, 1)

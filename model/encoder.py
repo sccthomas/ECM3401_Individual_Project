@@ -234,7 +234,7 @@ class _SkipConnections(_nn.Module):
             assert translated_patch_embedding.shape[1:] == expected_shape, (
                 "Translated patch embedding dimension does not align with the target patch embedding."
             )
-            primary_patch_embedding += translated_patch_embedding
+            primary_patch_embedding = primary_patch_embedding + translated_patch_embedding
 
         # - Normalize the fused patch embeddings to reduce over active neurons.
         primary_patch_embedding = norm(primary_patch_embedding)

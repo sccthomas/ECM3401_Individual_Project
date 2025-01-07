@@ -1,14 +1,14 @@
 import os as _os
 from typing import Tuple
-from PIL import Image as _Image
+
 import torch as _torch
-from torch.utils.data import Dataset as _Dataset
 import torchvision.transforms.v2 as _transforms
+from PIL import Image as _Image
+from torch.utils.data import Dataset as _Dataset
 
 
 class SnowDataset(_Dataset):
-    def __init__(self) -> None:
-        dataset_dir_path = _os.path.join(_os.path.dirname(_os.getcwd()), _DIR_NAME)
+    def __init__(self, dataset_dir_path: str) -> None:
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
         image_target_paths = tuple(
@@ -61,7 +61,6 @@ class SnowDataset(_Dataset):
 # --------------------------------------------
 
 
-_DIR_NAME = 'snow_dataset'
 _IMAGES_DIR_NAME = 'image'
 _TARGETS_DIR_NAME = 'mask'
 _MEAN = [0.4808, 0.4178, 0.5046]
