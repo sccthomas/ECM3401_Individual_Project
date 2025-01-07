@@ -73,7 +73,7 @@ def train_model(
     return model
 
 
-if __name__ == '__main__':
+def config_1() -> _nn.Module:
     # Create model
     model_config = _config.ModelConfig.create(
         input_dimensions=(3, 512, 512),
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     criterion = _nn.BCEWithLogitsLoss().to(device)
 
     # Train model
-    num_epochs = 15
+    num_epochs = 5
     semantic_segmentation_model = train_model(
         semantic_segmentation_model,
         training_dataset_loader,
@@ -235,3 +235,5 @@ if __name__ == '__main__':
     folder_path = f'trained_model/'
     _os.makedirs(folder_path, exist_ok=True)
     _torch.save(semantic_segmentation_model.state_dict(), f'{folder_path}{data_str}_semantic_segmentation_model.pth')
+
+    return semantic_segmentation_model
