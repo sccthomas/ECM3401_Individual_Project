@@ -240,7 +240,7 @@ class TransformerBlockDecoder(_TransformerBlock):
                 input=patch_embeddings.permute(0, 2, 1),
                 size=(output_num_patches,),
                 mode='nearest',
-            ).permute(0, 2, 1)
+            ).permute(0, 2, 1).contiguous()
 
         assert patch_embeddings.shape[1:] == (output_num_patches, output_vector_len), \
             (f"Expected shape {(output_num_patches, output_vector_len)}, got {patch_embeddings.shape[1:]} after "

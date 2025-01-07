@@ -96,7 +96,8 @@ class SwinTransformerAttention(_nn.Module):
 
         shifted_window_attention = attn_mask is not None
         if shifted_window_attention:
-            patch_embeddings = _torch.roll(patch_embeddings, shifts=(-shift_size, -shift_size), dims=(1, 2))
+            patch_embeddings = _torch.roll(patch_embeddings, shifts=(-shift_size, -shift_size),
+                                           dims=(1, 2)).contiguous()
 
         # Partition the patch embeddings into non-overlapping windows
         patch_embeddings = _window_partition(patch_embeddings, window_size)
@@ -112,7 +113,7 @@ class SwinTransformerAttention(_nn.Module):
 
         # Reverse Cyclic Shift
         if shifted_window_attention:
-            patch_embeddings = _torch.roll(patch_embeddings, shifts=(shift_size, shift_size), dims=(1, 2))
+            patch_embeddings = _torch.roll(patch_embeddings, shifts=(shift_size, shift_size), dims=(1, 2)).contiguous()
 
         patch_embeddings = patch_embeddings.reshape(B, H * W, C)
 
@@ -187,10 +188,11 @@ class _WindowAttention(_nn.Module):
             self.__qkv(windowed_patch_embeddings)
             .reshape(b, n, 3, self.__num_heads, c // self.__num_heads)
             .permute(2, 0, 3, 1, 4)
+            .contiguous()
         )  # 3, num_windows*B, num_heads, window_size, head_dim
 
         q = q * self.__scale
-        attn = (q @ k.transpose(-2, -1))  # num_windows*B, num_heads, window_size, window_size
+        attn = (q @ k.transpose(-2, -1)).contiguous()  # num_windows*B, num_heads, window_size, window_size
 
         relative_position_bias = self.__relative_position_bias_table[self.relative_position_index.reshape(-1)].reshape(
             self.__window_size[0] * self.__window_size[1],
@@ -210,8 +212,8 @@ class _WindowAttention(_nn.Module):
 
         windowed_patch_embeddings = ((attn @ v).transpose(1, 2)
                                      .reshape(b, n, c))  # num_windows*B, window_size, in_channels
-        windowed_patch_embeddings = self.__proj(windowed_patch_embeddings)
-        windowed_patch_embeddings = self.__proj_drop(windowed_patch_embeddings)
+        windowed_patch_embeddings = self.__proj(windowed_patch_embeddings).contiguous()
+        windowed_patch_embeddings = self.__proj_drop(windowed_patch_embeddings).contiguous()
 
         return windowed_patch_embeddings
 
@@ -227,7 +229,6 @@ def _window_partition(x: _torch.Tensor, window_size: _t.Tuple[int, int]) -> _tor
     B, H, W, C = x.shape
     x = x.reshape(B, H // window_size[0], window_size[0], W // window_size[1], window_size[1], C)
     windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().reshape(-1, window_size[0], window_size[1], C)
-
     return windows
 
 

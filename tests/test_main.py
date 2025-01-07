@@ -153,9 +153,8 @@ class TestMain(unittest.TestCase):
                                                '/snow_dataset'), range(10))
         training_dataset, validation_dataset = _data.random_split(snow_dataset, [0.8, 0.2])
 
-        batch_size = 10
-        training_dataset_loader = _data.DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
-        validation_dataset_loader = _data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+        training_dataset_loader = _data.DataLoader(training_dataset, batch_size=8, shuffle=True)
+        validation_dataset_loader = _data.DataLoader(validation_dataset, batch_size=2, shuffle=False)
 
         # Create Optimizer, Loss function and Device
         optimizer = _optim.Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)

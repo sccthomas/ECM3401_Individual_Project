@@ -20,7 +20,6 @@ def train_model(
         criterion: '_nn.modules.loss._Loss',
         device: _torch.device,
         num_epochs: int,
-        grad_accumulation_steps: int = 1,  # Optional: To accumulate gradients for more memory-efficient training
 ) -> _nn.Module:
     _log.info(f"Training model for {num_epochs} epochs")
     for epoch in range(num_epochs):
@@ -41,9 +40,8 @@ def train_model(
             loss.backward()
 
             # Gradient accumulation (if using more than 1 step per gradient update)
-            if (step + 1) % grad_accumulation_steps == 0:
-                optimizer.step()
-                optimizer.zero_grad()  # Clear gradients after the optimizer step
+            optimizer.step()
+            optimizer.zero_grad()  # Clear gradients after the optimizer step
 
             training_loss += loss.item()
 
@@ -224,7 +222,7 @@ def config_1() -> _nn.Module:
     criterion = _nn.BCEWithLogitsLoss().to(device)
 
     # Train model
-    num_epochs = 5
+    num_epochs = 1
     semantic_segmentation_model = train_model(
         semantic_segmentation_model,
         training_dataset_loader,
