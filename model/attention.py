@@ -68,7 +68,7 @@ class SwinTransformerAttention(_nn.Module):
                     cnt += 1
 
             mask_windows = _window_partition(img_mask, window_size)  # nW, window_size, window_size, 1
-            mask_windows = mask_windows.view(-1, window_size_h * window_size_w)
+            mask_windows = mask_windows.reshape(-1, window_size_h * window_size_w)
             attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
 
@@ -92,7 +92,7 @@ class SwinTransformerAttention(_nn.Module):
         B, L, C = patch_embeddings.shape
         assert L == in_patches and C == in_channels, "Input shape is not valid before `SwinTransformerAttention`."
 
-        patch_embeddings = patch_embeddings.view(B, H, W, C)
+        patch_embeddings = patch_embeddings.reshape(B, H, W, C)
 
         shifted_window_attention = attn_mask is not None
         if shifted_window_attention:
@@ -101,11 +101,11 @@ class SwinTransformerAttention(_nn.Module):
         # Partition the patch embeddings into non-overlapping windows
         patch_embeddings = _window_partition(patch_embeddings, window_size)
         window_size_h, window_size_w = window_size
-        patch_embeddings = patch_embeddings.view(-1, window_size_h * window_size_w, C)
+        patch_embeddings = patch_embeddings.reshape(-1, window_size_h * window_size_w, C)
 
         # Apply the window attention mechanism
         patch_embeddings = window_attention(patch_embeddings, mask=attn_mask)
-        patch_embeddings = patch_embeddings.view(-1, window_size_h, window_size_w, C)
+        patch_embeddings = patch_embeddings.reshape(-1, window_size_h, window_size_w, C)
 
         # Reconstruct the patch embeddings
         patch_embeddings = _window_reverse(patch_embeddings, window_size, H, W)
@@ -114,7 +114,7 @@ class SwinTransformerAttention(_nn.Module):
         if shifted_window_attention:
             patch_embeddings = _torch.roll(patch_embeddings, shifts=(shift_size, shift_size), dims=(1, 2))
 
-        patch_embeddings = patch_embeddings.view(B, H * W, C)
+        patch_embeddings = patch_embeddings.reshape(B, H * W, C)
 
         assert patch_embeddings.shape[1:] == (in_patches, in_channels) \
             , "Output shape is not valid after `SwinTransformerAttention`."
@@ -192,7 +192,7 @@ class _WindowAttention(_nn.Module):
         q = q * self.__scale
         attn = (q @ k.transpose(-2, -1))  # num_windows*B, num_heads, window_size, window_size
 
-        relative_position_bias = self.__relative_position_bias_table[self.relative_position_index.view(-1)].view(
+        relative_position_bias = self.__relative_position_bias_table[self.relative_position_index.reshape(-1)].reshape(
             self.__window_size[0] * self.__window_size[1],
             self.__window_size[0] * self.__window_size[1],
             -1
@@ -202,8 +202,8 @@ class _WindowAttention(_nn.Module):
 
         if mask is not None:
             nW = mask.shape[0]
-            attn = attn.view(b // nW, nW, self.__num_heads, n, n) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.__num_heads, n, n)
+            attn = attn.reshape(b // nW, nW, self.__num_heads, n, n) + mask.unsqueeze(1).unsqueeze(0)
+            attn = attn.reshape(-1, self.__num_heads, n, n)
         attn = self.__softmax(attn)
 
         attn = self.__attn_drop(attn)
@@ -225,8 +225,8 @@ def _window_partition(x: _torch.Tensor, window_size: _t.Tuple[int, int]) -> _tor
     :return: Partitioned windows, shape (num_windows*B, window_size, window_size, C).
     """
     B, H, W, C = x.shape
-    x = x.view(B, H // window_size[0], window_size[0], W // window_size[1], window_size[1], C)
-    windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size[0], window_size[1], C)
+    x = x.reshape(B, H // window_size[0], window_size[0], W // window_size[1], window_size[1], C)
+    windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().reshape(-1, window_size[0], window_size[1], C)
 
     return windows
 
@@ -242,6 +242,6 @@ def _window_reverse(x: _torch.Tensor, window_size: _t.Tuple[int, int], H: int, W
     :return: Non-windowed patch embeddings of shape (B, H, W, C).
     """
     B = int(x.shape[0] / (H * W / window_size[0] / window_size[1]))
-    x = x.view(B, H // window_size[0], W // window_size[1], window_size[0], window_size[1], -1)
-    x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
+    x = x.reshape(B, H // window_size[0], W // window_size[1], window_size[0], window_size[1], -1)
+    x = x.permute(0, 1, 3, 2, 4, 5).contiguous().reshape(B, H, W, -1)
     return x

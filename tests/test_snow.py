@@ -11,6 +11,8 @@ class MyTestCase(unittest.TestCase):
                              '/snow_dataset')
 
         image, mask = snow_dataset[0]
+        self.assertTrue(type(image).__name__ == 'Tensor')
+        self.assertTrue(type(mask).__name__ == 'Tensor')
         self.assertEqual(image.size(), (3, 512, 512))
         self.assertEqual(mask.size(), (1, 512, 512))
 
