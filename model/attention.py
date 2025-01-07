@@ -72,8 +72,8 @@ class SwinTransformerAttention(_nn.Module):
             attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
 
-        self.__attn_mask = attn_mask
         self.__shift_size = shift_size
+        self.register_buffer("__attn_mask", attn_mask)
 
     def forward(self, patch_embeddings: _torch.Tensor) -> _torch.Tensor:
         """
@@ -83,7 +83,7 @@ class SwinTransformerAttention(_nn.Module):
         :return: The attended patch embeddings, shape (B, L, C).
         """
         in_patches, in_channels = self.__in_patches, self.__in_channels
-        attn_mask = self.__attn_mask
+        attn_mask = self._buffers["__attn_mask"]
         H, W = self.__patch_resolution
         shift_size = self.__shift_size
         window_attention = self.__window_attention

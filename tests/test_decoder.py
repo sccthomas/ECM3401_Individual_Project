@@ -82,18 +82,20 @@ class TestDecoder(unittest.TestCase):
                 ),
             ],
         )
-        self.decoder = Decoder.from_config(self.config)
+        self.device = torch.device('mps')
+        self.decoder = Decoder.from_config(self.config).to(self.device)
 
     def test_forward(self) -> None:
+        device = self.device
         decoder = self.decoder
 
         batch_size = 2
         patch_embeddings = [
-            torch.randn(batch_size, 16, 1024),
-            torch.randn(batch_size, 64, 768),
-            torch.randn(batch_size, 256, 512),
-            torch.randn(batch_size, 1024, 256),
-            torch.randn(batch_size, 4096, 64),
+            torch.randn(batch_size, 16, 1024).to(device),
+            torch.randn(batch_size, 64, 768).to(device),
+            torch.randn(batch_size, 256, 512).to(device),
+            torch.randn(batch_size, 1024, 256).to(device),
+            torch.randn(batch_size, 4096, 64).to(device),
         ]
 
         output = decoder(patch_embeddings)

@@ -95,9 +95,11 @@ class TestEncoder(unittest.TestCase):
                 ),
             ]
         )
-        self.encoder = Encoder.from_config(self.config)
+        self.device = torch.device('mps')
+        self.encoder = Encoder.from_config(self.config).to(self.device)
 
     def test_transformer_blocks(self) -> None:
+        device = self.device
         encoder = self.encoder
         transformer_blocks = encoder.transformer_blocks
         patch_embedding_configs = self.config.patch_embedding_configs
@@ -153,6 +155,7 @@ class TestEncoder(unittest.TestCase):
                 self.assertEqual(actual_skip_connection_scales, expected_skip_connections_scales[j])
 
     def test_forward(self) -> None:
+        device = self.device
         config = self.config
         encoder = self.encoder
         patch_embedding_configs = config.patch_embedding_configs
@@ -160,7 +163,7 @@ class TestEncoder(unittest.TestCase):
         # Test forward pass
         batch_size = 1
         patch_embeddings = [
-            torch.rand(batch_size, patch_embedding_config.in_patches, patch_embedding_config.in_channels)
+            torch.rand(batch_size, patch_embedding_config.in_patches, patch_embedding_config.in_channels).to(device)
             for patch_embedding_config in patch_embedding_configs
         ]
 

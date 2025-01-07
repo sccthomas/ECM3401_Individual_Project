@@ -64,10 +64,11 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
                 },
             ],
         )
-        model = SemanticSegmentationVisionTransformer.from_config(config)
+        device = torch.device('mps')
+        model = SemanticSegmentationVisionTransformer.from_config(config).to(device)
 
         # Test the forward method.
-        batch = torch.randn(10, 3, 512, 512)
+        batch = torch.randn(10, 3, 512, 512).to(device)
         predictions = model(batch)
 
         self.assertEqual(predictions.shape, (10, 1, 512, 512))
