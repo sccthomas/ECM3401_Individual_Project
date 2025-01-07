@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.model import PatchEmbedding
+from src.model.patch_embedding import PatchEmbedding
 
 
 class MyTestCase(unittest.TestCase):

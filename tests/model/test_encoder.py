@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.model import EncoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from src.model.config import EncoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
 from src.model.encoder import Encoder
 
 

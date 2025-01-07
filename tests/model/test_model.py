@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.model import ModelConfig
+from src.model.config import ModelConfig
 from src.model.model import SemanticSegmentationVisionTransformer
 
 

@@ -9,7 +9,7 @@ import torch.utils.data as _data
 
 import src.dataset.snow as _snow
 import src.model.config as _config
-from src import model as _model
+import src.model.model as _model
 
 
 def train_model(

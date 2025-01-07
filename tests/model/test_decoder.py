@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from src.model import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from src.model.config import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
 from src.model.decoder import Decoder
 
 

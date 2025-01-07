@@ -6,7 +6,7 @@ import torch.nn as _nn
 import torch.nn.functional as _F
 
 import src.model.config as _config
-from src import model as _transformer
+import src.model.transformer as _transformer
 
 
 class Decoder(_nn.Module):
