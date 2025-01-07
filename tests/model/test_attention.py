@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from model.attention import SwinTransformerAttention
+from src.model.attention import SwinTransformerAttention
 
 
 class TestSwinTransformerAttention(unittest.TestCase):

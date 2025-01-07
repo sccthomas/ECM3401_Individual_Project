@@ -4,8 +4,8 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 
-import model.config as _config
-import model.transformer as _transformer
+import src.model.config as _config
+from src import model as _transformer
 
 
 class Encoder(_nn.Module):

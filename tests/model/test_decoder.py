@@ -1,9 +1,11 @@
 import unittest
 
 import torch
+import torch.nn as nn
+import torch.optim as optim
 
-from model.config import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
-from model.decoder import Decoder
+from src.model import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from src.model.decoder import Decoder
 
 
 class TestDecoder(unittest.TestCase):
@@ -89,7 +91,7 @@ class TestDecoder(unittest.TestCase):
         device = self.device
         decoder = self.decoder
 
-        batch_size = 2
+        batch_size = 5
         patch_embeddings = [
             torch.randn(batch_size, 16, 1024).to(device),
             torch.randn(batch_size, 64, 768).to(device),
@@ -97,8 +99,14 @@ class TestDecoder(unittest.TestCase):
             torch.randn(batch_size, 1024, 256).to(device),
             torch.randn(batch_size, 4096, 64).to(device),
         ]
+        target = torch.randint(0, 2, (batch_size, 1, 512, 512)).float().to(device)
 
+        criterion = nn.BCEWithLogitsLoss()
+        optimizer = optim.Adam(decoder.parameters(), lr=0.001)
         output = decoder(patch_embeddings)
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
 
         self.assertEqual(output.shape, (batch_size, 1, 512, 512))
 

@@ -5,8 +5,8 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 
-import model.config as _config
-import model.transformer as _transformer
+import src.model.config as _config
+from src import model as _transformer
 
 
 class Decoder(_nn.Module):
@@ -122,7 +122,6 @@ class Decoder(_nn.Module):
 
         # Apply the prediction head.
         output = prediction_head(output)
-        output = _torch.sigmoid(output)
 
         # Assert the output dimensions.
         assert output.shape[1:] == (1, output_height, output_width)

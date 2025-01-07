@@ -5,10 +5,10 @@ import torch.nn as _nn
 import torch.optim as _optim
 import torch.utils.data as _data
 
-import dataset.snow as _snow
-import model.config as _config
-import model.model as _model
-from main import train_model
+import src.dataset.snow as _snow
+import src.model.config as _config
+from src import model as _model
+from src.main import train_model
 
 
 class TestMain(unittest.TestCase):

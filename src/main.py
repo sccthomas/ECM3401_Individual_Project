@@ -7,9 +7,9 @@ import torch.nn as _nn
 import torch.optim as _optim
 import torch.utils.data as _data
 
-import dataset.snow as _snow
-import model.config as _config
-import model.model as _model
+import src.dataset.snow as _snow
+import src.model.config as _config
+from src import model as _model
 
 
 def train_model(
@@ -206,20 +206,23 @@ def config_1() -> _nn.Module:
             },
         ],
     )
-    device = _torch.device('cuda')  # Fallback to CUDA if MPS is not available
+    device = _torch.device('mps')  # Fallback to CUDA if MPS is not available
     semantic_segmentation_model = _model.SemanticSegmentationVisionTransformer.from_config(model_config).to(device)
 
     # Create dataset loaders
-    snow_dataset = _snow.SnowDataset(dataset_dir_path='/content/drive/MyDrive/snow_dataset')
+    snow_dataset = _snow.SnowDataset(dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
+                                                      '/ECM3401_Individual_Literature_Review_and_Project'
+                                                      '/SNOW_Semantic_Segmentation'
+                                                      '/snow_dataset')
     training_dataset, validation_dataset = _data.random_split(snow_dataset, [0.8, 0.2])
 
-    batch_size = 1
+    batch_size = 5
     training_dataset_loader = _data.DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
     validation_dataset_loader = _data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
     # Create Optimizer, Loss function and Device
     optimizer = _optim.Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)
-    criterion = _nn.BCEWithLogitsLoss().to(device)
+    criterion = _nn.BCEWithLogitsLoss()
 
     # Train model
     num_epochs = 1
@@ -240,3 +243,7 @@ def config_1() -> _nn.Module:
     _torch.save(semantic_segmentation_model.state_dict(), f'{folder_path}{data_str}_semantic_segmentation_model.pth')
 
     return semantic_segmentation_model
+
+
+if __name__ == '__main__':
+    config_1()

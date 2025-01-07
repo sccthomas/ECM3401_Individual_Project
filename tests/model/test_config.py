@@ -1,6 +1,6 @@
 import unittest
 
-from model.config import ModelConfig, EncoderConfig, DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from src.model import ModelConfig, EncoderConfig, DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
 
 
 class TestModelConfig(unittest.TestCase):

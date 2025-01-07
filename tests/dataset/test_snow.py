@@ -1,6 +1,6 @@
 import unittest
 
-from dataset.snow import SnowDataset
+from src.dataset.snow import SnowDataset
 
 
 class MyTestCase(unittest.TestCase):

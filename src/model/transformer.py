@@ -5,7 +5,7 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 
-import model.attention as _attention
+from src import model as _attention
 
 
 # Note: The below class is only intended to be used through inheritance.
