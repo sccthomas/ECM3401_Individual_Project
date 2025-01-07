@@ -19,28 +19,40 @@ def train_model(
         criterion: '_nn.modules.loss._Loss',
         device: _torch.device,
         num_epochs: int,
+        grad_accumulation_steps: int = 1,  # Optional: To accumulate gradients for more memory-efficient training
 ) -> _nn.Module:
     for epoch in range(num_epochs):
         # Training phase
         model.train()
         training_loss = 0.0
-        for dataset_batch in training_dataset_loader:
+        optimizer.zero_grad()  # Zero the gradients before starting the loop
+
+        for step, dataset_batch in enumerate(training_dataset_loader):
             batch_images, batch_masks = dataset_batch
             batch_images, batch_masks = batch_images.to(device), batch_masks.to(device)
+
+            # Forward pass
             predictions = model(batch_images)
             loss = criterion(predictions, batch_masks)
-            optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
+
+            # Gradient accumulation (if using more than 1 step per gradient update)
+            if (step + 1) % grad_accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()  # Clear gradients after the optimizer step
 
             training_loss += loss.item()
+
+            # Clear unnecessary variables for memory efficiency
+            del batch_images, batch_masks, predictions, loss
+            _torch.cuda.empty_cache()  # Clear cache to free up memory
 
         training_loss /= len(training_dataset_loader)
 
         # Validation phase
         model.eval()
         validation_loss = 0.0
-        with _torch.no_grad():
+        with _torch.no_grad():  # No need to compute gradients for validation
             for dataset_batch in validation_dataset_loader:
                 batch_images, batch_masks = dataset_batch
                 batch_images, batch_masks = batch_images.to(device), batch_masks.to(device)
@@ -48,9 +60,15 @@ def train_model(
                 loss = criterion(predictions, batch_masks)
                 validation_loss += loss.item()
 
+                # Clear unnecessary variables for memory efficiency
+                del batch_images, batch_masks, predictions, loss
+                _torch.cuda.empty_cache()
+
         validation_loss /= len(validation_dataset_loader)
 
-        print(f"Finished Epoch: {epoch} | Training Loss: {training_loss:.4f} | Validation Loss: {validation_loss:.4f}")
+        print(f"Finished Epoch: {epoch + 1}/{num_epochs} | "
+              f"Training Loss: {training_loss:.4f} | "
+              f"Validation Loss: {validation_loss:.4f}")
 
     return model
 
@@ -185,24 +203,23 @@ if __name__ == '__main__':
             },
         ],
     )
-    semantic_segmentation_model = _model.SemanticSegmentationVisionTransformer.from_config(model_config)
+    device = _torch.device('cuda')  # Fallback to CUDA if MPS is not available
+    semantic_segmentation_model = _model.SemanticSegmentationVisionTransformer.from_config(model_config).to(device)
 
     # Create dataset loaders
     snow_dataset = _snow.SnowDataset()
     training_dataset, validation_dataset = _data.random_split(snow_dataset, [0.8, 0.2])
 
-    batch_size = 16
+    batch_size = 1
     training_dataset_loader = _data.DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
     validation_dataset_loader = _data.DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
     # Create Optimizer, Loss function and Device
     optimizer = _optim.Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)
-    criterion = _nn.BCEWithLogitsLoss()
-    device = _torch.device('cuda')  # Fallback to CUDA if MPS is not available
+    criterion = _nn.BCEWithLogitsLoss().to(device)
 
     # Train model
     num_epochs = 15
-    semantic_segmentation_model = semantic_segmentation_model.to(device)
     semantic_segmentation_model = train_model(
         semantic_segmentation_model,
         training_dataset_loader,

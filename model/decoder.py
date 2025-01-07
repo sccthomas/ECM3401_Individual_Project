@@ -98,7 +98,7 @@ class Decoder(_nn.Module):
 
         # Feed the patch embeddings through the transformer blocks.
         patch_embeddings = list(reversed(patch_embeddings))
-        output = patch_embeddings[0].clone().zero_()
+        output = _torch.zeros_like(patch_embeddings[0])
         for patch_embedding, transformer_block in zip(patch_embeddings, transformer_blocks):
             # - Include the previous decoded patch embedding in the input of the next transformer block.
             # - Assert the input dimensions.
