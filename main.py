@@ -1,4 +1,5 @@
 import datetime as _datetime
+import logging as _log
 import os as _os
 
 import torch as _torch
@@ -21,8 +22,10 @@ def train_model(
         num_epochs: int,
         grad_accumulation_steps: int = 1,  # Optional: To accumulate gradients for more memory-efficient training
 ) -> _nn.Module:
+    _log.info(f"Training model for {num_epochs} epochs")
     for epoch in range(num_epochs):
         # Training phase
+        _log.info(f"Starting training for epoch: {epoch + 1}")
         model.train()
         training_loss = 0.0
         optimizer.zero_grad()  # Zero the gradients before starting the loop
@@ -33,6 +36,7 @@ def train_model(
 
             # Forward pass
             predictions = model(batch_images)
+            _log.info(f"Finished forward pass for epoch: {epoch + 1} | step: {step + 1}")
             loss = criterion(predictions, batch_masks)
             loss.backward()
 
@@ -50,6 +54,7 @@ def train_model(
         training_loss /= len(training_dataset_loader)
 
         # Validation phase
+        _log.info(f"Starting validation for epoch: {epoch + 1}")
         model.eval()
         validation_loss = 0.0
         with _torch.no_grad():  # No need to compute gradients for validation
@@ -207,7 +212,7 @@ def config_1() -> _nn.Module:
     semantic_segmentation_model = _model.SemanticSegmentationVisionTransformer.from_config(model_config).to(device)
 
     # Create dataset loaders
-    snow_dataset = _snow.SnowDataset()
+    snow_dataset = _snow.SnowDataset(dataset_dir_path='/content/drive/MyDrive/snow_dataset')
     training_dataset, validation_dataset = _data.random_split(snow_dataset, [0.8, 0.2])
 
     batch_size = 1
