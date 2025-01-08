@@ -19,7 +19,7 @@ class PatchEmbedding(_nn.Module):
         num_patches = (image_size // patch_size) ** 2
 
         self.__projection = _nn.Conv2d(in_channels, out_channels, kernel_size=patch_size, stride=patch_size)
-        self.__positional_encoding = _nn.Parameter(_torch.randn(1, num_patches, out_channels))
+        self.__positional_encoding = _nn.Parameter(_torch.zeros(1, num_patches, out_channels).contiguous())
 
     def forward(self, image: _torch.Tensor) -> _torch.Tensor:
         """

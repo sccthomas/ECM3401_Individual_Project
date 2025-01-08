@@ -21,10 +21,9 @@ class Encoder(_nn.Module):
             skip_connections: '_nn.ModuleList[_nn.ModuleList[_SkipConnections]]'
     ) -> None:
         """
-
-        :param num_stages:
-        :param transformer_blocks:
-        :param skip_connections:
+        :param num_stages: The number of stages in the encoder.
+        :param transformer_blocks: List of transformer blocks in each stage of the encoder.
+        :param skip_connections: List of skip connections in each stage of the encoder.
         """
         super(Encoder, self).__init__()
 
@@ -32,7 +31,6 @@ class Encoder(_nn.Module):
         self.__skip_connections = skip_connections
         self.__transformer_blocks = transformer_blocks
 
-    # Note - This is intended as the main entry to the class.
     @classmethod
     def from_config(cls, config: _config.EncoderConfig) -> 'Encoder':
         """
@@ -44,7 +42,6 @@ class Encoder(_nn.Module):
         patch_embedding_configs = config.patch_embedding_configs
         transformer_block_configs = config.transformer_block_configs
 
-        # Create Skip Connection dimension information for each Patch Embedding.
         skip_connection_in_dimensions = tuple([
             tuple([
                 (patch_embedding_config.in_patches, patch_embedding_config.in_channels)
@@ -53,27 +50,21 @@ class Encoder(_nn.Module):
             for i, _ in enumerate(patch_embedding_configs)
         ])
 
-        # Create Transformer Block and Skip Connection for each Patch Embedding in the Stage.
         transformer_blocks = _nn.ModuleList()
         skip_connections = _nn.ModuleList()
         for stage in range(num_stages):
             transformer_blocks_stage = _nn.ModuleList()
             skip_connections_stage = _nn.ModuleList()
-            # - Create Transformer Block and Skip Connection for each Patch Embedding in the Stage.
             for i, patch_embedding_config in enumerate(patch_embedding_configs):
-                # - Patch Embedding information
                 in_patches = patch_embedding_config.in_patches
                 in_channels = patch_embedding_config.in_channels
                 patch_resolution = patch_embedding_config.patch_resolution
 
-                # - Create Transformer Block for Patch Embedding Stage.
                 transformer_block_config = transformer_block_configs[i][stage]
                 transformer_block = _transformer.TransformerBlockEncoder(
-                    # - Patch Embedding information
                     in_patches=in_patches,
                     in_channels=in_channels,
                     patch_resolution=patch_resolution,
-                    # - Transformer Block information
                     window_size=transformer_block_config.window_size,
                     num_attention_heads=transformer_block_config.num_attention_heads,
                     shifted_window=transformer_block_config.shifted_window,
@@ -82,7 +73,6 @@ class Encoder(_nn.Module):
                 )
                 transformer_blocks_stage.append(transformer_block)
 
-                # - Create Skip connection for Transformer Block in Patch Embedding Stage.
                 skip_connection = _SkipConnections(
                     out_patches=in_patches,
                     out_channels=in_channels,
@@ -126,36 +116,27 @@ class Encoder(_nn.Module):
 
         len_patch_embeddings = len(patch_embeddings)
 
-        # - Manually feed the patch embeddings to the first stage of the encoder
-        patch_embeddings = [
-            transformer_block(patch_embedding)
-            for transformer_block, patch_embedding in zip(transformer_blocks[0], patch_embeddings)
-        ]
+        patch_embeddings_encoded = []
+        for i in range(len_patch_embeddings):
+            patch_embedding = patch_embeddings[i]
+            transformer_block = transformer_blocks[0][i]
+            patch_embeddings_encoded.append(transformer_block(patch_embedding))
 
-        # - Then feed the output of the first stage to the second stage, but fuse together patch embedding outputs from
-        #   different scales.
         for i in range(1, num_stages):
-            # - Fuse together patch embedding outputs from different scales
-            patch_embeddings = [
-                skip_connection(patch_embedding, patch_embeddings[:j] + patch_embeddings[j + 1:])
-                for j, (skip_connection, patch_embedding) in enumerate(zip(skip_connections[i], patch_embeddings))
-            ]
-            # - Feed the fused patch embeddings to the next stage of the encoder
-            patch_embeddings = [
-                transformer_block(patch_embedding)
-                for transformer_block, patch_embedding in zip(transformer_blocks[i], patch_embeddings)
-            ]
+            for j in range(len_patch_embeddings):
+                patch_embedding = patch_embeddings_encoded[j]
+                skip_connection = skip_connections[i][j]
+                patch_embeddings_encoded[j] = skip_connection(
+                    patch_embedding, patch_embeddings_encoded[:j] + patch_embeddings_encoded[j + 1:])
 
-        assert len_patch_embeddings == len(
-            patch_embeddings), ("Number of patch embeddings should be the same after passing through all stages of the "
-                                "encoder.")
+            for j in range(len_patch_embeddings):
+                patch_embedding = patch_embeddings_encoded[j]
+                transformer_block = transformer_blocks[i][j]
+                patch_embeddings_encoded[j] = transformer_block(patch_embedding)
 
-        return patch_embeddings
+        assert len_patch_embeddings == len(patch_embeddings_encoded)
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Protected Helpers
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+        return patch_embeddings_encoded
 
 
 class _SkipConnections(_nn.Module):
@@ -170,7 +151,6 @@ class _SkipConnections(_nn.Module):
             in_dimensions: _t.Tuple[int, int],
     ) -> None:
         """
-
         :param out_patches: Number of patches to output.
         :param out_channels: Number of channels in each patch embedding output.
         :param in_dimensions: List of tuples containing the number of patches and channels in each secondary patch
@@ -216,13 +196,13 @@ class _SkipConnections(_nn.Module):
 
         expected_shape = (out_patches, out_channels)
 
+        primary_patch_embedding_skip_connection = primary_patch_embedding.clone()
         kwargs = {'size': (out_patches,), 'mode': 'nearest'}
         for patch_embedding, linear_operation, in_dimension in zip(
                 secondary_patch_embeddings,
                 linear_operations,
                 in_dimensions,
         ):
-            # - Assert that the patch embedding aligns with the linear operation
             assert patch_embedding.shape[1:] == in_dimension, (
                 "Patch embedding dimension does not align with the linear operation."
             )
@@ -231,12 +211,13 @@ class _SkipConnections(_nn.Module):
                 translated_patch_embedding,
                 **kwargs
             ).permute(0, 2, 1).contiguous()
-            # - Assert that the translated patch embedding aligns with the target patch embedding
             assert translated_patch_embedding.shape[1:] == expected_shape, (
                 "Translated patch embedding dimension does not align with the target patch embedding."
             )
-            primary_patch_embedding = primary_patch_embedding + translated_patch_embedding
-        # - Normalize the fused patch embeddings to reduce over active neurons.
-        primary_patch_embedding = norm(primary_patch_embedding)
+            primary_patch_embedding_skip_connection = (
+                    primary_patch_embedding_skip_connection + translated_patch_embedding
+            )
 
-        return primary_patch_embedding
+        primary_patch_embedding_skip_connection = norm(primary_patch_embedding_skip_connection)
+
+        return primary_patch_embedding_skip_connection

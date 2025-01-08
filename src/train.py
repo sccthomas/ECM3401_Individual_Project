@@ -11,7 +11,7 @@ def train_model(
         training_dataset_loader: _data.DataLoader,
         validation_dataset_loader: _data.DataLoader,
         optimizer: _optim.Optimizer,
-        criterion: '_nn.modules.loss._Loss',
+        criterion,
         device: _torch.device,
         num_epochs: int,
 ) -> _nn.Module:
@@ -20,20 +20,17 @@ def train_model(
         # Training phase
         _log.info(f"Starting training for epoch: {epoch + 1}")
         model.train()
+        optimizer.zero_grad()
         training_loss = 0.0
-        optimizer.zero_grad()  # Zero the gradients before starting the loop
-
-        for step, dataset_batch in enumerate(training_dataset_loader):
+        for dataset_batch in training_dataset_loader:
             batch_images, batch_masks = dataset_batch
-            batch_images, batch_masks = batch_images.to(device), batch_masks.to(device)
+            batch_images, batch_masks = batch_images.to(device).contiguous(), batch_masks.to(device).contiguous()
 
             # Forward pass
             predictions = model(batch_images)
-            _log.info(f"Finished forward pass for epoch: {epoch + 1} | step: {step + 1}")
             loss = criterion(predictions, batch_masks)
             loss.backward()
 
-            # Gradient accumulation (if using more than 1 step per gradient update)
             optimizer.step()
             optimizer.zero_grad()  # Clear gradients after the optimizer step
 
@@ -52,7 +49,7 @@ def train_model(
         with _torch.no_grad():  # No need to compute gradients for validation
             for dataset_batch in validation_dataset_loader:
                 batch_images, batch_masks = dataset_batch
-                batch_images, batch_masks = batch_images.to(device), batch_masks.to(device)
+                batch_images, batch_masks = batch_images.to(device).contiguous(), batch_masks.to(device).contiguous()
                 predictions = model(batch_images)
                 loss = criterion(predictions, batch_masks)
                 validation_loss += loss.item()

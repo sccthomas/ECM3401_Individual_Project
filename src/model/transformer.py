@@ -28,7 +28,6 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
             dropout: bool,
     ) -> None:
         """
-
         :param in_patches: Number of patches.
         :param in_channels: Length of the patch embeddings.
         :param patch_resolution: Resolution of the input image after patch embeddings.
@@ -73,7 +72,6 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
     @property
     def in_patches(self) -> int:
         """
-
         :return: Number of patches.
         """
         return self.__in_patches
@@ -81,7 +79,6 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
     @property
     def in_channels(self) -> int:
         """
-
         :return: Input channels.
         """
         return self.__in_channels
@@ -143,7 +140,6 @@ class TransformerBlockEncoder(_TransformerBlock):
             dropout: bool,
     ) -> None:
         """
-
         :param in_patches: Number of patches.
         :param in_channels: Length of the patch embeddings.
         :param patch_resolution: Resolution of the input image after patch embeddings.
@@ -166,7 +162,7 @@ class TransformerBlockEncoder(_TransformerBlock):
 
     def _post_process(self, patch_embeddings: _torch.Tensor) -> _torch.Tensor:
         """
-        Post-processing of the patch embeddings to asser the shape.
+        Post-processing of the patch embeddings to assert the shape.
 
         :param patch_embeddings: Patch embeddings.
         :return: Post processed patch embeddings.
@@ -198,7 +194,6 @@ class TransformerBlockDecoder(_TransformerBlock):
             dropout: bool,
     ) -> None:
         """
-
         :param in_patches: Number of patches.
         :param in_channels: Length of the patch embeddings.
         :param patch_resolution: Resolution of the input image after patch embeddings.

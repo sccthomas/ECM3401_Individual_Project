@@ -20,15 +20,16 @@ class TestMain(unittest.TestCase):
         ).to(device)
 
         # Create dataset loaders
-        snow_dataset = torch.utils.data.Subset(
-            SnowDataset(dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
-                                         '/ECM3401_Individual_Literature_Review_and_Project'
-                                         '/SNOW_Semantic_Segmentation'
-                                         '/snow_dataset'), range(10))
+        snow_dataset = SnowDataset(
+            dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
+                             '/ECM3401_Individual_Literature_Review_and_Project'
+                             '/SNOW_Semantic_Segmentation'
+                             '/snow_dataset'
+        )
         training_dataset, validation_dataset = random_split(snow_dataset, [0.8, 0.2])
 
-        training_dataset_loader = DataLoader(training_dataset, batch_size=1, shuffle=True)
-        validation_dataset_loader = DataLoader(validation_dataset, batch_size=1, shuffle=False)
+        training_dataset_loader = DataLoader(training_dataset, batch_size=10, shuffle=True)
+        validation_dataset_loader = DataLoader(validation_dataset, batch_size=10, shuffle=False)
 
         # Create Optimizer, Loss function and Device
         optimizer = Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)

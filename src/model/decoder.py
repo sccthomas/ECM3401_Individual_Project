@@ -10,6 +10,10 @@ import src.model.transformer as _transformer
 
 
 class Decoder(_nn.Module):
+    """
+    Decoder module of the HRViT-Swin-Segmentation model.
+    """
+
     def __init__(
             self,
             *,
@@ -18,6 +22,13 @@ class Decoder(_nn.Module):
             output_dimensions: _t.Tuple[int, int, int],
             transformer_blocks: '_nn.ModuleList[_transformer.TransformerBlockDecoder]',
     ) -> None:
+        """
+
+        :param max_in_channels: Max number of input channels to the decoder.
+        :param num_classes: Number of classes to predict.
+        :param output_dimensions: Tuple of (batch_size, output_height, output_width).
+        :param transformer_blocks: List of transformer blocks in the decoder.
+        """
         super(Decoder, self).__init__()
         self._batch_size, self.__output_height, self.__output_width = output_dimensions
         self.__transformer_blocks = transformer_blocks
@@ -38,7 +49,6 @@ class Decoder(_nn.Module):
         max_in_channels = config.max_in_channels
         num_classes = config.num_classes
 
-        # Create the transformer blocks.
         patch_embedding_configs = config.patch_embedding_configs
         transformer_block_configs = config.transformer_block_configs
         transformer_blocks = _nn.ModuleList([
@@ -56,7 +66,7 @@ class Decoder(_nn.Module):
             for i, (patch_embedding_config, transformer_block_config) in enumerate(
                 zip(patch_embedding_configs[:-1], transformer_block_configs[:-1])
             )
-            if (next_patch_embedding_config := patch_embedding_configs[i + 1])  # Assign the next item
+            if (next_patch_embedding_config := patch_embedding_configs[i + 1])
         ])
         final_transformer_block_config = transformer_block_configs[-1]
         final_patch_embedding_config = patch_embedding_configs[-1]
@@ -94,23 +104,18 @@ class Decoder(_nn.Module):
         transformer_blocks = self.__transformer_blocks
         prediction_head = self.__prediction_head
 
-        # Feed the patch embeddings through the transformer blocks.
-        patch_embeddings = list(reversed(patch_embeddings))
-        output = _torch.zeros_like(patch_embeddings[0])
-        for patch_embedding, transformer_block in zip(patch_embeddings, transformer_blocks):
-            # - Include the previous decoded patch embedding in the input of the next transformer block.
-            # - Assert the input dimensions.
+        patch_embeddings_decoder = list(reversed(patch_embeddings))
+        output = _torch.zeros_like(patch_embeddings_decoder[0])
+        for patch_embedding, transformer_block in zip(patch_embeddings_decoder, transformer_blocks):
             assert output.shape[1:] == patch_embedding.shape[1:]
             output = transformer_block(output + patch_embedding)
 
-        # Project the final patch embeddings to the output dimensions.
         batch_size, num_patches, vector_len = output.shape
 
         grid_size = int(_math.sqrt(num_patches))
         assert grid_size ** 2 == num_patches
 
-        # Upsample to the output dimensions.
-        output = output.reshape(batch_size, vector_len, grid_size, grid_size)
+        output = output.reshape(batch_size, vector_len, grid_size, grid_size).contiguous()
         output = _F.interpolate(
             input=output,
             size=(output_height, output_width),
@@ -118,10 +123,8 @@ class Decoder(_nn.Module):
             align_corners=False,
         )
 
-        # Apply the prediction head.
         output = prediction_head(output)
 
-        # Assert the output dimensions.
         assert output.shape[1:] == (1, output_height, output_width)
 
         return output

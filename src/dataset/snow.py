@@ -25,7 +25,7 @@ class SnowDataset(_Dataset):
 
     def __len__(self) -> int:
         count = self.__count
-        return 1000
+        return count
 
     def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
         image_target_paths = self.__image_target_paths
@@ -51,8 +51,8 @@ class SnowDataset(_Dataset):
 
         # To Tensor and Normalize
         image = to_tensor(image)
-        image = normalize(image)
-        target = to_tensor(target).float()
+        image = normalize(image).contiguous()
+        target = to_tensor(target).float().contiguous()
         return image, target
 
 

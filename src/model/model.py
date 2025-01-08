@@ -14,6 +14,12 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             encoder_module: _encoder.Encoder,
             decoder_module: _decoder.Decoder,
     ) -> None:
+        """
+
+        :param patch_embedding_modules: Patch embedding modules.
+        :param encoder_module: Encoder module.
+        :param decoder_module: Decoder module.
+        """
         super(SemanticSegmentationVisionTransformer, self).__init__()
         self.__patch_embedding_modules = patch_embedding_modules
         self.__encoder_module = encoder_module
@@ -47,7 +53,6 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
     @property
     def patch_embedding_modules(self) -> '_nn.ModuleList[_patch_embedding.PatchEmbedding]':
         """
-
         :return: The patch embedding modules.
         """
         return self.__patch_embedding_modules
@@ -55,7 +60,6 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
     @property
     def encoder_module(self) -> '_encoder.Encoder':
         """
-
         :return: The encoder module.
         """
         return self.__encoder_module
@@ -63,27 +67,35 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
     @property
     def decoder_module(self) -> '_decoder.Decoder':
         """
-
         :return: The decoder module.
         """
         return self.__decoder_module
 
     def forward(self, x: '_torch.Tensor') -> '_torch.Tensor':
+        """
+        Forward pass of the model.
+
+        :param x: The input tensor.
+        :return: The output tensor.
+        """
         patch_embedding_modules = self.__patch_embedding_modules
         encoder_module = self.__encoder_module
         decoder_module = self.__decoder_module
 
         # Create different patch embeddings for different scales.
         patch_embeddings = [
-            patch_embedding_module(x)
+            patch_embedding_module(x).contiguous()
             for patch_embedding_module in patch_embedding_modules
         ]
 
         # Feed the patch embeddings to the encoder module.
-        patch_embeddings = encoder_module(patch_embeddings)
+        patch_embeddings = [
+            patch_embedding.contiguous()
+            for patch_embedding in encoder_module(patch_embeddings)
+        ]
 
         # Feed the encoder output to the decoder module.
-        segmentation_output = decoder_module(patch_embeddings)
+        segmentation_output = decoder_module(patch_embeddings).contiguous()
 
         # Return the final segmentation output.
         return segmentation_output

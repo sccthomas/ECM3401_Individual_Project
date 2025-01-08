@@ -109,6 +109,7 @@ class TestEncoder(unittest.TestCase):
             self.assertEqual(len(transformer_blocks[i]), 5)
             for j in range(5):
                 self.assertEqual(transformer_blocks[i][j].in_channels, patch_embedding_configs[j].in_channels)
+                self.assertEqual(transformer_blocks[i][j].in_patches, patch_embedding_configs[j].in_patches)
 
     def test_skip_connections(self) -> None:
         encoder = self.encoder
