@@ -10,8 +10,8 @@ from src.model.transformer import TransformerBlockEncoder, TransformerBlockDecod
 class TestTransformerBlockEncoder(unittest.TestCase):
     def test_forward_with_training(self) -> None:
         device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-        patch_embeddings = torch.rand(1, 16, 1024).to(device)
-        target = torch.rand(1, 16, 1024).to(device)
+        patch_embeddings = torch.rand(10, 16, 1024).to(device)
+        target = torch.rand(10, 16, 1024).to(device)
 
         transformer_block_encoder = TransformerBlockEncoder(
             in_patches=16,
@@ -36,7 +36,7 @@ class TestTransformerBlockEncoder(unittest.TestCase):
         self.assertEqual(output.shape, patch_embeddings.shape)
         self.assertGreater(loss.item(), 0)
 
-        patch_embeddings = torch.rand(1, 64, 768)
+        patch_embeddings = torch.rand(10, 64, 768)
         self.assertRaises(
             AssertionError,
             transformer_block_encoder,
@@ -47,8 +47,8 @@ class TestTransformerBlockEncoder(unittest.TestCase):
 class TestTransformerBlockDecoder(unittest.TestCase):
     def test_forward_with_training(self) -> None:
         device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-        patch_embeddings = torch.rand(1, 64, 768).to(device)
-        target = torch.rand(1, 16, 1024).to(device)
+        patch_embeddings = torch.rand(10, 64, 768).to(device)
+        target = torch.rand(10, 16, 1024).to(device)
 
         transformer_block_decoder = TransformerBlockDecoder(
             in_patches=64,
@@ -71,7 +71,7 @@ class TestTransformerBlockDecoder(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
-        self.assertEqual(output.shape, (1, 16, 1024))
+        self.assertEqual(output.shape, (10, 16, 1024))
         self.assertGreater(loss.item(), 0)
 
 

@@ -103,10 +103,12 @@ class _TransformerBlock(_abc.ABC, _nn.Module):
 
         # Pass the patch embeddings through the transformer block iterations.
         for iteration in iterations:
-            attention_output = iteration['attention'](iteration['norm1'](patch_embeddings))
+            norm1_output = iteration['norm1'](patch_embeddings)
+            attention_output = iteration['attention'](norm1_output)
             patch_embeddings = patch_embeddings + attention_output  # Add out-of-place
 
-            mlp_output = iteration['mlp'](iteration['norm2'](patch_embeddings))
+            norm2_output = iteration['norm2'](patch_embeddings)
+            mlp_output = iteration['mlp'](norm2_output)
             patch_embeddings = patch_embeddings + mlp_output  # Add out-of-place
 
         patch_embeddings = self._post_process(patch_embeddings)
@@ -233,17 +235,20 @@ class TransformerBlockDecoder(_TransformerBlock):
         linear_operation = self.__linear_operation
         output_num_patches, output_vector_len = self.__output_num_patches, self.__output_vector_len
 
+        if output_num_patches == patch_embeddings.shape[1] and output_vector_len == patch_embeddings.shape[2]:
+            return patch_embeddings
+
         # Linear operation to project the patch embeddings to the output dimensions.
-        if output_num_patches != patch_embeddings.shape[1] and output_vector_len != patch_embeddings.shape[2]:
-            patch_embeddings = linear_operation(patch_embeddings)
-            patch_embeddings = _F.interpolate(
-                input=patch_embeddings.permute(0, 2, 1),
-                size=(output_num_patches,),
-                mode='nearest',
-            ).permute(0, 2, 1).contiguous()
+        translated_patch_embedding = linear_operation(patch_embeddings).permute(0, 2, 1).contiguous()
+        translated_patch_embedding = _F.interpolate(
+            input=translated_patch_embedding,
+            size=(output_num_patches,),
+            mode='nearest',
+        ).permute(0, 2, 1).contiguous()
 
-        assert patch_embeddings.shape[1:] == (output_num_patches, output_vector_len), \
-            (f"Expected shape {(output_num_patches, output_vector_len)}, got {patch_embeddings.shape[1:]} after "
-             f"`TransformerBlockDecoder`.")
+        assert translated_patch_embedding.shape[1:] == (output_num_patches, output_vector_len), \
+            (
+                f"Expected shape {(output_num_patches, output_vector_len)}, got {translated_patch_embedding.shape[1:]} after "
+                f"`TransformerBlockDecoder`.")
 
-        return patch_embeddings
+        return translated_patch_embedding

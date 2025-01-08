@@ -30,8 +30,8 @@ class TestSwinTransformerAttention(unittest.TestCase):
         ).to(device)
 
         # Create random patch embeddings
-        patch_embeddings = torch.rand(1, in_patches, in_channels).to(device)
-        target = torch.rand(1, in_patches, in_channels).to(device)
+        patch_embeddings = torch.rand(10, in_patches, in_channels).to(device)
+        target = torch.rand(10, in_patches, in_channels).to(device)
 
         # Define a loss function and optimizer
         criterion = nn.MSELoss()
@@ -45,7 +45,7 @@ class TestSwinTransformerAttention(unittest.TestCase):
         optimizer.step()
 
         # Assertions
-        self.assertEqual(attended_patch_embeddings.shape, (1, in_patches, in_channels))
+        self.assertEqual(attended_patch_embeddings.shape, (10, in_patches, in_channels))
         self.assertFalse(torch.allclose(patch_embeddings, attended_patch_embeddings))
         self.assertGreater(loss.item(), 0)
 
@@ -66,8 +66,8 @@ class TestSwinTransformerAttention(unittest.TestCase):
         ).to(device)
 
         # Create random patch embeddings
-        patch_embeddings = torch.rand(1, in_patches, in_channels).to(device)
-        target = torch.rand(1, in_patches, in_channels).to(device)
+        patch_embeddings = torch.rand(10, in_patches, in_channels).to(device)
+        target = torch.rand(10, in_patches, in_channels).to(device)
 
         # Define a loss function and optimizer
         criterion = nn.MSELoss()
@@ -81,6 +81,10 @@ class TestSwinTransformerAttention(unittest.TestCase):
         optimizer.step()
 
         # Assertions
-        self.assertEqual(attended_patch_embeddings.shape, (1, in_patches, in_channels))
+        self.assertEqual(attended_patch_embeddings.shape, (10, in_patches, in_channels))
         self.assertFalse(torch.allclose(patch_embeddings, attended_patch_embeddings))
         self.assertGreater(loss.item(), 0)
+
+
+if __name__ == '__main__':
+    unittest.main()

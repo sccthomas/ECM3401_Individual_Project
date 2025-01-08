@@ -32,7 +32,7 @@ class PatchEmbedding(_nn.Module):
         positional_encoding = self.__positional_encoding
 
         patch_embeddings = projection(image)  # [B, embed_dim, H/patch_size, W/patch_size]
-        patch_embeddings = patch_embeddings.flatten(2).transpose(1, 2)  # [B, H*W/P^2, embed_dim]
+        patch_embeddings = patch_embeddings.flatten(2).transpose(1, 2).contiguous()  # [B, H*W/P^2, embed_dim]
         patch_embeddings = patch_embeddings + positional_encoding
 
         return patch_embeddings

@@ -69,8 +69,9 @@ class SwinTransformerAttention(_nn.Module):
 
             mask_windows = _window_partition(img_mask, window_size)  # nW, window_size, window_size, 1
             mask_windows = mask_windows.reshape(-1, window_size_h * window_size_w)
-            attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
-            attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
+            attn_mask = (mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)).contiguous()
+            attn_mask = (attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0,
+                                                                                          float(0.0))).contiguous()
 
         self.__shift_size = shift_size
         self.register_buffer("__attn_mask", attn_mask)
@@ -90,7 +91,8 @@ class SwinTransformerAttention(_nn.Module):
         window_size = self.__window_size
 
         B, L, C = patch_embeddings.shape
-        assert L == in_patches and C == in_channels, "Input shape is not valid before `SwinTransformerAttention`."
+        assert L == in_patches and C == in_channels, ("Input shape is not valid before `SwinTransformerAttention`, "
+                                                      f"{(in_patches, in_channels)}.")
 
         patch_embeddings = patch_embeddings.reshape(B, H, W, C)
 
@@ -159,7 +161,7 @@ class _WindowAttention(_nn.Module):
         # Define a parameter table of relative position bias
         relative_position_bias_table = _nn.Parameter(
             _torch.zeros((2 * window_size_h - 1) * (2 * window_size_w - 1), num_attention_heads)
-        )  # 2*Wh-1 * 2*Ww-1, nH
+        ).contiguous()  # 2*Wh-1 * 2*Ww-1, nH
         _nn.init.trunc_normal_(relative_position_bias_table, std=.02)
         self.__relative_position_bias_table = relative_position_bias_table
 
@@ -200,12 +202,14 @@ class _WindowAttention(_nn.Module):
             -1
         )  # Wh*Ww, Wh*Ww, num_heads
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # num_heads, Wh*Ww, Wh*Ww
-        attn = attn + relative_position_bias.unsqueeze(0)  # num_windows*B, num_heads, window_size, window_size
+        attn = (attn + relative_position_bias.unsqueeze(
+            0)).contiguous()  # num_windows*B, num_heads, window_size, window_size
 
         if mask is not None:
             nW = mask.shape[0]
-            attn = attn.reshape(b // nW, nW, self.__num_heads, n, n) + mask.unsqueeze(1).unsqueeze(0)
+            attn = attn.reshape(b // nW, nW, self.__num_heads, n, n) + mask.unsqueeze(1).unsqueeze(0).contiguous()
             attn = attn.reshape(-1, self.__num_heads, n, n)
+
         attn = self.__softmax(attn)
 
         attn = self.__attn_drop(attn)

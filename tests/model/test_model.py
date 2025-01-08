@@ -11,7 +11,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
         config = ModelConfig.create(
             input_dimensions=(3, 512, 512),
             output_dimensions=(1, 512, 512),
-            num_encoder_stages=2,
+            num_encoder_stages=3,
             num_classes=1,
             patch_embedding_config_dicts=[
                 # Patch Embedding Config 1

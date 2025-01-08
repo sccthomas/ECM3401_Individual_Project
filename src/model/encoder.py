@@ -226,16 +226,16 @@ class _SkipConnections(_nn.Module):
             assert patch_embedding.shape[1:] == in_dimension, (
                 "Patch embedding dimension does not align with the linear operation."
             )
+            translated_patch_embedding = linear_operation(patch_embedding).permute(0, 2, 1).contiguous()
             translated_patch_embedding = _F.interpolate(
-                linear_operation(patch_embedding).permute(0, 2, 1),
+                translated_patch_embedding,
                 **kwargs
-            ).permute(0, 2, 1)
+            ).permute(0, 2, 1).contiguous()
             # - Assert that the translated patch embedding aligns with the target patch embedding
             assert translated_patch_embedding.shape[1:] == expected_shape, (
                 "Translated patch embedding dimension does not align with the target patch embedding."
             )
             primary_patch_embedding = primary_patch_embedding + translated_patch_embedding
-
         # - Normalize the fused patch embeddings to reduce over active neurons.
         primary_patch_embedding = norm(primary_patch_embedding)
 

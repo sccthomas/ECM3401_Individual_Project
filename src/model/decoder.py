@@ -25,8 +25,6 @@ class Decoder(_nn.Module):
             in_channels=max_in_channels,
             out_channels=num_classes,
             kernel_size=1,
-            stride=1,
-            padding=0,
         )
 
     @classmethod

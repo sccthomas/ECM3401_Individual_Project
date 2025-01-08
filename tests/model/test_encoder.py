@@ -161,7 +161,7 @@ class TestEncoder(unittest.TestCase):
         patch_embedding_configs = config.patch_embedding_configs
 
         # Test forward pass
-        batch_size = 1
+        batch_size = 5
         patch_embeddings = [
             torch.rand(batch_size, patch_embedding_config.in_patches, patch_embedding_config.in_channels).to(device)
             for patch_embedding_config in patch_embedding_configs
