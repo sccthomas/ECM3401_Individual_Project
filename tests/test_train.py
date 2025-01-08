@@ -28,8 +28,8 @@ class TestMain(unittest.TestCase):
         )
         training_dataset, validation_dataset = random_split(snow_dataset, [0.8, 0.2])
 
-        training_dataset_loader = DataLoader(training_dataset, batch_size=10, shuffle=True)
-        validation_dataset_loader = DataLoader(validation_dataset, batch_size=10, shuffle=False)
+        training_dataset_loader = DataLoader(training_dataset, batch_size=10, num_workers=4, shuffle=True)
+        validation_dataset_loader = DataLoader(validation_dataset, batch_size=10, num_workers=4, shuffle=False)
 
         # Create Optimizer, Loss function and Device
         optimizer = Adam(semantic_segmentation_model.parameters(), lr=1e-3, weight_decay=1e-5)
