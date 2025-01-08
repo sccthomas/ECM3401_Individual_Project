@@ -140,6 +140,30 @@ def small_model_configuration() -> _config.ModelConfig:
         # Patch Embedding Config 1
         {
             "patch_embedding_info": {
+                'patch_size': 128,
+                'in_channels': 1024,
+            },
+            "encoder_block_configs": [
+                {
+                    'dropout': True,
+                    'iterations': 3,
+                    'num_attention_heads': 8,
+                    'shifted_window': True,
+                    'window_size': (2, 2)
+                }
+                for _ in range(3)
+            ],
+            "decoder_block_config": {
+                'dropout': True,
+                'iterations': 3,
+                'num_attention_heads': 8,
+                'shifted_window': True,
+                'window_size': (2, 2)
+            }
+        },
+        # Patch Embedding Config 2
+        {
+            "patch_embedding_info": {
                 'patch_size': 64,
                 'in_channels': 768,
             },
@@ -159,30 +183,6 @@ def small_model_configuration() -> _config.ModelConfig:
                 'num_attention_heads': 8,
                 'shifted_window': True,
                 'window_size': (4, 4)
-            }
-        },
-        # Patch Embedding Config 2
-        {
-            "patch_embedding_info": {
-                'patch_size': 16,
-                'in_channels': 256,
-            },
-            "encoder_block_configs": [
-                {
-                    'dropout': True,
-                    'iterations': 3,
-                    'num_attention_heads': 8,
-                    'shifted_window': True,
-                    'window_size': (8, 8)
-                }
-                for _ in range(3)
-            ],
-            "decoder_block_config": {
-                'dropout': True,
-                'iterations': 3,
-                'num_attention_heads': 8,
-                'shifted_window': True,
-                'window_size': (8, 8)
             }
         },
     ]
