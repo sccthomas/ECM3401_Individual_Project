@@ -26,7 +26,7 @@ class SnowDataset(_Dataset):
 
     def __len__(self) -> int:
         count = self.__count
-        return 1000
+        return 3000
 
     def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
         image_target_paths = self.__image_target_paths
