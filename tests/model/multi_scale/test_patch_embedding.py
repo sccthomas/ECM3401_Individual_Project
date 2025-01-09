@@ -5,7 +5,7 @@ import torch
 from src.model.multi_scale.patch_embedding import PatchEmbedding
 
 
-class MyTestCase(unittest.TestCase):
+class TestPatchEmbedding(unittest.TestCase):
     def test_forward(self) -> None:
         device = torch.device('mps')
         image = torch.randn(10, 3, 512, 512).to(device)

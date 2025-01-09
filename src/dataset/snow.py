@@ -21,7 +21,8 @@ class SnowDataset(_Dataset):
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD)
         self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
         self.__random_vertical_flip = _transforms.RandomVerticalFlip()
-        self.__to_tensor = _transforms.ToTensor()
+        self.__to_tensor = _transforms.PILToTensor()
+        self.__resize = _transforms.Resize((256, 256))
 
     def __len__(self) -> int:
         count = self.__count
@@ -32,8 +33,8 @@ class SnowDataset(_Dataset):
 
         image_path, target_path = image_target_paths[idx]
 
-        image = _Image.open(image_path).convert('RGB')
-        target = _Image.open(target_path).convert('L')
+        image = _Image.open(image_path)
+        target = _Image.open(target_path)
 
         image, target = self.transform(image, target)
 
@@ -44,15 +45,21 @@ class SnowDataset(_Dataset):
         random_horizontal_flip = self.__random_horizontal_flip
         random_vertical_flip = self.__random_vertical_flip
         to_tensor = self.__to_tensor
+        resize = self.__resize
+
+        # Resize
+        image = resize(image)
+        target = resize(target)
 
         # Random horizontal and vertical flip
         image, target = random_horizontal_flip(image, target)
         image, target = random_vertical_flip(image, target)
 
         # To Tensor and Normalize
-        image = to_tensor(image)
-        image = normalize(image).contiguous()
-        target = to_tensor(target).float().contiguous()
+        image = to_tensor(image) / 255
+        image = normalize(image)
+        target = (to_tensor(target) // 255).float()
+
         return image, target
 
 

@@ -13,8 +13,8 @@ class MyTestCase(unittest.TestCase):
         image, mask = snow_dataset[0]
         self.assertTrue(type(image).__name__ == 'Tensor')
         self.assertTrue(type(mask).__name__ == 'Tensor')
-        self.assertEqual(image.size(), (3, 512, 512))
-        self.assertEqual(mask.size(), (1, 512, 512))
+        self.assertEqual(image.size(), (3, 256, 256))
+        self.assertEqual(mask.size(), (1, 256, 256))
 
 
 if __name__ == '__main__':
