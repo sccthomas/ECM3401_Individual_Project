@@ -1,10 +1,10 @@
 import torch as _torch
 import torch.nn as _nn
 
-import src.model.config as _config
-import src.model.decoder as _decoder
-import src.model.encoder as _encoder
-import src.model.patch_embedding as _patch_embedding
+import src.model.multi_scale.config as _config
+import src.model.multi_scale.decoder as _decoder
+import src.model.multi_scale.encoder as _encoder
+import src.model.multi_scale.patch_embedding as _patch_embedding
 
 
 class SemanticSegmentationVisionTransformer(_nn.Module):

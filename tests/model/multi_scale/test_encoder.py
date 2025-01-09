@@ -2,8 +2,8 @@ import unittest
 
 import torch
 
-from src.model.config import EncoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
-from src.model.encoder import Encoder
+from src.model.multi_scale.config import EncoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from src.model.multi_scale.encoder import Encoder
 
 
 class TestEncoder(unittest.TestCase):

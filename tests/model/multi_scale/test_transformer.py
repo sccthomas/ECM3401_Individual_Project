@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from src.model.transformer import TransformerBlockEncoder, TransformerBlockDecoder
+from src.model.multi_scale.transformer import TransformerBlockEncoder, TransformerBlockDecoder
 
 
 class TestTransformerBlockEncoder(unittest.TestCase):

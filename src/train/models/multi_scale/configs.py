@@ -1,4 +1,4 @@
-import src.model.config as _config
+import src.models.config as _config
 
 
 def large_model_configuration() -> _config.ModelConfig:

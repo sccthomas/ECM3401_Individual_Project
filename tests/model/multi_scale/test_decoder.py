@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from src.model.config import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
-from src.model.decoder import Decoder
+from src.model.multi_scale.config import DecoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
+from src.model.multi_scale.decoder import Decoder
 
 
 class TestDecoder(unittest.TestCase):

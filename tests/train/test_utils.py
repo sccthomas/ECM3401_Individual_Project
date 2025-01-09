@@ -1,14 +1,14 @@
 import unittest
 
 import torch
+from src.model.model import SemanticSegmentationVisionTransformer
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam
 from torch.utils.data import random_split, DataLoader
 
 from src.dataset.snow import SnowDataset
-from src.model.model import SemanticSegmentationVisionTransformer
-from src.model_configs import small_model_configuration
 from src.train import train_model
+from src.train.models.multi_scale.configs import small_model_configuration
 
 
 class TestMain(unittest.TestCase):
