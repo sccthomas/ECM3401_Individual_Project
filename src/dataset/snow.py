@@ -24,12 +24,19 @@ class SnowDataset(_Dataset):
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256))
 
+        self.__cache = [None] * self.__count
+
     def __len__(self) -> int:
         count = self.__count
         return 3000
 
     def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
         image_target_paths = self.__image_target_paths
+        cache = self.__cache
+
+        if cache[idx] is not None:
+            image_path, target_path = cache[idx]
+            return image_path, target_path
 
         image_path, target_path = image_target_paths[idx]
 
@@ -37,6 +44,8 @@ class SnowDataset(_Dataset):
         target = _Image.open(target_path)
 
         image, target = self.transform(image, target)
+
+        cache[idx] = image, target
 
         return image, target
 
@@ -56,8 +65,8 @@ class SnowDataset(_Dataset):
         image, target = random_vertical_flip(image, target)
 
         # To Tensor and Normalize
-        image = to_tensor(image) / 255
-        # image = normalize(image)
+        image = to_tensor(image).float() / 255
+        image = normalize(image)
         target = (to_tensor(target) // 255).float()
 
         return image, target

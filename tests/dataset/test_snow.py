@@ -10,11 +10,17 @@ class MyTestCase(unittest.TestCase):
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
                              '/snow_dataset')
 
-        image, mask = snow_dataset[0]
-        self.assertTrue(type(image).__name__ == 'Tensor')
-        self.assertTrue(type(mask).__name__ == 'Tensor')
-        self.assertEqual(image.size(), (3, 256, 256))
-        self.assertEqual(mask.size(), (1, 256, 256))
+        image_1, mask_1 = snow_dataset[0]
+        self.assertTrue(type(image_1).__name__ == 'Tensor')
+        self.assertTrue(type(mask_1).__name__ == 'Tensor')
+        self.assertEqual(image_1.size(), (3, 256, 256))
+        self.assertEqual(mask_1.size(), (1, 256, 256))
+
+        image_2, mask_2 = snow_dataset[0]
+        self.assertTrue(type(image_2).__name__ == 'Tensor')
+        self.assertTrue(type(mask_2).__name__ == 'Tensor')
+        self.assertEqual(image_2.size(), (3, 256, 256))
+        self.assertEqual(mask_2.size(), (1, 256, 256))
 
 
 if __name__ == '__main__':
