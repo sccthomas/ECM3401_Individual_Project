@@ -24,8 +24,19 @@ class SnowDataset(_Dataset):
             tuple([_os.path.join(images_dir_path, file_name), _os.path.join(targets_dir_path, file_name)])
             for file_name in set(_os.listdir(targets_dir_path)).intersection(set(_os.listdir(images_dir_path)))
         )
+        len_image_target_paths = len(image_target_paths)
+        if len_image_target_paths == 0:
+            raise ValueError('The dataset directory does not contain any images or targets.')
 
-        self.__count = len(image_target_paths) if len_override is None else len_override
+        count = (
+            len_image_target_paths
+            if len_override is None
+            else len_override
+            if len_override <= len_image_target_paths
+            else len_image_target_paths
+        )
+        print(count)
+        self.__count = count
         self.__image_target_paths = image_target_paths
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD)
         self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
@@ -33,7 +44,7 @@ class SnowDataset(_Dataset):
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256))
 
-        self.__cache = [None] * self.__count
+        self.__cache = [None] * count
 
     def __len__(self) -> int:
         count = self.__count
