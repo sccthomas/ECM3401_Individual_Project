@@ -45,7 +45,7 @@ class SnowDataset(_Dataset):
 
         image, target = self.transform(image, target)
 
-        cache[idx] = image, target
+        cache[idx] = (image, target)
 
         return image, target
 

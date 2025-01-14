@@ -1,5 +1,7 @@
 import unittest
 
+import torch
+
 from src.dataset.snow import SnowDataset
 
 
@@ -21,6 +23,9 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(type(mask_2).__name__ == 'Tensor')
         self.assertEqual(image_2.size(), (3, 256, 256))
         self.assertEqual(mask_2.size(), (1, 256, 256))
+
+        torch.equal(image_1, image_2)
+        torch.equal(mask_1, mask_2)
 
 
 if __name__ == '__main__':
