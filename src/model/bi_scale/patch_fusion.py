@@ -10,7 +10,7 @@ class PatchFusion(_nn.Module):
             in_channels=in_patches, out_channels=out_patches, kernel_size=1
         )
 
-        self.__norm = _nn.LayerNorm(out_embed)
+        self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
     def forward(self, x, y):
         x = self.__feature_projector(x)
@@ -18,6 +18,6 @@ class PatchFusion(_nn.Module):
 
         x = x + y
 
-        x = self.__norm(x)
+        x = self.__norm(x).float()
 
         return x
