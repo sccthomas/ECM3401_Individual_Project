@@ -2,6 +2,7 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
+import torch.nn.functional as _f
 
 import src.model.bi_scale.patch_embedding as _patch_embedding
 import src.model.bi_scale.patch_fusion as _patch_fusion
@@ -51,9 +52,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_1[1],
                     nhead=16,
-                    dim_feedforward=int(patch_embedding_scale_1[1] * 4),
-                    dropout=True,
-                    activation='gelu'
+                    dim_feedforward=int(patch_embedding_scale_1[1] * 2),
+                    dropout=0.1,
+                    activation=_f.gelu,
                 )
                 for __ in range(12)
             ]
@@ -63,9 +64,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_2[1],
                     nhead=16,
-                    dim_feedforward=int(patch_embedding_scale_2[1] * 4),
-                    dropout=True,
-                    activation='gelu'
+                    dim_feedforward=int(patch_embedding_scale_2[1] * 2),
+                    dropout=0.1,
+                    activation=_f.gelu,
                 )
                 for __ in range(12)
             ]
