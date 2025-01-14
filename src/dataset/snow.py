@@ -57,7 +57,7 @@ class SnowDataset(_Dataset):
 
         # To Tensor and Normalize
         image = to_tensor(image) / 255
-        image = normalize(image)
+        # image = normalize(image)
         target = (to_tensor(target) // 255).float()
 
         return image, target
