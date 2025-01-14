@@ -1,12 +1,10 @@
 import unittest
 
-import torch
-
 from src.dataset.snow import SnowDataset
 
 
 class MyTestCase(unittest.TestCase):
-    def test_something(self):
+    def test_something(self) -> None:
         snow_dataset = SnowDataset(
             dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
@@ -23,9 +21,6 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(type(mask_2).__name__ == 'Tensor')
         self.assertEqual(image_2.size(), (3, 256, 256))
         self.assertEqual(mask_2.size(), (1, 256, 256))
-
-        torch.equal(image_1, image_2)
-        torch.equal(mask_1, mask_2)
 
 
 if __name__ == '__main__':
