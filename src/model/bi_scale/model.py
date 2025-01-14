@@ -34,14 +34,14 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         # Patch Embedding
         self.__patch_embedding_scale_1 = _patch_embedding.PatchEmbedding(
             in_channels=in_channels,
-            embed_dim=patch_embedding_scale_1[0],
-            patch_size=patch_embedding_scale_1[1],
+            patch_size=patch_embedding_scale_1[0],
+            embed_dim=patch_embedding_scale_1[1],
             image_size=height
         )
         self.__patch_embedding_scale_2 = _patch_embedding.PatchEmbedding(
             in_channels=in_channels,
-            embed_dim=patch_embedding_scale_2[0],
-            patch_size=patch_embedding_scale_2[1],
+            patch_size=patch_embedding_scale_2[0],
+            embed_dim=patch_embedding_scale_2[1],
             image_size=height
         )
 
@@ -49,9 +49,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         self.__encoders_scale_1 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
-                    d_model=patch_embedding_scale_1[0],
-                    nhead=12,
-                    dim_feedforward=int(patch_embedding_scale_1[0] * 4),
+                    d_model=patch_embedding_scale_1[1],
+                    nhead=16,
+                    dim_feedforward=int(patch_embedding_scale_1[1] * 4),
                     dropout=True,
                     activation='gelu'
                 )
@@ -61,41 +61,48 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         self.__encoders_scale_2 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
-                    d_model=patch_embedding_scale_2[0],
-                    nhead=12,
-                    dim_feedforward=int(patch_embedding_scale_2[0] * 4),
+                    d_model=patch_embedding_scale_2[1],
+                    nhead=16,
+                    dim_feedforward=int(patch_embedding_scale_2[1] * 4),
                     dropout=True,
                     activation='gelu'
                 )
                 for __ in range(12)
             ]
         )
-        self.__patch_fusion_scale_1_to_2 = _nn.ModuleList(
+        self.__patch_fusions_scale_1_to_2 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
                     in_patches=self.__patch_embedding_scale_1.num_patches,
-                    in_embed=patch_embedding_scale_1[0],
+                    in_embed=patch_embedding_scale_1[1],
                     out_patches=self.__patch_embedding_scale_2.num_patches,
-                    out_embed=patch_embedding_scale_2[0]
+                    out_embed=patch_embedding_scale_2[1]
                 )
                 for __ in range(11)
             ]
         )
-        self.__patch_fusion_scale_2_to_1 = _nn.ModuleList(
+        self.__patch_fusions_scale_2_to_1 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
                     in_patches=self.__patch_embedding_scale_2.num_patches,
-                    in_embed=patch_embedding_scale_2[0],
+                    in_embed=patch_embedding_scale_2[1],
                     out_patches=self.__patch_embedding_scale_1.num_patches,
-                    out_embed=patch_embedding_scale_1[0]
+                    out_embed=patch_embedding_scale_1[1]
                 )
                 for __ in range(11)
             ]
         )
 
         # Decoder Stage
+        # - Basically this code here will always upsample a tensor of shape [B, 256, X] to [B, 1, 256, 256]
+        self.__decoder_patch_fusion_scale_2_to_1 = _patch_fusion.PatchFusion(
+            in_patches=self.__patch_embedding_scale_2.num_patches,
+            in_embed=patch_embedding_scale_2[1],
+            out_patches=self.__patch_embedding_scale_1.num_patches,
+            out_embed=patch_embedding_scale_1[1]
+        )
         self.__decoder = _nn.Sequential(
-            _nn.Conv2d(patch_embedding_scale_1[0], 256, kernel_size=3, padding=1),
+            _nn.Conv2d(patch_embedding_scale_1[1], 256, kernel_size=3, padding=1),
             _nn.ReLU(),
             _nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),
             _nn.ReLU(),
@@ -122,8 +129,8 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         for encoder_scale_1, encoder_scale_2, patch_fusion_scale_1_to_2, patch_fusion_scale_2_to_1 in zip(
                 self.__encoders_scale_1[1:],
                 self.__encoders_scale_2[1:],
-                self.__patch_fusion_scale_1_to_2,
-                self.__patch_fusion_scale_2_to_1,
+                self.__patch_fusions_scale_1_to_2,
+                self.__patch_fusions_scale_2_to_1,
         ):
             # - Patch Fusion Layer
             x1 = patch_fusion_scale_2_to_1(x2, x1)
@@ -134,5 +141,8 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             x2 = encoder_scale_2(x2)
 
         # Decoder Stage
+        x1 = self.__decoder_patch_fusion_scale_2_to_1(x2, x1)
+        x1 = x1.transpose(1, 2).reshape(-1, x1.shape[-1], 16, 16)
+        x1 = self.__decoder(x1)
 
         return x1
