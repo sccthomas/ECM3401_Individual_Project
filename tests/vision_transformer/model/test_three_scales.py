@@ -3,7 +3,7 @@ import unittest
 import torch
 from torchvision.transforms.v2 import Normalize
 
-from src.vision_transformer.model.three_scales.model import SemanticSegmentationVisionTransformer
+from src.vision_transformer.model.three_scales import SemanticSegmentationVisionTransformer
 
 
 class TestSemanticSegmentationVisionTransformer(unittest.TestCase):

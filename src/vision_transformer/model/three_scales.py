@@ -7,9 +7,10 @@ import torch.nn.functional as _f
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
+import src.vision_transformer.model.base as _base
 
 
-class SemanticSegmentationVisionTransformer(_nn.Module):
+class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTransformerBase):
     """
     Semantic Segmentation Vision Transformer vision_transformer.
     """
@@ -29,11 +30,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         :param patch_embedding_scale_2: The patch embedding configuration for scale 2.
         :param patch_embedding_scale_3: The patch embedding configuration for scale 3.
         """
-        super(SemanticSegmentationVisionTransformer, self).__init__()
+        super(SemanticSegmentationVisionTransformer, self).__init__(image_dims=image_dims)
 
         in_channels, height, width = image_dims
-
-        assert height == width, "Input image must be square."
 
         # Patch Embedding
         self.__patch_embedding_scale_1 = _patch_embedding.PatchEmbedding(
@@ -184,47 +183,67 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             output_dims=(1, height, width)
         )
 
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
         """
-        Forward pass.
+        Apply the patch embedding to the input tensor.
 
         :param x: The input tensor.
-        :return: The output tensor.
+        :return: The patch embeddings for the 3 scales.
         """
-        # Patch Embedding
-        x1 = self.__patch_embedding_scale_1(x)
-        x2 = self.__patch_embedding_scale_2(x)
-        x3 = self.__patch_embedding_scale_3(x)
+        patch_embedding_scale_1 = self.__patch_embedding_scale_1
+        patch_embedding_scale_2 = self.__patch_embedding_scale_2
+        patch_embedding_scale_3 = self.__patch_embedding_scale_3
+
+        x1 = patch_embedding_scale_1(x)
+        x2 = patch_embedding_scale_2(x)
+        x3 = patch_embedding_scale_3(x)
+
+        return {'x1': x1, 'x2': x2, 'x3': x3}
+
+    def apply_encoder_stage(
+            self, x1: _torch.Tensor, x2: _torch.Tensor, x3: _torch.Tensor
+    ) -> _t.Dict[str, _torch.Tensor]:
+        """
+        Apply the encoder stage to the input tensors.
+
+        :param x1: Scale 1 input tensor.
+        :param x2: Scale 2 input tensor.
+        :param x3: Scale 3 input tensor.
+        :return: The output tensors for the 3 scales encoded.
+        """
+        encoders_scale_1 = self.__encoders_scale_1
+        encoders_scale_2 = self.__encoders_scale_2
+        encoders_scale_3 = self.__encoders_scale_3
+        patch_fusions_scale_1_to_2 = self.__patch_fusions_scale_1_to_2
+        patch_fusions_scale_1_to_3 = self.__patch_fusions_scale_1_to_3
+        patch_fusions_scale_2_to_1 = self.__patch_fusions_scale_2_to_1
+        patch_fusions_scale_2_to_3 = self.__patch_fusions_scale_2_to_3
+        patch_fusions_scale_3_to_1 = self.__patch_fusions_scale_3_to_1
+        patch_fusions_scale_3_to_2 = self.__patch_fusions_scale_3_to_2
 
         # Encoder Stage
-        x1 = self.__encoders_scale_1[0](x1)
-        x2 = self.__encoders_scale_2[0](x2)
-        x3 = self.__encoders_scale_3[0](x3)
+        x1 = encoders_scale_1[0](x1)
+        x2 = encoders_scale_2[0](x2)
+        x3 = encoders_scale_3[0](x3)
 
         for (
                 # Encoder Scales
-                encoder_scale_1,
-                encoder_scale_2,
-                encoder_scale_3,
+                encoder_scale_1, encoder_scale_2, encoder_scale_3,
                 # Patch Fusion Scale 1
-                patch_fusion_scale_1_to_2,
-                patch_fusion_scale_1_to_3,
+                patch_fusion_scale_1_to_2, patch_fusion_scale_1_to_3,
                 # Patch Fusion Scale 2
-                patch_fusion_scale_2_to_1,
-                patch_fusion_scale_2_to_3,
+                patch_fusion_scale_2_to_1, patch_fusion_scale_2_to_3,
                 # Patch Fusion Scale 3
-                patch_fusion_scale_3_to_1,
-                patch_fusion_scale_3_to_2,
+                patch_fusion_scale_3_to_1, patch_fusion_scale_3_to_2,
         ) in zip(
-            self.__encoders_scale_1[1:],
-            self.__encoders_scale_2[1:],
-            self.__encoders_scale_3[1:],
-            self.__patch_fusions_scale_1_to_2,
-            self.__patch_fusions_scale_1_to_3,
-            self.__patch_fusions_scale_2_to_1,
-            self.__patch_fusions_scale_2_to_3,
-            self.__patch_fusions_scale_3_to_1,
-            self.__patch_fusions_scale_3_to_2,
+            # Encoder Scales
+            encoders_scale_1[1:], encoders_scale_2[1:], encoders_scale_3[1:],
+            # Patch Fusion Scale 1
+            patch_fusions_scale_1_to_2, patch_fusions_scale_1_to_3,
+            # Patch Fusion Scale 2
+            patch_fusions_scale_2_to_1, patch_fusions_scale_2_to_3,
+            # Patch Fusion Scale 3
+            patch_fusions_scale_3_to_1, patch_fusions_scale_3_to_2,
         ):
             # - Patch Fusion Layer
             #   - Scale 1
@@ -242,11 +261,26 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             x2 = encoder_scale_2(x2)
             x3 = encoder_scale_3(x3)
 
-        # Decoder Stage
-        # - Upsample x3 to x2, x2 to x1
-        x2 = self.__decoder_patch_fusion_scale_3_to_2(x3, x2)
-        x1 = self.__decoder_patch_fusion_scale_2_to_1(x2, x1)
-        # - Final Decoder Head
-        x1 = self.__decoder(x1)
+        return {'x1': x1, 'x2': x2, 'x3': x3}
+
+    def apply_decoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor, x3: _torch.Tensor) -> _torch.Tensor:
+        """
+        Apply the decoder stage to the input tensors.
+
+        :param x1: Scale 1 input tensor.
+        :param x2: Scale 2 input tensor.
+        :param x3: Scale 3 input tensor.
+        :return: The output tensor.
+        """
+        decoder_patch_fusion_scale_3_to_2 = self.__decoder_patch_fusion_scale_3_to_2
+        decoder_patch_fusion_scale_2_to_1 = self.__decoder_patch_fusion_scale_2_to_1
+        decoder = self.__decoder
+
+        # Upsample x3 to x2, x2 to x1
+        x2 = decoder_patch_fusion_scale_3_to_2(x3, x2)
+        x1 = decoder_patch_fusion_scale_2_to_1(x2, x1)
+
+        # Final Decoder Head
+        x1 = decoder(x1)
 
         return x1

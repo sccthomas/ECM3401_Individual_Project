@@ -7,11 +7,12 @@ import torch.nn.functional as _f
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
+import src.vision_transformer.model.base as _base
 
 
-class SemanticSegmentationVisionTransformer(_nn.Module):
+class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTransformerBase):
     """
-    Semantic Segmentation Vision Transformer vision_transformer.
+    Semantic Segmentation Vision Transformer for 2 scales.
     """
 
     def __init__(
@@ -27,11 +28,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         :param patch_embedding_scale_1: The patch embedding configuration for scale 1.
         :param patch_embedding_scale_2: The patch embedding configuration for scale 2.
         """
-        super(SemanticSegmentationVisionTransformer, self).__init__()
+        super(SemanticSegmentationVisionTransformer, self).__init__(image_dims=image_dims)
 
         in_channels, height, width = image_dims
-
-        assert height == width, "Input image must be square."
 
         # Patch Embedding
         self.__patch_embedding_scale_1 = _patch_embedding.PatchEmbedding(
@@ -109,7 +108,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             output_dims=(1, height, width)
         )
 
-    def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+    def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
         """
         Apply the patch embedding to the input tensor.
 
@@ -122,9 +121,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         x1 = patch_embedding_scale_1(x)
         x2 = patch_embedding_scale_2(x)
 
-        return x1, x2
+        return {'x1': x1, 'x2': x2}
 
-    def apply_encoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+    def apply_encoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
         """
         Apply the encoder stage to the input tensors.
 
@@ -155,7 +154,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             x1 = encoder_scale_1(x1)
             x2 = encoder_scale_2(x2)
 
-        return x1, x2
+        return {'x1': x1, 'x2': x2}
 
     def apply_decoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor) -> _torch.Tensor:
         """
@@ -170,21 +169,5 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
 
         x1 = decoder_patch_fusion_scale_2_to_1(x2, x1)
         x1 = decoder(x1)
-
-        return x1
-
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
-        """
-        Forward pass.
-
-        :param x: The input tensor.
-        :return: The output tensor.
-        """
-        # Patch Embedding
-        x1, x2 = self.apply_patch_embedding_stage(x)
-        # Encoder Stage
-        x1, x2 = self.apply_encoder_stage(x1, x2)
-        # Decoder Stage
-        x1 = self.apply_decoder_stage(x1, x2)
 
         return x1
