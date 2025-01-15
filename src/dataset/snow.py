@@ -2,6 +2,7 @@ import os as _os
 from typing import Tuple
 
 import torch as _torch
+import torch.nn as _nn
 import torchvision.transforms.v2 as _transforms
 from PIL import Image as _Image
 from torch.utils.data import Dataset as _Dataset
@@ -12,7 +13,7 @@ class SnowDataset(_Dataset):
     A dataset class for the snow dataset.
     """
 
-    def __init__(self, dataset_dir_path: str, len_override: int = None) -> None:
+    def __init__(self, dataset_dir_path: str, len_override: int = None, resize: bool = False) -> None:
         """
 
         :param dataset_dir_path: The path to the directory containing the dataset.
@@ -42,7 +43,7 @@ class SnowDataset(_Dataset):
         self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
         self.__random_vertical_flip = _transforms.RandomVerticalFlip()
         self.__to_tensor = _transforms.PILToTensor()
-        self.__resize = _transforms.Resize((256, 256))
+        self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
 
         self.__cache = [None] * count
 
