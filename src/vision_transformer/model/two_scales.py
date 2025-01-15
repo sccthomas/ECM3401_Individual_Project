@@ -97,7 +97,6 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         )
 
         # Decoder Stage
-        # - Basically this code here will always upsample a tensor of shape [B, 256, X] to [B, 1, 256, 256]
         self.__decoder_patch_fusion_scale_2_to_1 = _patch_fusion.PatchFusion(
             in_patches=self.__patch_embedding_scale_2.num_patches,
             in_embed=patch_embedding_scale_2[1],
