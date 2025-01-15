@@ -33,44 +33,45 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         in_channels, height, width = image_dims
 
         # Patch Embedding
+        kwargs = {'in_channels': in_channels, 'image_size': height}
         self.__patch_embedding_scale_1 = _patch_embedding.PatchEmbedding(
-            in_channels=in_channels,
             patch_size=patch_embedding_scale_1[0],
             embed_dim=patch_embedding_scale_1[1],
-            image_size=height
+            **kwargs,
         )
         self.__patch_embedding_scale_2 = _patch_embedding.PatchEmbedding(
-            in_channels=in_channels,
             patch_size=patch_embedding_scale_2[0],
             embed_dim=patch_embedding_scale_2[1],
-            image_size=height
+            **kwargs,
         )
 
         # Encoder Stage
+        # - Transformers Encoder Layers
+        encoder_layers = 12
+        kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
         self.__encoders_scale_1 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_1[1],
-                    nhead=16,
                     dim_feedforward=int(patch_embedding_scale_1[1] * 2),
-                    dropout=0.1,
-                    activation=_f.gelu,
+                    **kwargs,
                 )
-                for __ in range(12)
+                for _ in range(encoder_layers)
             ]
         )
         self.__encoders_scale_2 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_2[1],
-                    nhead=16,
                     dim_feedforward=int(patch_embedding_scale_2[1] * 2),
-                    dropout=0.1,
-                    activation=_f.gelu,
+                    **kwargs,
                 )
-                for __ in range(12)
+                for _ in range(encoder_layers)
             ]
         )
+        # - Patch Fusion Layers
+        patch_fusion_layers = encoder_layers - 1
+        #   - Scale 1
         self.__patch_fusions_scale_1_to_2 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
@@ -82,6 +83,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 for __ in range(11)
             ]
         )
+        #   - Scale 2
         self.__patch_fusions_scale_2_to_1 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(

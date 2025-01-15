@@ -12,7 +12,7 @@ import src.vision_transformer.model.base as _base
 
 class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTransformerBase):
     """
-    Semantic Segmentation Vision Transformer vision_transformer.
+    Semantic Segmentation Vision Transformer for 3 scales.
     """
 
     def __init__(
@@ -35,131 +35,123 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         in_channels, height, width = image_dims
 
         # Patch Embedding
+        kwargs = {'in_channels': in_channels, 'image_size': height}
         self.__patch_embedding_scale_1 = _patch_embedding.PatchEmbedding(
-            in_channels=in_channels,
             patch_size=patch_embedding_scale_1[0],
             embed_dim=patch_embedding_scale_1[1],
-            image_size=height
+            **kwargs,
         )
         self.__patch_embedding_scale_2 = _patch_embedding.PatchEmbedding(
-            in_channels=in_channels,
             patch_size=patch_embedding_scale_2[0],
             embed_dim=patch_embedding_scale_2[1],
-            image_size=height
+            **kwargs,
         )
         self.__patch_embedding_scale_3 = _patch_embedding.PatchEmbedding(
-            in_channels=in_channels,
             patch_size=patch_embedding_scale_3[0],
             embed_dim=patch_embedding_scale_3[1],
-            image_size=height
+            **kwargs,
         )
 
         # Encoder Stage
+        # - Transformers Encoder Layers
         encoder_layers = 12
+        kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
         self.__encoders_scale_1 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_1[1],
-                    nhead=16,
                     dim_feedforward=int(patch_embedding_scale_1[1] * 2),
-                    dropout=0.1,
-                    activation=_f.gelu,
+                    **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for _ in range(encoder_layers)
             ]
         )
         self.__encoders_scale_2 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_2[1],
-                    nhead=16,
                     dim_feedforward=int(patch_embedding_scale_2[1] * 2),
-                    dropout=0.1,
-                    activation=_f.gelu,
+                    **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for _ in range(encoder_layers)
             ]
         )
         self.__encoders_scale_3 = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
                     d_model=patch_embedding_scale_3[1],
-                    nhead=16,
                     dim_feedforward=int(patch_embedding_scale_3[1] * 2),
-                    dropout=0.1,
-                    activation=_f.gelu,
+                    **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for _ in range(encoder_layers)
             ]
         )
+        # - Patch Fusion Layers
         patch_fusion_layers = encoder_layers - 1
-        # - Scale 1
+        #   - Scale 1
+        kwargs = {'in_patches': self.__patch_embedding_scale_1.num_patches, 'in_embed': patch_embedding_scale_1[1]}
         self.__patch_fusions_scale_1_to_2 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_1.num_patches,
-                    in_embed=patch_embedding_scale_1[1],
                     out_patches=self.__patch_embedding_scale_2.num_patches,
-                    out_embed=patch_embedding_scale_2[1]
+                    out_embed=patch_embedding_scale_2[1],
+                    **kwargs,
                 )
-                for __ in range(patch_fusion_layers)
+                for _ in range(patch_fusion_layers)
             ]
         )
         self.__patch_fusions_scale_1_to_3 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_1.num_patches,
-                    in_embed=patch_embedding_scale_1[1],
                     out_patches=self.__patch_embedding_scale_3.num_patches,
-                    out_embed=patch_embedding_scale_3[1]
+                    out_embed=patch_embedding_scale_3[1],
+                    **kwargs,
                 )
-                for __ in range(patch_fusion_layers)
+                for _ in range(patch_fusion_layers)
             ]
         )
-        # - Scale 2
+        #   - Scale 2
+        kwargs = {'in_patches': self.__patch_embedding_scale_2.num_patches, 'in_embed': patch_embedding_scale_2[1]}
         self.__patch_fusions_scale_2_to_1 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_2.num_patches,
-                    in_embed=patch_embedding_scale_2[1],
                     out_patches=self.__patch_embedding_scale_1.num_patches,
-                    out_embed=patch_embedding_scale_1[1]
+                    out_embed=patch_embedding_scale_1[1],
+                    **kwargs,
                 )
-                for __ in range(patch_fusion_layers)
+                for _ in range(patch_fusion_layers)
             ]
         )
         self.__patch_fusions_scale_2_to_3 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_2.num_patches,
-                    in_embed=patch_embedding_scale_2[1],
                     out_patches=self.__patch_embedding_scale_3.num_patches,
-                    out_embed=patch_embedding_scale_3[1]
+                    out_embed=patch_embedding_scale_3[1],
+                    **kwargs,
                 )
-                for __ in range(patch_fusion_layers)
+                for _ in range(patch_fusion_layers)
             ]
         )
-        # - Scale 3
+        #   - Scale 3
+        kwargs = {'in_patches': self.__patch_embedding_scale_3.num_patches, 'in_embed': patch_embedding_scale_3[1]}
         self.__patch_fusions_scale_3_to_1 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_3.num_patches,
-                    in_embed=patch_embedding_scale_3[1],
                     out_patches=self.__patch_embedding_scale_1.num_patches,
-                    out_embed=patch_embedding_scale_1[1]
+                    out_embed=patch_embedding_scale_1[1],
+                    **kwargs,
                 )
-                for __ in range(patch_fusion_layers)
+                for _ in range(patch_fusion_layers)
             ]
         )
         self.__patch_fusions_scale_3_to_2 = _nn.ModuleList(
             [
                 _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_3.num_patches,
-                    in_embed=patch_embedding_scale_3[1],
                     out_patches=self.__patch_embedding_scale_2.num_patches,
-                    out_embed=patch_embedding_scale_2[1]
+                    out_embed=patch_embedding_scale_2[1],
+                    **kwargs,
                 )
-                for __ in range(patch_fusion_layers)
+                for _ in range(patch_fusion_layers)
             ]
         )
 

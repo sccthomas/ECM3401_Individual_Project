@@ -36,7 +36,6 @@ class SnowDataset(_Dataset):
             if len_override <= len_image_target_paths
             else len_image_target_paths
         )
-        print(count)
         self.__count = count
         self.__image_target_paths = image_target_paths
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD)

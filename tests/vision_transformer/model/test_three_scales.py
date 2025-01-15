@@ -10,9 +10,9 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
     def test_forward(self) -> None:
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 256, 256),
-            patch_embedding_scale_1=(16, 1024),
-            patch_embedding_scale_2=(8, 512),
-            patch_embedding_scale_3=(4, 256),
+            patch_embedding_scale_1=(32, 1024),
+            patch_embedding_scale_2=(16, 512),
+            patch_embedding_scale_3=(8, 256),
         )
 
         x = torch.randint(0, 255, (16, 3, 256, 256)).float() / 255
