@@ -68,7 +68,6 @@ class Decoder(_nn.Module):
         transposed_convolutions.append(
             _nn.ConvTranspose2d(transposed_dims[-1], num_classes, kernel_size=1, stride=1)
         )
-        transposed_convolutions.append(_nn.ReLU())
 
         return cls(resolution=resolution, transposed_convolutions=transposed_convolutions)
 
