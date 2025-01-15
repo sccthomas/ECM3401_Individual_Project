@@ -109,26 +109,43 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             output_dims=(1, height, width)
         )
 
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
         """
-        Forward pass.
+        Apply the patch embedding to the input tensor.
 
         :param x: The input tensor.
-        :return: The output tensor.
+        :return: The patch embeddings for scale 1 and scale 2.
         """
-        # Patch Embedding
-        x1 = self.__patch_embedding_scale_1(x)
-        x2 = self.__patch_embedding_scale_2(x)
+        patch_embedding_scale_1 = self.__patch_embedding_scale_1
+        patch_embedding_scale_2 = self.__patch_embedding_scale_2
+
+        x1 = patch_embedding_scale_1(x)
+        x2 = patch_embedding_scale_2(x)
+
+        return x1, x2
+
+    def apply_encoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+        """
+        Apply the encoder stage to the input tensors.
+
+        :param x1: Scale 1 input tensor.
+        :param x2: Scale 2 input tensor.
+        :return: Encoded tensors for scale 1 and scale 2.
+        """
+        encoder_scale_1 = self.__encoders_scale_1
+        encoder_scale_2 = self.__encoders_scale_2
+        patch_fusions_scale_1_to_2 = self.__patch_fusions_scale_1_to_2
+        patch_fusions_scale_2_to_1 = self.__patch_fusions_scale_2_to_1
 
         # Encoder Stage
-        x1 = self.__encoders_scale_1[0](x1)
-        x2 = self.__encoders_scale_2[0](x2)
+        x1 = encoder_scale_1[0](x1)
+        x2 = encoder_scale_2[0](x2)
 
         for encoder_scale_1, encoder_scale_2, patch_fusion_scale_1_to_2, patch_fusion_scale_2_to_1 in zip(
-                self.__encoders_scale_1[1:],
-                self.__encoders_scale_2[1:],
-                self.__patch_fusions_scale_1_to_2,
-                self.__patch_fusions_scale_2_to_1,
+                encoder_scale_1[1:],
+                encoder_scale_2[1:],
+                patch_fusions_scale_1_to_2,
+                patch_fusions_scale_2_to_1,
         ):
             # - Patch Fusion Layer
             x1 = patch_fusion_scale_2_to_1(x2, x1)
@@ -138,8 +155,36 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             x1 = encoder_scale_1(x1)
             x2 = encoder_scale_2(x2)
 
+        return x1, x2
+
+    def apply_decoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor) -> _torch.Tensor:
+        """
+        Apply the decoder stage to the input tensors.
+
+        :param x1: Scale 1 input tensor.
+        :param x2: Scale 2 input tensor.
+        :return: The decoded tensor.
+        """
+        decoder_patch_fusion_scale_2_to_1 = self.__decoder_patch_fusion_scale_2_to_1
+        decoder = self.__decoder
+
+        x1 = decoder_patch_fusion_scale_2_to_1(x2, x1)
+        x1 = decoder(x1)
+
+        return x1
+
+    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+        """
+        Forward pass.
+
+        :param x: The input tensor.
+        :return: The output tensor.
+        """
+        # Patch Embedding
+        x1, x2 = self.apply_patch_embedding_stage(x)
+        # Encoder Stage
+        x1, x2 = self.apply_encoder_stage(x1, x2)
         # Decoder Stage
-        x1 = self.__decoder_patch_fusion_scale_2_to_1(x2, x1)
-        x1 = self.__decoder(x1)
+        x1 = self.apply_decoder_stage(x1, x2)
 
         return x1
