@@ -2,9 +2,9 @@ import torch as _torch
 import torch.nn as _nn
 
 import src.vision_transformer.common.patch_embedding as _patch_embedding
-import src.vision_transformer.model.multi_scale.config as _config
-import src.vision_transformer.model.multi_scale.decoder as _decoder
-import src.vision_transformer.model.multi_scale.encoder as _encoder
+import src.vision_transformer.model._old_multi_scale.config as _config
+import src.vision_transformer.model._old_multi_scale.decoder as _decoder
+import src.vision_transformer.model._old_multi_scale.encoder as _encoder
 
 
 class SemanticSegmentationVisionTransformer(_nn.Module):

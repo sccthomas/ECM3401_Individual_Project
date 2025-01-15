@@ -4,8 +4,8 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 
-import src.vision_transformer.model.multi_scale.config as _config
-import src.vision_transformer.model.multi_scale.transformer as _transformer
+import src.vision_transformer.model._old_multi_scale.config as _config
+import src.vision_transformer.model._old_multi_scale.transformer as _transformer
 
 
 class Encoder(_nn.Module):

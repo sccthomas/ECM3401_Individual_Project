@@ -5,7 +5,7 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 
-import src.vision_transformer.model.multi_scale.attention as _attention
+import src.vision_transformer.model._old_multi_scale.attention as _attention
 
 
 # Note: The below class is only intended to be used through inheritance.

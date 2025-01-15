@@ -2,8 +2,8 @@ import unittest
 
 import torch
 
-from src.vision_transformer.model.multi_scale.config import ModelConfig
-from src.vision_transformer.model.multi_scale.model import SemanticSegmentationVisionTransformer
+from src.vision_transformer.model._old_multi_scale.config import ModelConfig
+from src.vision_transformer.model._old_multi_scale.model import SemanticSegmentationVisionTransformer
 
 
 class TestSemanticSegmentationVisionTransformer(unittest.TestCase):

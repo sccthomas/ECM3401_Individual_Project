@@ -2,8 +2,9 @@ import unittest
 
 import torch
 
-from src.vision_transformer.model.multi_scale.config import EncoderConfig, TransformerBlockConfig, PatchEmbeddingConfig
-from src.vision_transformer.model.multi_scale.encoder import Encoder
+from src.vision_transformer.model._old_multi_scale.config import EncoderConfig, TransformerBlockConfig, \
+    PatchEmbeddingConfig
+from src.vision_transformer.model._old_multi_scale.encoder import Encoder
 
 
 class TestEncoder(unittest.TestCase):

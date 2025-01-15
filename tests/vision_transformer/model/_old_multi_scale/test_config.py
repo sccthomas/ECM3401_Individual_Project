@@ -1,6 +1,6 @@
 import unittest
 
-from src.vision_transformer.model.multi_scale.config import ModelConfig, EncoderConfig, DecoderConfig, \
+from src.vision_transformer.model._old_multi_scale.config import ModelConfig, EncoderConfig, DecoderConfig, \
     TransformerBlockConfig, \
     PatchEmbeddingConfig
 

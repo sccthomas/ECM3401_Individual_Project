@@ -4,6 +4,7 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _f
 
+import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 
@@ -102,14 +103,10 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             out_patches=self.__patch_embedding_scale_1.num_patches,
             out_embed=patch_embedding_scale_1[1]
         )
-        self.__decoder = _nn.Sequential(
-            _nn.Conv2d(patch_embedding_scale_1[1], 256, kernel_size=3, padding=1),
-            _nn.ReLU(),
-            _nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),
-            _nn.ReLU(),
-            _nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),
-            _nn.ReLU(),
-            _nn.ConvTranspose2d(64, 1, kernel_size=4, stride=4),
+        self.__decoder = _decoder.Decoder.create(
+            final_num_patches=self.__patch_embedding_scale_1.num_patches,
+            final_embed_dim=patch_embedding_scale_1[1],
+            output_dims=(1, height, width)
         )
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
@@ -143,7 +140,6 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
 
         # Decoder Stage
         x1 = self.__decoder_patch_fusion_scale_2_to_1(x2, x1)
-        x1 = x1.transpose(1, 2).reshape(-1, x1.shape[-1], 16, 16)
         x1 = self.__decoder(x1)
 
         return x1
