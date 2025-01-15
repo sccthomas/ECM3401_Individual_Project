@@ -1,0 +1,90 @@
+8076
+Running Epoch 1/10
+Training | Epoch 1/10: 100%|██████████| 404/404 [17:47<00:00,  2.64s/it]
+
+ Epoch 1/10, Losas: 0.2920
+
+Validation | Epoch 1/10: 100%|██████████| 101/101 [02:45<00:00,  1.63s/it]
+
+ Validation Loss: 0.2581, IoU: 0.8099
+
+Running Epoch 2/10
+Training | Epoch 2/10: 100%|██████████| 404/404 [03:23<00:00,  1.98it/s]
+
+ Epoch 2/10, Losas: 0.2563
+
+Validation | Epoch 2/10: 100%|██████████| 101/101 [00:47<00:00,  2.12it/s]
+
+ Validation Loss: 0.2549, IoU: 0.8110
+
+Running Epoch 3/10
+Training | Epoch 3/10: 100%|██████████| 404/404 [03:23<00:00,  1.99it/s]
+
+ Epoch 3/10, Losas: 0.2519
+
+Validation | Epoch 3/10: 100%|██████████| 101/101 [00:47<00:00,  2.12it/s]
+
+ Validation Loss: 0.2533, IoU: 0.8113
+
+Running Epoch 4/10
+Training | Epoch 4/10: 100%|██████████| 404/404 [03:22<00:00,  1.99it/s]
+
+ Epoch 4/10, Losas: 0.2510
+
+Validation | Epoch 4/10: 100%|██████████| 101/101 [00:47<00:00,  2.11it/s]
+
+ Validation Loss: 0.2540, IoU: 0.8114
+
+Running Epoch 5/10
+Training | Epoch 5/10: 100%|██████████| 404/404 [03:21<00:00,  2.01it/s]
+
+ Epoch 5/10, Losas: 0.2507
+
+Validation | Epoch 5/10: 100%|██████████| 101/101 [00:47<00:00,  2.11it/s]
+
+ Validation Loss: 0.2531, IoU: 0.8113
+
+Running Epoch 6/10
+Training | Epoch 6/10: 100%|██████████| 404/404 [03:22<00:00,  1.99it/s]
+
+ Epoch 6/10, Losas: 0.2498
+
+Validation | Epoch 6/10: 100%|██████████| 101/101 [00:48<00:00,  2.10it/s]
+
+ Validation Loss: 0.2527, IoU: 0.8115
+
+Running Epoch 7/10
+Training | Epoch 7/10: 100%|██████████| 404/404 [03:22<00:00,  1.99it/s]
+
+ Epoch 7/10, Losas: 0.2497
+
+Validation | Epoch 7/10: 100%|██████████| 101/101 [00:47<00:00,  2.11it/s]
+
+ Validation Loss: 0.2520, IoU: 0.8115
+
+Running Epoch 8/10
+Training | Epoch 8/10: 100%|██████████| 404/404 [03:22<00:00,  2.00it/s]
+
+ Epoch 8/10, Losas: 0.2496
+
+Validation | Epoch 8/10: 100%|██████████| 101/101 [00:47<00:00,  2.10it/s]
+
+ Validation Loss: 0.2519, IoU: 0.8116
+
+Running Epoch 9/10
+Training | Epoch 9/10: 100%|██████████| 404/404 [03:22<00:00,  1.99it/s]
+
+ Epoch 9/10, Losas: 0.2495
+
+Validation | Epoch 9/10: 100%|██████████| 101/101 [00:47<00:00,  2.11it/s]
+
+ Validation Loss: 0.2521, IoU: 0.8116
+
+Running Epoch 10/10
+Training | Epoch 10/10: 100%|██████████| 404/404 [03:21<00:00,  2.00it/s]
+
+ Epoch 10/10, Losas: 0.2495
+
+Validation | Epoch 10/10: 100%|██████████| 101/101 [00:47<00:00,  2.11it/s]
+
+ Validation Loss: 0.2525, IoU: 0.8115
