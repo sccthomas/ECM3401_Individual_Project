@@ -1,4 +1,5 @@
 import os as _os
+import random as _random
 from typing import Tuple
 
 import torch as _torch
@@ -13,7 +14,9 @@ class SnowDataset(_Dataset):
     A dataset class for the snow dataset.
     """
 
-    def __init__(self, dataset_dir_path: str, len_override: int = None, resize: bool = False) -> None:
+    def __init__(
+            self, dataset_dir_path: str, len_override: int = None, resize: bool = False, normalize: bool = False
+    ) -> None:
         """
 
         :param dataset_dir_path: The path to the directory containing the dataset.
@@ -38,7 +41,7 @@ class SnowDataset(_Dataset):
         )
         self.__count = count
         self.__image_target_paths = image_target_paths
-        self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD)
+        self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
         self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
         self.__random_vertical_flip = _transforms.RandomVerticalFlip()
         self.__to_tensor = _transforms.PILToTensor()
@@ -79,8 +82,11 @@ class SnowDataset(_Dataset):
         random_vertical_flip = self.__random_vertical_flip
 
         # Random horizontal and vertical flip
-        image_transformed, target_transformed = random_horizontal_flip(image, target)
-        image_transformed, target_transformed = random_vertical_flip(image_transformed, target_transformed)
+        k = _random.randint(0, 3)  # 0, 1, 2, or 3
+
+        # Rotate both tensors by the same amount
+        image_transformed = _torch.rot90(image, k=k, dims=(1, 2))
+        target_transformed = _torch.rot90(target, k=k, dims=(1, 2))
 
         return image_transformed, target_transformed
 
