@@ -55,6 +55,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 _swin_transformer_encoder.SwinTransformerEncoderLayer(
                     d_model=patch_embedding_scale_1[1],
                     dim_feedforward=int(patch_embedding_scale_1[1] * 2),
+                    window_size=8,
                     use_shifted_windows=True if i % 2 == 0 and i != 0 else False,
                     **kwargs,
                 )
@@ -66,6 +67,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 _swin_transformer_encoder.SwinTransformerEncoderLayer(
                     d_model=patch_embedding_scale_2[1],
                     dim_feedforward=int(patch_embedding_scale_2[1] * 2),
+                    window_size=8,
                     use_shifted_windows=True if i % 2 == 0 and i != 0 else False,
                     **kwargs,
                 )
