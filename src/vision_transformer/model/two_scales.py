@@ -7,6 +7,7 @@ import torch.nn.functional as _f
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
+import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
 import src.vision_transformer.model.base as _base
 
 
@@ -51,22 +52,24 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
         self.__encoders_scale_1 = _nn.ModuleList(
             [
-                _nn.TransformerEncoderLayer(
+                _swin_transformer_encoder.SwinTransformerEncoderLayer(
                     d_model=patch_embedding_scale_1[1],
                     dim_feedforward=int(patch_embedding_scale_1[1] * 2),
+                    use_shifted_windows=True if i % 2 == 0 and i != 0 else False,
                     **kwargs,
                 )
-                for _ in range(encoder_layers)
+                for i in range(encoder_layers)
             ]
         )
         self.__encoders_scale_2 = _nn.ModuleList(
             [
-                _nn.TransformerEncoderLayer(
+                _swin_transformer_encoder.SwinTransformerEncoderLayer(
                     d_model=patch_embedding_scale_2[1],
                     dim_feedforward=int(patch_embedding_scale_2[1] * 2),
+                    use_shifted_windows=True if i % 2 == 0 and i != 0 else False,
                     **kwargs,
                 )
-                for _ in range(encoder_layers)
+                for i in range(encoder_layers)
             ]
         )
         # - Patch Fusion Layers
