@@ -25,6 +25,13 @@ class PatchFusion(_nn.Module):
         self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
     def forward(self, tensor: _torch.Tensor, target_tensor: _torch.Tensor) -> _torch.Tensor:
+        """
+        Forward pass of the patch fusion layer.
+
+        :param tensor: Tensor to be fused.
+        :param target_tensor: Target tensor to be fused with.
+        :return: Fused tensor.
+        """
         feature_projector = self.__feature_projector
         sequence_expander = self.__sequence_expander
         norm = self.__norm
