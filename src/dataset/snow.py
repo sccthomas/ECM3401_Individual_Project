@@ -20,6 +20,7 @@ class SnowDataset(_Dataset):
             len_override: int = None,
             resize: bool = False,
             normalize: bool = False,
+            rotate: bool = False,
             cache: dict = None,
     ) -> None:
         """
@@ -28,6 +29,7 @@ class SnowDataset(_Dataset):
         :param len_override: Optional. Override the length of the dataset. If not provided, the length of the dataset
         :param resize: Optional. Resize the images and targets to 256x256.
         :param normalize: Optional. Normalize the images.
+        :param rotate: Optional. Rotate the images and targets by a random multiple of 90 degrees.
         :param cache: Optional. A shared dictionary to cache the images and targets.
         """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
@@ -50,10 +52,9 @@ class SnowDataset(_Dataset):
         self.__count = count
         self.__image_target_paths = image_target_paths
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
-        self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
-        self.__random_vertical_flip = _transforms.RandomVerticalFlip()
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
+        self.__rotate = rotate
 
         self.__cache = {} if cache is None else cache
 
@@ -67,6 +68,7 @@ class SnowDataset(_Dataset):
         normalize = self.__normalize
         to_tensor = self.__to_tensor
         resize = self.__resize
+        rotate = self.__rotate
 
         # If the image and target are already loaded, return them
         cached_data = cache.get(idx)
@@ -81,14 +83,14 @@ class SnowDataset(_Dataset):
             image = normalize(image)
             cache[idx] = (image, target)
 
-        # Transform the image and target
-        image_transformed, target_transformed = self.__transform(image, target)
+        # Rotate the image and target
+        if rotate:
+            image, target = self._rotate(image, target)
 
-        return image_transformed, target_transformed
+        return image, target
 
-    def __transform(self, image: _Image, target: _Image) -> Tuple[_torch.Tensor, _torch.Tensor]:
-        random_horizontal_flip = self.__random_horizontal_flip
-        random_vertical_flip = self.__random_vertical_flip
+    @staticmethod
+    def _rotate(image: _Image, target: _Image) -> Tuple[_torch.Tensor, _torch.Tensor]:
 
         # Random horizontal and vertical flip
         k = _random.randint(0, 3)  # 0, 1, 2, or 3

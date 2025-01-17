@@ -9,6 +9,7 @@ class MyTestCase(unittest.TestCase):
             dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
                              '/snow_dataset'
+
         )
 
         image_1, mask_1 = snow_dataset[0]
