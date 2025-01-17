@@ -96,10 +96,10 @@ class SnowDataset(_Dataset):
         k = _random.randint(0, 3)  # 0, 1, 2, or 3
 
         # Rotate both tensors by the same amount
-        image_transformed = _torch.rot90(image, k=k, dims=(1, 2))
-        target_transformed = _torch.rot90(target, k=k, dims=(1, 2))
+        image = _torch.rot90(image, k=k, dims=(1, 2))
+        target = _torch.rot90(target, k=k, dims=(1, 2))
 
-        return image_transformed, target_transformed
+        return image, target
 
 
 # --------------------------------------------
