@@ -15,12 +15,20 @@ class SnowDataset(_Dataset):
     """
 
     def __init__(
-            self, dataset_dir_path: str, len_override: int = None, resize: bool = False, normalize: bool = False
+            self,
+            dataset_dir_path: str,
+            len_override: int = None,
+            resize: bool = False,
+            normalize: bool = False,
+            cache: dict = None,
     ) -> None:
         """
 
         :param dataset_dir_path: The path to the directory containing the dataset.
         :param len_override: Optional. Override the length of the dataset. If not provided, the length of the dataset
+        :param resize: Optional. Resize the images and targets to 256x256.
+        :param normalize: Optional. Normalize the images.
+        :param cache: Optional. A shared dictionary to cache the images and targets.
         """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
@@ -47,7 +55,7 @@ class SnowDataset(_Dataset):
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
 
-        self.__cache = [None] * count
+        self.__cache = {} if cache is None else cache
 
     def __len__(self) -> int:
         count = self.__count
@@ -61,8 +69,9 @@ class SnowDataset(_Dataset):
         resize = self.__resize
 
         # If the image and target are already loaded, return them
-        if cache[idx] is not None:
-            image, target = cache[idx]
+        cached_data = cache.get(idx)
+        if cached_data is not None:
+            image, target = cached_data
         else:
             # Else, load, resize and convert the image and target to tensors
             image_path, target_path = image_target_paths[idx]
