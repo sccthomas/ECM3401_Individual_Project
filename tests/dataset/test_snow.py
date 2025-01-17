@@ -30,6 +30,7 @@ class MyTestCase(unittest.TestCase):
                              '/snow_dataset',
             len_override=10000,
             resize=True,
+            rotate=True,
         )
 
         image_1, mask_1 = snow_dataset[0]
