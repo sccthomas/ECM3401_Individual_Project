@@ -11,8 +11,8 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 256, 256),
             patch_embedding_scale_1=(32, 1024),
-            patch_embedding_scale_2=(16, 512),
-            patch_embedding_scale_3=(8, 256),
+            patch_embedding_scale_2=(16, 768),
+            patch_embedding_scale_3=(8, 512),
         )
 
         x = torch.randint(0, 255, (16, 3, 256, 256)).float() / 255
