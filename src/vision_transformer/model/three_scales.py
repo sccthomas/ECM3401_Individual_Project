@@ -66,11 +66,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             [
                 _swin_transformer_encoder.SwinTransformerBlock(
                     dim=patch_embedding_scale_1[1],
-                    input_resolution=(
-                        int(self.__patch_embedding_scale_1.num_patches ** 0.5),
-                        int(self.__patch_embedding_scale_1.num_patches ** 0.5)
-                    ),
-                    window_size=max(self.__patch_embedding_scale_1.num_patches // 4, 4),
+                    input_resolution=self.__patch_embedding_scale_1.resolution,
+                    window_size=max(self.__patch_embedding_scale_1.H // 4, 4),
                     **kwargs,
                 )
                 for _ in range(encoder_layers)
@@ -80,11 +77,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             [
                 _swin_transformer_encoder.SwinTransformerBlock(
                     dim=patch_embedding_scale_2[1],
-                    input_resolution=(
-                        int(self.__patch_embedding_scale_2.num_patches ** 0.5),
-                        int(self.__patch_embedding_scale_2.num_patches ** 0.5)
-                    ),
-                    window_size=max(self.__patch_embedding_scale_2.num_patches // 4, 4),
+                    input_resolution=self.__patch_embedding_scale_2.resolution,
+                    window_size=max(self.__patch_embedding_scale_2.H // 4, 4),
                     **kwargs,
                 )
                 for _ in range(encoder_layers)
@@ -94,11 +88,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             [
                 _swin_transformer_encoder.SwinTransformerBlock(
                     dim=patch_embedding_scale_3[1],
-                    input_resolution=(
-                        int(self.__patch_embedding_scale_3.num_patches ** 0.5),
-                        int(self.__patch_embedding_scale_3.num_patches ** 0.5)
-                    ),
-                    window_size=max(self.__patch_embedding_scale_3.num_patches // 4, 4),
+                    input_resolution=self.__patch_embedding_scale_3.resolution,
+                    window_size=max(self.__patch_embedding_scale_3.H // 4, 4),
                     **kwargs,
                 )
                 for _ in range(encoder_layers)

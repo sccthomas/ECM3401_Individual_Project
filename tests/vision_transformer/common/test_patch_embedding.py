@@ -12,6 +12,11 @@ class TestPatchEmbedding(unittest.TestCase):
         B, C, H, _ = image.shape
 
         patch_embedding = PatchEmbedding(in_channels=C, embed_dim=768, patch_size=16, image_size=H).to(device)
+        self.assertEqual(patch_embedding.H, 16)
+        self.assertEqual(patch_embedding.W, 16)
+        self.assertEqual(patch_embedding.num_patches, 256)
+        self.assertEqual(patch_embedding.resolution, (16, 16))
+        
         patch_embedding = patch_embedding(image)
         self.assertEqual(patch_embedding.shape, torch.Size([B, 256, 768]))
         self.assertTrue(patch_embedding.is_contiguous())

@@ -14,13 +14,17 @@ class PatchEmbedding(_nn.Module):
         :param in_channels: The number of input channels, i.e. RGB channels for image.
         :param embed_dim: The length to project patches into.
         :param patch_size: The size of each patch in the image.
+        :param image_size: The size of the image.
         """
         super(PatchEmbedding, self).__init__()
-        num_patches = (image_size // patch_size) ** 2
+        H = W = image_size // patch_size
+        num_patches = H * W
 
         self.__projection = _nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
         self.__positional_encoding = _nn.Parameter(_torch.zeros(1, num_patches, embed_dim))
 
+        self.__H = H
+        self.__W = W
         self.__num_patches = num_patches
 
     @property
@@ -31,6 +35,33 @@ class PatchEmbedding(_nn.Module):
         :return: The number of patches.
         """
         return self.__num_patches
+
+    @property
+    def H(self) -> int:
+        """
+        Get the height of the patched image.
+
+        :return: The height of the patched image.
+        """
+        return self.__H
+
+    @property
+    def W(self) -> int:
+        """
+        Get the width of the patched image.
+
+        :return: The width of the patched image.
+        """
+        return self.__W
+
+    @property
+    def resolution(self) -> tuple[int, int]:
+        """
+        Get the resolution of the patched image.
+
+        :return: The resolution of the patched image.
+        """
+        return self.__H, self.__W
 
     def forward(self, image: _torch.Tensor) -> _torch.Tensor:
         """
