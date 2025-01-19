@@ -18,6 +18,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
     def __init__(
             self,
             image_dims: _t.Tuple[int, int, int],
+            num_encoder_layers: int,
             patch_embedding_scale_1: _t.Tuple[int, int],
             patch_embedding_scale_2: _t.Tuple[int, int],
     ) -> None:
@@ -25,10 +26,14 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
+        :param num_encoder_layers: The number of encoder layers
         :param patch_embedding_scale_1: The patch embedding configuration for scale 1.
         :param patch_embedding_scale_2: The patch embedding configuration for scale 2.
         """
-        super(SemanticSegmentationVisionTransformer, self).__init__(image_dims=image_dims)
+        super(SemanticSegmentationVisionTransformer, self).__init__(
+            image_dims=image_dims,
+            num_encoder_layers=num_encoder_layers
+        )
 
         in_channels, height, width = image_dims
 
@@ -47,7 +52,6 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         # Encoder Stage
         # - Transformers Encoder Layers
-        encoder_layers = 12
         kwargs = {
             'num_heads': 16,
             'shift_size': 1,
@@ -63,7 +67,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                     window_size=max(self.__patch_embedding_scale_1.H // 4, 4),
                     **kwargs,
                 )
-                for _ in range(encoder_layers)
+                for _ in range(num_encoder_layers)
             ]
         )
         self.__encoders_scale_2 = _nn.ModuleList(
@@ -74,11 +78,11 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                     window_size=max(self.__patch_embedding_scale_2.H // 4, 4),
                     **kwargs,
                 )
-                for _ in range(encoder_layers)
+                for _ in range(num_encoder_layers)
             ]
         )
         # - Patch Fusion Layers
-        patch_fusion_layers = encoder_layers - 1
+        patch_fusion_layers = num_encoder_layers - 1
         #   - Scale 1
         self.__patch_fusions_scale_1_to_2 = _nn.ModuleList(
             [

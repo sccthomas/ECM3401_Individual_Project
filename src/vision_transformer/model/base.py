@@ -13,11 +13,13 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
     def __init__(
             self,
             image_dims: _t.Tuple[int, int, int],
+            num_encoder_layers: int
     ) -> None:
         """
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
+        :param num_encoder_layers: The number of encoder layers
         """
         super(SemanticSegmentationVisionTransformerBase, self).__init__()
 
@@ -26,6 +28,25 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         assert height == width, "Input image must be square."
 
         self.__image_dims = image_dims[1:]
+        self.__num_encoder_layers = num_encoder_layers
+
+    @property
+    def image_dims(self) -> _t.Tuple[int, int]:
+        """
+        Get the image dimensions.
+
+        :return: The image dimensions.
+        """
+        return self.__image_dims
+
+    @property
+    def num_encoder_layers(self) -> int:
+        """
+        Get the number of encoder layers.
+
+        :return: The number of encoder layers.
+        """
+        return self.__num_encoder_layers
 
     @_abc.abstractmethod
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:

@@ -18,6 +18,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
     def __init__(
             self,
             image_dims: _t.Tuple[int, int, int],
+            num_encoder_layers: int,
             patch_embedding_scale_1: _t.Tuple[int, int],
             patch_embedding_scale_2: _t.Tuple[int, int],
             patch_embedding_scale_3: _t.Tuple[int, int],
@@ -27,12 +28,16 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
+        :param num_encoder_layers: The number of encoder layers.
         :param patch_embedding_scale_1: The patch embedding configuration for scale 1.
         :param patch_embedding_scale_2: The patch embedding configuration for scale 2.
         :param patch_embedding_scale_3: The patch embedding configuration for scale 3.
         :param patch_embedding_scale_4: The patch embedding configuration for scale 4.
         """
-        super(SemanticSegmentationVisionTransformer, self).__init__(image_dims=image_dims)
+        super(SemanticSegmentationVisionTransformer, self).__init__(
+            image_dims=image_dims,
+            num_encoder_layers=num_encoder_layers
+        )
 
         in_channels, height, width = image_dims
 
@@ -60,7 +65,6 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         )
 
         # Encoder Stage
-        encoder_layers = 12
         kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
         self.__encoders_scale_1 = _nn.ModuleList(
             [
@@ -69,7 +73,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                     dim_feedforward=int(patch_embedding_scale_1[1] * 2),
                     **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for __ in range(num_encoder_layers)
             ]
         )
         self.__encoders_scale_2 = _nn.ModuleList(
@@ -79,7 +83,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                     dim_feedforward=int(patch_embedding_scale_2[1] * 2),
                     **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for __ in range(num_encoder_layers)
             ]
         )
         self.__encoders_scale_3 = _nn.ModuleList(
@@ -89,7 +93,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                     dim_feedforward=int(patch_embedding_scale_3[1] * 2),
                     **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for __ in range(num_encoder_layers)
             ]
         )
         self.__encoders_scale_4 = _nn.ModuleList(
@@ -99,12 +103,12 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                     dim_feedforward=int(patch_embedding_scale_4[1] * 2),
                     **kwargs,
                 )
-                for __ in range(encoder_layers)
+                for __ in range(num_encoder_layers)
             ]
         )
 
         # - Patch Fusion Layers
-        patch_fusion_layers = encoder_layers - 1
+        patch_fusion_layers = num_encoder_layers - 1
         #   - Scale 1
         kwargs = {'in_patches': self.__patch_embedding_scale_1.num_patches, 'in_embed': patch_embedding_scale_1[1]}
         self.__patch_fusions_scale_1_to_2 = _nn.ModuleList(

@@ -10,6 +10,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
     def test_forward(self) -> None:
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 256, 256),
+            num_encoder_layers=12,
             patch_embedding_scale_1=(64, 1024),
             patch_embedding_scale_2=(32, 512),
             patch_embedding_scale_3=(16, 256),
