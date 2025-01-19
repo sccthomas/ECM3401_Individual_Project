@@ -4,17 +4,46 @@ from src.dataset.snow import SnowDataset
 
 
 class MyTestCase(unittest.TestCase):
-    def test_something(self):
+    def test_something(self) -> None:
         snow_dataset = SnowDataset(
             dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
-                             '/snow_dataset')
+                             '/snow_dataset'
 
-        image, mask = snow_dataset[0]
-        self.assertTrue(type(image).__name__ == 'Tensor')
-        self.assertTrue(type(mask).__name__ == 'Tensor')
-        self.assertEqual(image.size(), (3, 512, 512))
-        self.assertEqual(mask.size(), (1, 512, 512))
+        )
+
+        image_1, mask_1 = snow_dataset[0]
+        self.assertTrue(type(image_1).__name__ == 'Tensor')
+        self.assertTrue(type(mask_1).__name__ == 'Tensor')
+        self.assertEqual(image_1.size(), (3, 512, 512))
+        self.assertEqual(mask_1.size(), (1, 512, 512))
+
+        image_2, mask_2 = snow_dataset[0]
+        self.assertTrue(type(image_2).__name__ == 'Tensor')
+        self.assertTrue(type(mask_2).__name__ == 'Tensor')
+        self.assertEqual(image_2.size(), (3, 512, 512))
+        self.assertEqual(mask_2.size(), (1, 512, 512))
+
+        snow_dataset = SnowDataset(
+            dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
+                             '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
+                             '/snow_dataset',
+            len_override=10000,
+            resize=True,
+            rotate=True,
+        )
+
+        image_1, mask_1 = snow_dataset[0]
+        self.assertTrue(type(image_1).__name__ == 'Tensor')
+        self.assertTrue(type(mask_1).__name__ == 'Tensor')
+        self.assertEqual(image_1.size(), (3, 256, 256))
+        self.assertEqual(mask_1.size(), (1, 256, 256))
+
+        image_2, mask_2 = snow_dataset[0]
+        self.assertTrue(type(image_2).__name__ == 'Tensor')
+        self.assertTrue(type(mask_2).__name__ == 'Tensor')
+        self.assertEqual(image_2.size(), (3, 256, 256))
+        self.assertEqual(mask_2.size(), (1, 256, 256))
 
 
 if __name__ == '__main__':

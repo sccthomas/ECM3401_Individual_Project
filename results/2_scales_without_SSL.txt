@@ -1,0 +1,90 @@
+10000
+Running Epoch 1/10
+Training | Epoch 1/10: 100%|██████████| 500/500 [1:09:35<00:00,  8.35s/it]
+
+ Epoch 1/10, Average Loss: 0.2673
+
+Validation | Epoch 1/10: 100%|██████████| 125/125 [18:09<00:00,  8.72s/it]
+
+ Average Validation Loss: 0.2546, Average IoU: 0.8117
+
+Running Epoch 2/10
+Training | Epoch 2/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 2/10, Average Loss: 0.2520
+
+Validation | Epoch 2/10: 100%|██████████| 125/125 [01:05<00:00,  1.92it/s]
+
+ Average Validation Loss: 0.2530, Average IoU: 0.8118
+
+Running Epoch 3/10
+Training | Epoch 3/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 3/10, Average Loss: 0.2511
+
+Validation | Epoch 3/10: 100%|██████████| 125/125 [01:05<00:00,  1.92it/s]
+
+ Average Validation Loss: 0.2516, Average IoU: 0.8122
+
+Running Epoch 4/10
+Training | Epoch 4/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 4/10, Average Loss: 0.2506
+
+Validation | Epoch 4/10: 100%|██████████| 125/125 [01:05<00:00,  1.92it/s]
+
+ Average Validation Loss: 0.2517, Average IoU: 0.8116
+
+Running Epoch 5/10
+Training | Epoch 5/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 5/10, Average Loss: 0.2506
+
+Validation | Epoch 5/10: 100%|██████████| 125/125 [01:05<00:00,  1.92it/s]
+
+ Average Validation Loss: 0.2512, Average IoU: 0.8123
+
+Running Epoch 6/10
+Training | Epoch 6/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 6/10, Average Loss: 0.2499
+
+Validation | Epoch 6/10: 100%|██████████| 125/125 [01:04<00:00,  1.93it/s]
+
+ Average Validation Loss: 0.2512, Average IoU: 0.8124
+
+Running Epoch 7/10
+Training | Epoch 7/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 7/10, Average Loss: 0.2499
+
+Validation | Epoch 7/10: 100%|██████████| 125/125 [01:04<00:00,  1.93it/s]
+
+ Average Validation Loss: 0.2511, Average IoU: 0.8124
+
+Running Epoch 8/10
+Training | Epoch 8/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 8/10, Average Loss: 0.2499
+
+Validation | Epoch 8/10: 100%|██████████| 125/125 [01:04<00:00,  1.93it/s]
+
+ Average Validation Loss: 0.2511, Average IoU: 0.8123
+
+Running Epoch 9/10
+Training | Epoch 9/10: 100%|██████████| 500/500 [06:00<00:00,  1.39it/s]
+
+ Epoch 9/10, Average Loss: 0.2499
+
+Validation | Epoch 9/10: 100%|██████████| 125/125 [01:05<00:00,  1.92it/s]
+
+ Average Validation Loss: 0.2507, Average IoU: 0.8124
+
+Running Epoch 10/10
+Training | Epoch 10/10: 100%|██████████| 500/500 [05:59<00:00,  1.39it/s]
+
+ Epoch 10/10, Average Loss: 0.2498
+
+Validation | Epoch 10/10: 100%|██████████| 125/125 [01:04<00:00,  1.93it/s]
+
+ Average Validation Loss: 0.2506, Average IoU: 0.8124

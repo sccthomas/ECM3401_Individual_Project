@@ -1,58 +1,104 @@
 import os as _os
+import random as _random
 from typing import Tuple
 
 import torch as _torch
+import torch.nn as _nn
 import torchvision.transforms.v2 as _transforms
 from PIL import Image as _Image
 from torch.utils.data import Dataset as _Dataset
 
 
 class SnowDataset(_Dataset):
-    def __init__(self, dataset_dir_path: str) -> None:
+    """
+    A dataset class for the snow dataset.
+    """
+
+    def __init__(
+            self,
+            dataset_dir_path: str,
+            len_override: int = None,
+            resize: bool = False,
+            normalize: bool = False,
+            rotate: bool = False,
+            cache: dict = None,
+    ) -> None:
+        """
+
+        :param dataset_dir_path: The path to the directory containing the dataset.
+        :param len_override: Optional. Override the length of the dataset. If not provided, the length of the dataset
+        :param resize: Optional. Resize the images and targets to 256x256.
+        :param normalize: Optional. Normalize the images.
+        :param rotate: Optional. Rotate the images and targets by a random multiple of 90 degrees.
+        :param cache: Optional. A shared dictionary to cache the images and targets.
+        """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
         image_target_paths = tuple(
             tuple([_os.path.join(images_dir_path, file_name), _os.path.join(targets_dir_path, file_name)])
             for file_name in set(_os.listdir(targets_dir_path)).intersection(set(_os.listdir(images_dir_path)))
         )
+        len_image_target_paths = len(image_target_paths)
+        if len_image_target_paths == 0:
+            raise ValueError('The dataset directory does not contain any images or targets.')
 
-        self.__count = len(image_target_paths)
+        count = (
+            len_image_target_paths
+            if len_override is None
+            else len_override
+            if len_override <= len_image_target_paths
+            else len_image_target_paths
+        )
+        self.__count = count
         self.__image_target_paths = image_target_paths
-        self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD)
-        self.__random_horizontal_flip = _transforms.RandomHorizontalFlip()
-        self.__random_vertical_flip = _transforms.RandomVerticalFlip()
-        self.__to_tensor = _transforms.ToTensor()
+        self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
+        self.__to_tensor = _transforms.PILToTensor()
+        self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
+        self.__rotate = rotate
+
+        self.__cache = {} if cache is None else cache
 
     def __len__(self) -> int:
         count = self.__count
-        return 1000
+        return count
 
     def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
         image_target_paths = self.__image_target_paths
+        cache = self.__cache
+        normalize = self.__normalize
+        to_tensor = self.__to_tensor
+        resize = self.__resize
+        rotate = self.__rotate
 
-        image_path, target_path = image_target_paths[idx]
+        # If the image and target are already loaded, return them
+        cached_data = cache.get(idx)
+        if cached_data is not None:
+            image, target = cached_data
+        else:
+            # Else, load, resize and convert the image and target to tensors
+            image_path, target_path = image_target_paths[idx]
+            image, target = _Image.open(image_path), _Image.open(target_path)
+            image, target = resize(image), resize(target)
+            image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
+            image = normalize(image)
+            cache[idx] = (image, target)
 
-        image = _Image.open(image_path).convert('RGB')
-        target = _Image.open(target_path).convert('L')
-
-        image, target = self.transform(image, target)
+        # Rotate the image and target
+        if rotate:
+            image, target = self._rotate(image, target)
 
         return image, target
 
-    def transform(self, image: _Image, target: _Image) -> Tuple[_torch.Tensor, _torch.Tensor]:
-        normalize = self.__normalize
-        random_horizontal_flip = self.__random_horizontal_flip
-        random_vertical_flip = self.__random_vertical_flip
-        to_tensor = self.__to_tensor
+    @staticmethod
+    def _rotate(image: _Image, target: _Image) -> Tuple[_torch.Tensor, _torch.Tensor]:
 
         # Random horizontal and vertical flip
-        image, target = random_horizontal_flip(image, target)
-        image, target = random_vertical_flip(image, target)
+        k = _random.randint(0, 3)  # 0, 1, 2, or 3
 
-        # To Tensor and Normalize
-        image = to_tensor(image)
-        image = normalize(image).contiguous()
-        target = to_tensor(target).float().contiguous()
+        # Rotate both tensors by the same amount
+        image = _torch.rot90(image, k=k, dims=(1, 2))
+        target = _torch.rot90(target, k=k, dims=(1, 2))
+
         return image, target
 
 
