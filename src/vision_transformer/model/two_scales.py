@@ -1,12 +1,10 @@
 import typing as _t
 
 import torch as _torch
-import torch.nn as _nn
 
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
-import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
 import src.vision_transformer.model.base as _base
 
 
@@ -54,58 +52,39 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         # - Transformers Encoder Layers
         kwargs = {
             'num_heads': 16,
-            'shift_size': 1,
-            'drop': 0.1,
-            'attn_drop': 0.1,
-            'drop_path': 0.1,
+            'drop': 0.25,
+            'attn_drop': 0.25,
+            'drop_path': 0.25,
         }
-        self.__encoders_scale_1 = _nn.ModuleList(
-            [
-                _swin_transformer_encoder.SwinTransformerBlock(
-                    dim=patch_embedding_scale_1[1],
-                    input_resolution=self.__patch_embedding_scale_1.resolution,
-                    window_size=max(self.__patch_embedding_scale_1.H // 4, 4),
-                    **kwargs,
-                )
-                for _ in range(num_encoder_layers)
-            ]
+        #  - Scale 1
+        self.__encoders_scale_1 = self._create_swin_encoder_layers_for_scale_X(
+            H=self.__patch_embedding_scale_1.H,
+            embed_dim=patch_embedding_scale_1[1],
+            input_resolution=self.__patch_embedding_scale_1.resolution,
+            kwargs=kwargs,
         )
-        self.__encoders_scale_2 = _nn.ModuleList(
-            [
-                _swin_transformer_encoder.SwinTransformerBlock(
-                    dim=patch_embedding_scale_2[1],
-                    input_resolution=self.__patch_embedding_scale_2.resolution,
-                    window_size=max(self.__patch_embedding_scale_2.H // 4, 4),
-                    **kwargs,
-                )
-                for _ in range(num_encoder_layers)
-            ]
+        #  - Scale 2
+        self.__encoders_scale_2 = self._create_swin_encoder_layers_for_scale_X(
+            H=self.__patch_embedding_scale_2.H,
+            embed_dim=patch_embedding_scale_2[1],
+            input_resolution=self.__patch_embedding_scale_2.resolution,
+            kwargs=kwargs,
         )
+
         # - Patch Fusion Layers
-        patch_fusion_layers = num_encoder_layers - 1
         #   - Scale 1
-        self.__patch_fusions_scale_1_to_2 = _nn.ModuleList(
-            [
-                _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_1.num_patches,
-                    in_embed=patch_embedding_scale_1[1],
-                    out_patches=self.__patch_embedding_scale_2.num_patches,
-                    out_embed=patch_embedding_scale_2[1]
-                )
-                for __ in range(11)
-            ]
+        self.__patch_fusions_scale_1_to_2 = self._create_patch_fusion_layers_for_scale_X_to_Y(
+            in_patches=self.__patch_embedding_scale_1.num_patches,
+            in_embed=patch_embedding_scale_1[1],
+            out_patches=self.__patch_embedding_scale_2.num_patches,
+            out_embed=patch_embedding_scale_2[1],
         )
         #   - Scale 2
-        self.__patch_fusions_scale_2_to_1 = _nn.ModuleList(
-            [
-                _patch_fusion.PatchFusion(
-                    in_patches=self.__patch_embedding_scale_2.num_patches,
-                    in_embed=patch_embedding_scale_2[1],
-                    out_patches=self.__patch_embedding_scale_1.num_patches,
-                    out_embed=patch_embedding_scale_1[1]
-                )
-                for __ in range(11)
-            ]
+        self.__patch_fusions_scale_2_to_1 = self._create_patch_fusion_layers_for_scale_X_to_Y(
+            in_patches=self.__patch_embedding_scale_2.num_patches,
+            in_embed=patch_embedding_scale_2[1],
+            out_patches=self.__patch_embedding_scale_1.num_patches,
+            out_embed=patch_embedding_scale_1[1],
         )
 
         # Decoder Stage

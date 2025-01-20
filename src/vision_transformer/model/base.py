@@ -4,6 +4,9 @@ import typing as _t
 import torch as _torch
 import torch.nn as _nn
 
+import src.vision_transformer.common.patch_fusion as _patch_fusion
+import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
+
 
 class SemanticSegmentationVisionTransformerBase(_nn.Module):
     """
@@ -29,6 +32,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers
+        self.__num_patch_fusion_layers = num_encoder_layers - 1
 
     @property
     def image_dims(self) -> _t.Tuple[int, int]:
@@ -92,3 +96,65 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         assert x1.shape[2:] == image_dims
 
         return x1
+
+    def _create_swin_encoder_layers_for_scale_X(
+            self, *, H: int, embed_dim: int, input_resolution: _t.Tuple[int, int], kwargs: _t.Dict[str, _t.Any]
+    ) -> '_nn.ModuleList[_swin_transformer_encoder.SwinTransformerBlock]':
+        """
+        Create Swin Transformer encoder layers for scale X.
+
+        :param H:  Height of the input tensor after patch embedding.
+        :param embed_dim: Patch embedding dimension.
+        :param input_resolution: The resolution of the input tensor.
+        :param kwargs: Additional keyword arguments.
+        :return: Module list of Swin Transformer encoder layers.
+        """
+        num_encoder_layers = self.__num_encoder_layers
+
+        window_size = max(H // 4, 4)
+        shift_size = window_size // 2
+        encoders_scale_X = _nn.ModuleList(
+            [
+                _swin_transformer_encoder.SwinTransformerBlock(
+                    dim=embed_dim,
+                    input_resolution=input_resolution,
+                    window_size=window_size,
+                    shift_size=0 if (i % 2 == 0) else shift_size,
+                    **kwargs,
+                )
+                for i in range(num_encoder_layers)
+            ]
+        )
+
+        return encoders_scale_X
+
+    def _create_patch_fusion_layers_for_scale_X_to_Y(
+            self, *, in_patches: int, in_embed: int, out_patches: int, out_embed: int
+    ) -> '_nn.ModuleList[_patch_fusion.PatchFusion]':
+        """
+        Create patch fusion layers for scale X to Y.
+
+        :param in_patches: In number of patches.
+        :param in_embed: In patch embedding dimension.
+        :param out_patches: Out number of patches.
+        :param out_embed: Out patch embedding dimension.
+        :return: Module list of patch fusion layers.
+        """
+        num_patch_fusion_layers = self.__num_patch_fusion_layers
+
+        kwargs = {
+            'in_patches': in_patches,
+            'in_embed': in_embed,
+            'out_patches': out_patches,
+            'out_embed': out_embed,
+        }
+        patch_fusion_layers_scale_X_to_Y = _nn.ModuleList(
+            [
+                _patch_fusion.PatchFusion(
+                    **kwargs,
+                )
+                for _ in range(num_patch_fusion_layers)
+            ]
+        )
+
+        return patch_fusion_layers_scale_X_to_Y
