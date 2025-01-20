@@ -7,7 +7,7 @@ from src.training.metrics import SegmentationMetrics
 
 class TestSegmentationMetrics(unittest.TestCase):
     def test(self) -> None:
-        segmentation_metrics = SegmentationMetrics(len_dataset=10)
+        segmentation_metrics = SegmentationMetrics(len_dataset=10, device=torch.device('mps'))
         preds = torch.rand(10, 1, 128, 128)
         target = torch.randint(0, 2, (10, 1, 128, 128))
         segmentation_metrics.update_metrics(preds, target, 1.9)

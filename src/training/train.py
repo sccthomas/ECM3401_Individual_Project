@@ -34,8 +34,8 @@ def train_model(
     """
     best_val_loss = float('inf')
     patience_counter = 0
-    train_metrics = _metrics.SegmentationMetrics(len_dataset=len(train_loader))
-    val_metrics = _metrics.SegmentationMetrics(len_dataset=len(val_loader))
+    train_metrics = _metrics.SegmentationMetrics(len_dataset=len(train_loader), device=device)
+    val_metrics = _metrics.SegmentationMetrics(len_dataset=len(val_loader), device=device)
     for epoch in range(num_epochs):
         # - Training loop
         print(f"\n Epoch {epoch + 1}/{num_epochs}")

@@ -7,7 +7,7 @@ class SegmentationMetrics:
     Class to handle all metric calculation during model training.
     """
 
-    def __init__(self, len_dataset: int) -> None:
+    def __init__(self, len_dataset: int, device) -> None:
         """
 
         :param len_dataset: The length of the training or validation dataset.
@@ -17,15 +17,15 @@ class SegmentationMetrics:
         self.__dice_score = _metrics.DiceScore(
             average='micro',
             num_classes=num_classes,
-        )
-        self.__generalized_dice_score = _metrics.GeneralizedDiceScore(num_classes=num_classes)
+        ).to(device)
+        self.__generalized_dice_score = _metrics.GeneralizedDiceScore(num_classes=num_classes).to(device)
         self.__hausdorff_distance = _metrics.HausdorffDistance(
             distance_metric='euclidean',
             num_classes=num_classes,
-        )
+        ).to(device)
         self.__mean_intersection_over_union = _metrics.MeanIoU(
             num_classes=num_classes,
-        )
+        ).to(device)
         # Metric Values
         self.__len_dataset = len_dataset
         self.__binary_cross_entropy_loss = 0
