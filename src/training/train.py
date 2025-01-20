@@ -15,6 +15,7 @@ def train_model(
         scaler: torch.cuda.amp.GradScaler,
         train_loader: _data.DataLoader,
         val_loader: _data.DataLoader,
+        patience: int,
         device: torch.device,
 ) -> None:
     """
@@ -28,6 +29,7 @@ def train_model(
     :param scaler: The gradient scaler to use.
     :param train_loader: The training data loader.
     :param val_loader: The validation data loader.
+    :param patience: The number of epochs to wait before early stopping.
     :param device: The device to train the model on.
     """
     best_val_loss = float('inf')
