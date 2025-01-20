@@ -24,6 +24,8 @@ class PatchFusion(_nn.Module):
         )
         self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
+        self.__initialize_weights()
+
     def forward(self, tensor: _torch.Tensor, target_tensor: _torch.Tensor) -> _torch.Tensor:
         """
         Forward pass of the patch fusion layer.
@@ -44,3 +46,16 @@ class PatchFusion(_nn.Module):
         tensor = norm(tensor).float()
 
         return tensor
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the patch fusion layer.
+        """
+        feature_projector = self.__feature_projector
+        sequence_expander = self.__sequence_expander
+
+        _nn.init.xavier_uniform_(feature_projector.weight)
+        _nn.init.constant_(feature_projector.bias, 0)
+
+        _nn.init.xavier_uniform_(sequence_expander.weight)
+        _nn.init.constant_(sequence_expander.bias, 0)

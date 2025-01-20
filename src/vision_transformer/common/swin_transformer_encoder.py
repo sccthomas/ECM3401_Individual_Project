@@ -23,6 +23,8 @@ class Mlp(nn.Module):
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
+        self.__initialize_weights()
+
     def forward(self, x):
         x = self.fc1(x)
         x = self.act(x)
@@ -30,6 +32,18 @@ class Mlp(nn.Module):
         x = self.fc2(x)
         x = self.drop(x)
         return x
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the MLP.
+        """
+        fc1 = self.fc1
+        fc2 = self.fc2
+
+        nn.init.xavier_uniform_(fc1.weight)
+        nn.init.constant_(fc1.bias, 0)
+        nn.init.xavier_uniform_(fc2.weight)
+        nn.init.constant_(fc2.bias, 0)
 
 
 def window_partition(x, window_size):
@@ -137,6 +151,8 @@ class WindowAttention(nn.Module):
         self.proj_drop = nn.Dropout(proj_drop)
         self.softmax = nn.Softmax(dim=-1)
 
+        self.__initialize_weights()
+
     def forward(self, x, mask=None):
         """
         Args:
@@ -178,6 +194,17 @@ class WindowAttention(nn.Module):
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the window attention layer.
+        """
+        qkv = self.qkv
+        proj = self.proj
+
+        nn.init.xavier_uniform_(qkv.weight)
+        nn.init.xavier_uniform_(proj.weight)
+        nn.init.constant_(proj.bias, 0)
 
 
 class SwinTransformerBlock(nn.Module):
@@ -251,6 +278,8 @@ class SwinTransformerBlock(nn.Module):
 
         self.register_buffer("attn_mask", attn_mask)
 
+        self.__initialize_weights()
+
     def forward(self, x):
         H, W = self.input_resolution
         B, L, C = x.shape
@@ -288,3 +317,15 @@ class SwinTransformerBlock(nn.Module):
         x = x + self.drop_path(self.norm2(self.mlp(x)))
 
         return x
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the Swin Transformer block.
+        """
+        norm1 = self.norm1
+        norm2 = self.norm2
+
+        nn.init.constant_(norm1.bias, 0)
+        nn.init.constant_(norm1.weight, 1)
+        nn.init.constant_(norm2.bias, 0)
+        nn.init.constant_(norm2.weight, 1)

@@ -19,6 +19,8 @@ class Decoder(_nn.Module):
         self.__resolution = resolution
         self.__transposed_convolutions = transposed_convolutions
 
+        self.__initialize_weights()
+
     @classmethod
     def create(cls, final_num_patches: int, final_embed_dim: int, output_dims: _t.Tuple[int, int, int]) -> 'Decoder':
         """
@@ -85,3 +87,14 @@ class Decoder(_nn.Module):
         x = transposed_convolutions(x)
 
         return x
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the decoder.
+        """
+        transposed_convolutions = self.__transposed_convolutions
+
+        for layer in transposed_convolutions:
+            if isinstance(layer, _nn.ConvTranspose2d):
+                _nn.init.xavier_uniform_(layer.weight)
+                _nn.init.constant_(layer.bias, 0)

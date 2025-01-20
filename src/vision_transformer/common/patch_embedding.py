@@ -27,6 +27,8 @@ class PatchEmbedding(_nn.Module):
         self.__W = W
         self.__num_patches = num_patches
 
+        self.__initialize_weights()
+
     @property
     def num_patches(self) -> int:
         """
@@ -78,3 +80,12 @@ class PatchEmbedding(_nn.Module):
         patch_embeddings = patch_embeddings + positional_encoding
 
         return patch_embeddings
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the patch embedding layer.
+        """
+        projection = self.__projection
+
+        _nn.init.xavier_uniform_(projection.weight)
+        _nn.init.constant_(projection.bias, 0)
