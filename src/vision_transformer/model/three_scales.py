@@ -2,11 +2,11 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
-import torch.nn.functional as _f
 
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
+import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
 import src.vision_transformer.model.base as _base
 
 
@@ -59,37 +59,58 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         # Encoder Stage
         # - Transformers Encoder Layers
-        kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
+        kwargs = {
+            'num_heads': 16,
+            'drop': 0.1,
+            'attn_drop': 0.1,
+            'drop_path': 0.1,
+        }
+        #  - Scale 1
+        window_size = max(self.__patch_embedding_scale_1.H // 4, 4)
+        shift_size = window_size // 2
         self.__encoders_scale_1 = _nn.ModuleList(
             [
-                _nn.TransformerEncoderLayer(
-                    d_model=patch_embedding_scale_1[1],
-                    dim_feedforward=int(patch_embedding_scale_1[1] * 2),
+                _swin_transformer_encoder.SwinTransformerBlock(
+                    dim=patch_embedding_scale_1[1],
+                    input_resolution=self.__patch_embedding_scale_1.resolution,
+                    window_size=window_size,
+                    shift_size=shift_size if i % 2 != 0 else 0,
                     **kwargs,
                 )
-                for _ in range(num_encoder_layers)
+                for i in range(num_encoder_layers)
             ]
         )
+        #  - Scale 2
+        window_size = max(self.__patch_embedding_scale_2.H // 4, 4)
+        shift_size = window_size // 2
         self.__encoders_scale_2 = _nn.ModuleList(
             [
-                _nn.TransformerEncoderLayer(
-                    d_model=patch_embedding_scale_2[1],
-                    dim_feedforward=int(patch_embedding_scale_2[1] * 2),
+                _swin_transformer_encoder.SwinTransformerBlock(
+                    dim=patch_embedding_scale_2[1],
+                    input_resolution=self.__patch_embedding_scale_2.resolution,
+                    window_size=window_size,
+                    shift_size=shift_size if i % 2 != 0 else 0,
                     **kwargs,
                 )
-                for _ in range(num_encoder_layers)
+                for i in range(num_encoder_layers)
             ]
         )
+        # - Scale 3
+        window_size = max(self.__patch_embedding_scale_3.H // 4, 4)
+        shift_size = window_size // 2
         self.__encoders_scale_3 = _nn.ModuleList(
             [
-                _nn.TransformerEncoderLayer(
-                    d_model=patch_embedding_scale_3[1],
-                    dim_feedforward=int(patch_embedding_scale_3[1] * 2),
+                _swin_transformer_encoder.SwinTransformerBlock(
+                    dim=patch_embedding_scale_3[1],
+                    input_resolution=self.__patch_embedding_scale_3.resolution,
+                    window_size=window_size,
+                    shift_size=shift_size if i % 2 != 0 else 0,
                     **kwargs,
                 )
-                for _ in range(num_encoder_layers)
+                for i in range(num_encoder_layers)
             ]
         )
+
         # - Patch Fusion Layers
         patch_fusion_layers = num_encoder_layers - 1
         #   - Scale 1
