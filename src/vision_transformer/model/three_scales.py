@@ -61,9 +61,9 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         # - Transformers Encoder Layers
         kwargs = {
             'num_heads': 16,
-            'drop': 0.1,
-            'attn_drop': 0.1,
-            'drop_path': 0.1,
+            'drop': 0.25,
+            'attn_drop': 0.25,
+            'drop_path': 0.25,
         }
         #  - Scale 1
         window_size = max(self.__patch_embedding_scale_1.H // 4, 4)
