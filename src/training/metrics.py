@@ -51,7 +51,8 @@ class SegmentationMetrics:
         dice_score = self.__dice_score
         mean_intersection_over_union = self.__mean_intersection_over_union
 
-        preds = _torch.sigmoid(preds) > 0.5
+        preds = (_torch.sigmoid(preds) > 0.5).int()
+        target = target.int()
 
         self.__binary_cross_entropy_loss += binary_cross_entropy_loss
         self.__dice_score_metric += dice_score(preds, target).item()
