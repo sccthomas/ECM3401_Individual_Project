@@ -67,11 +67,11 @@ class SegmentationMetrics:
         hausdorff_distance_metric = self.__hausdorff_distance_metric
         mean_intersection_over_union_metric = self.__mean_intersection_over_union_metric
 
-        preds = (_torch.sigmoid(preds) > 0.5).detach().to(device)
-        target = target.detach().to(device)
+        preds = (_torch.sigmoid(preds) > 0.5).detach().to(device).int()
+        target = target.detach().to(device).int()
         dice_score_metric += dice_score(preds, target).item()
         generalized_dice_score_metric += generalized_dice_score(preds, target).item()
-        hausdorff_distance_metric += hausdorff_distance(preds.int(), target.int()).item()
+        hausdorff_distance_metric += hausdorff_distance(preds, target).item()
         mean_intersection_over_union_metric += mean_intersection_over_union(preds, target).item()
 
         self.__binary_cross_entropy_loss += binary_cross_entropy_loss
