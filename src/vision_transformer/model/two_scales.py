@@ -50,25 +50,13 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         # Encoder Stage
         # - Transformers Encoder Layers
-        kwargs = {
-            'num_heads': 16,
-            'drop': 0.25,
-            'attn_drop': 0.25,
-            'drop_path': 0.25,
-        }
         #  - Scale 1
-        self.__encoders_scale_1 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_1.H,
+        self.__encoders_scale_1 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_1[1],
-            input_resolution=self.__patch_embedding_scale_1.resolution,
-            kwargs=kwargs,
         )
         #  - Scale 2
-        self.__encoders_scale_2 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_2.H,
+        self.__encoders_scale_2 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_2[1],
-            input_resolution=self.__patch_embedding_scale_2.resolution,
-            kwargs=kwargs,
         )
 
         # - Patch Fusion Layers
@@ -139,12 +127,12 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 patch_fusions_scale_2_to_1,
         ):
             # - Patch Fusion Layer
-            x1 = patch_fusion_scale_2_to_1(x2, x1)
-            x2 = patch_fusion_scale_1_to_2(x1, x2)
+            x1_fused = patch_fusion_scale_2_to_1(x2, x1)
+            x2_fused = patch_fusion_scale_1_to_2(x1, x2)
 
             # - Transformer Encoder Layer
-            x1 = encoder_scale_1(x1)
-            x2 = encoder_scale_2(x2)
+            x1 = encoder_scale_1(x1_fused)
+            x2 = encoder_scale_2(x2_fused)
 
         return {'x1': x1, 'x2': x2}
 

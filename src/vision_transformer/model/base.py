@@ -98,24 +98,18 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         return x1
 
-    def _create_swin_encoder_layers_for_scale_X(
-            self, *, H: int, embed_dim: int, input_resolution: _t.Tuple[int, int], kwargs: _t.Dict[str, _t.Any]
-    ) -> '_nn.ModuleList[_swin_transformer_encoder.SwinTransformerBlock]':
+    def _create_encoder_layers_for_scale_X(
+            self, embed_dim: int,
+    ) -> '_nn.ModuleList[_nn.TransformerEncoderLayer]':
         """
         Create Swin Transformer encoder layers for scale X.
 
-        :param H:  Height of the input tensor after patch embedding.
         :param embed_dim: Patch embedding dimension.
-        :param input_resolution: The resolution of the input tensor.
-        :param kwargs: Additional keyword arguments.
-        :return: Module list of Swin Transformer encoder layers.
+        :return: Module list of Transformer encoder layers.
         """
         num_encoder_layers = self.__num_encoder_layers
 
-        window_size = max(H // 4, 4)
-        shift_size = window_size // 2
-
-        kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
+        kwargs = {'nhead': 16, 'dropout': 0.25, 'activation': _f.gelu}
         encoders_scale_X = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
@@ -124,13 +118,41 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
                     **kwargs,
                 )
                 for _ in range(num_encoder_layers)
-                # _swin_transformer_encoder.SwinTransformerBlock(
-                #     dim=embed_dim,
-                #     input_resolution=input_resolution,
-                #     window_size=window_size,
-                #     shift_size=0 if (i % 2 == 0) else shift_size,
-                #     **kwargs,
-                # )
+            ]
+        )
+
+        return encoders_scale_X
+
+    def _create_swin_encoder_layers_for_scale_X(
+            self, *, H: int, embed_dim: int, input_resolution: _t.Tuple[int, int]
+    ) -> '_nn.ModuleList[_swin_transformer_encoder.SwinTransformerBlock]':
+        """
+        Create Swin Transformer encoder layers for scale X.
+
+        :param H:  Height of the input tensor after patch embedding.
+        :param embed_dim: Patch embedding dimension.
+        :param input_resolution: The resolution of the input tensor.
+        :return: Module list of Swin Transformer encoder layers.
+        """
+        num_encoder_layers = self.__num_encoder_layers
+
+        window_size = max(H // 4, 4)
+        shift_size = window_size // 2
+        kwargs = {
+            'num_heads': 16,
+            'drop': 0.25,
+            'attn_drop': 0.25,
+            'drop_path': 0.25,
+        }
+        encoders_scale_X = _nn.ModuleList(
+            [
+                _swin_transformer_encoder.SwinTransformerBlock(
+                    dim=embed_dim,
+                    input_resolution=input_resolution,
+                    window_size=window_size,
+                    shift_size=0 if (i % 2 == 0) else shift_size,
+                    **kwargs,
+                )
                 for i in range(num_encoder_layers)
             ]
         )

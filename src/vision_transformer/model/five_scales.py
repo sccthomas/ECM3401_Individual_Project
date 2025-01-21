@@ -71,44 +71,25 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         # Encoder Stage
         # - Transformers Encoder Layers
-        kwargs = {
-            'num_heads': 16,
-            'drop': 0.25,
-            'attn_drop': 0.25,
-            'drop_path': 0.25,
-        }
-        #  - Scale 1
-        self.__encoders_scale_1 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_1.H,
+        #   - Scale 1
+        self.__encoders_scale_1 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_1[1],
-            input_resolution=self.__patch_embedding_scale_1.resolution,
-            kwargs=kwargs,
         )
-        #  - Scale 2
-        self.__encoders_scale_2 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_2.H,
+        #   - Scale 2
+        self.__encoders_scale_2 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_2[1],
-            input_resolution=self.__patch_embedding_scale_2.resolution,
-            kwargs=kwargs,
         )
-        # - Scale 3
-        self.__encoders_scale_3 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_3.H,
+        #   - Scale 3
+        self.__encoders_scale_3 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_3[1],
-            input_resolution=self.__patch_embedding_scale_3.resolution,
-            kwargs=kwargs,
         )
-        self.__encoders_scale_4 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_4.H,
+        #   - Scale 4
+        self.__encoders_scale_4 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_4[1],
-            input_resolution=self.__patch_embedding_scale_4.resolution,
-            kwargs=kwargs,
         )
-        self.__encoders_scale_5 = self._create_swin_encoder_layers_for_scale_X(
-            H=self.__patch_embedding_scale_5.H,
+        #   - Scale 5
+        self.__encoders_scale_5 = self._create_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_5[1],
-            input_resolution=self.__patch_embedding_scale_5.resolution,
-            kwargs=kwargs,
         )
 
         # - Patch Fusion Layers
@@ -361,37 +342,37 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         ):
             # - Patch Fusion Layer
             #   - Scale 1
-            x1 = patch_fusion_scale_2_to_1(x2, x1)
-            x1 = patch_fusion_scale_3_to_1(x3, x1)
-            x1 = patch_fusion_scale_4_to_1(x4, x1)
-            x1 = patch_fusion_scale_5_to_1(x5, x1)
+            x1_fused = patch_fusion_scale_2_to_1(x2, x1)
+            x1_fused = patch_fusion_scale_3_to_1(x3, x1_fused)
+            x1_fused = patch_fusion_scale_4_to_1(x4, x1_fused)
+            x1_fused = patch_fusion_scale_5_to_1(x5, x1_fused)
             #   - Scale 2
-            x2 = patch_fusion_scale_1_to_2(x1, x2)
-            x2 = patch_fusion_scale_3_to_2(x3, x2)
-            x2 = patch_fusion_scale_4_to_2(x4, x2)
-            x2 = patch_fusion_scale_5_to_2(x5, x2)
+            x2_fused = patch_fusion_scale_1_to_2(x1, x2)
+            x2_fused = patch_fusion_scale_3_to_2(x3, x2_fused)
+            x2_fused = patch_fusion_scale_4_to_2(x4, x2_fused)
+            x2_fused = patch_fusion_scale_5_to_2(x5, x2_fused)
             #   - Scale 3
-            x3 = patch_fusion_scale_1_to_3(x1, x3)
-            x3 = patch_fusion_scale_2_to_3(x2, x3)
-            x3 = patch_fusion_scale_4_to_3(x4, x3)
-            x3 = patch_fusion_scale_5_to_3(x5, x3)
+            x3_fused = patch_fusion_scale_1_to_3(x1, x3)
+            x3_fused = patch_fusion_scale_2_to_3(x2, x3_fused)
+            x3_fused = patch_fusion_scale_4_to_3(x4, x3_fused)
+            x3_fused = patch_fusion_scale_5_to_3(x5, x3_fused)
             #   - Scale 4
-            x4 = patch_fusion_scale_1_to_4(x1, x4)
-            x4 = patch_fusion_scale_2_to_4(x2, x4)
-            x4 = patch_fusion_scale_3_to_4(x3, x4)
-            x4 = patch_fusion_scale_5_to_4(x5, x4)
+            x4_fused = patch_fusion_scale_1_to_4(x1, x4)
+            x4_fused = patch_fusion_scale_2_to_4(x2, x4_fused)
+            x4_fused = patch_fusion_scale_3_to_4(x3, x4_fused)
+            x4_fused = patch_fusion_scale_5_to_4(x5, x4_fused)
             #   - Scale 5
-            x5 = patch_fusion_scale_1_to_5(x1, x5)
-            x5 = patch_fusion_scale_2_to_5(x2, x5)
-            x5 = patch_fusion_scale_3_to_5(x3, x5)
-            x5 = patch_fusion_scale_4_to_5(x4, x5)
+            x5_fused = patch_fusion_scale_1_to_5(x1, x5)
+            x5_fused = patch_fusion_scale_2_to_5(x2, x5_fused)
+            x5_fused = patch_fusion_scale_3_to_5(x3, x5_fused)
+            x5_fused = patch_fusion_scale_4_to_5(x4, x5_fused)
 
             # - Transformer Encoder Layer
-            x1 = encoder_scale_1(x1)
-            x2 = encoder_scale_2(x2)
-            x3 = encoder_scale_3(x3)
-            x4 = encoder_scale_4(x4)
-            x5 = encoder_scale_5(x5)
+            x1 = encoder_scale_1(x1_fused)
+            x2 = encoder_scale_2(x2_fused)
+            x3 = encoder_scale_3(x3_fused)
+            x4 = encoder_scale_4(x4_fused)
+            x5 = encoder_scale_5(x5_fused)
 
         return {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
 
