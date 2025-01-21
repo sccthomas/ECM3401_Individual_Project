@@ -16,8 +16,6 @@ class TestSegmentationMetrics(unittest.TestCase):
         expected_msg = '--------------------------------------------\n'
         expected_msg += f'Average Binary Cross Entropy Loss:  \n'
         expected_msg += f'Average Dice Score:  \n'
-        expected_msg += f'Average Generalized Dice Score:  \n'
-        expected_msg += f'Average Hausdorff Distance:  \n'
         expected_msg += f'Average Mean IoU:  \n'
         expected_msg += '--------------------------------------------\n'
         actual_msg = segmentation_metrics.__str__()
@@ -27,8 +25,6 @@ class TestSegmentationMetrics(unittest.TestCase):
         expected_msg = '--------------------------------------------\n'
         expected_msg += f'Average Binary Cross Entropy Loss: 0 \n'
         expected_msg += f'Average Dice Score: 0 \n'
-        expected_msg += f'Average Generalized Dice Score: 0 \n'
-        expected_msg += f'Average Hausdorff Distance: 0 \n'
         expected_msg += f'Average Mean IoU: 0 \n'
         expected_msg += '--------------------------------------------\n'
         actual_msg = segmentation_metrics.__str__()
