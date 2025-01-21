@@ -3,6 +3,7 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
+import torch.nn.functional as _f
 
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
@@ -113,15 +114,23 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         window_size = max(H // 4, 4)
         shift_size = window_size // 2
+
+        kwargs = {'nhead': 16, 'dropout': 0.1, 'activation': _f.gelu}
         encoders_scale_X = _nn.ModuleList(
             [
-                _swin_transformer_encoder.SwinTransformerBlock(
-                    dim=embed_dim,
-                    input_resolution=input_resolution,
-                    window_size=window_size,
-                    shift_size=0 if (i % 2 == 0) else shift_size,
+                _nn.TransformerEncoderLayer(
+                    d_model=embed_dim,
+                    dim_feedforward=int(embed_dim * 2),
                     **kwargs,
                 )
+                for _ in range(num_encoder_layers)
+                # _swin_transformer_encoder.SwinTransformerBlock(
+                #     dim=embed_dim,
+                #     input_resolution=input_resolution,
+                #     window_size=window_size,
+                #     shift_size=0 if (i % 2 == 0) else shift_size,
+                #     **kwargs,
+                # )
                 for i in range(num_encoder_layers)
             ]
         )
