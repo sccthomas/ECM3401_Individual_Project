@@ -43,7 +43,7 @@ def train_model(
         for images, masks in _tqdm.tqdm(train_loader, desc=f"Training"):
             images, masks = images.to(device), masks.to(device)
             # - Mixed Precision Forward Pass
-            with torch.amp.autocast('cuda'):
+            with torch.amp.autocast(device.type):
                 outputs = model(images)
                 loss = criterion(outputs, masks)
             # - Update Metrics
@@ -64,7 +64,7 @@ def train_model(
             for images, masks in _tqdm.tqdm(val_loader, desc=f"Validation"):
                 images, masks = images.to(device), masks.to(device)
                 # - Mixed Precision Forward Pass
-                with torch.amp.autocast('cuda'):
+                with torch.amp.autocast(device.type):
                     outputs = model(images)
                     loss = criterion(outputs, masks)
                 # - Update Metrics
