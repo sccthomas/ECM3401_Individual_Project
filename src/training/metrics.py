@@ -1,3 +1,4 @@
+import torch
 import torch as _torch
 import torchmetrics.segmentation as _metrics
 
@@ -7,13 +8,14 @@ class SegmentationMetrics:
     Class to handle all metric calculation during model training.
     """
 
-    def __init__(self, len_dataset: int, device) -> None:
+    def __init__(self, len_dataset: int) -> None:
         """
 
         :param len_dataset: The length of the training or validation dataset.
         """
         # Metric Calculators
         num_classes = 1
+        device = torch.device('cpu')
         self.__dice_score = _metrics.DiceScore(
             average='micro',
             num_classes=num_classes,
@@ -26,6 +28,7 @@ class SegmentationMetrics:
         self.__mean_intersection_over_union = _metrics.MeanIoU(
             num_classes=num_classes,
         ).to(device)
+        self.__device = device
         # Metric Values
         self.__len_dataset = len_dataset
         self.__binary_cross_entropy_loss = 0
@@ -52,6 +55,7 @@ class SegmentationMetrics:
         :param target: The target for each prediction.
         :param binary_cross_entropy_loss: Current Binary Cross Entropy Loss.
         """
+        device = self.__device
         # Metric Calculators
         dice_score = self.__dice_score
         generalized_dice_score = self.__generalized_dice_score
@@ -63,7 +67,8 @@ class SegmentationMetrics:
         hausdorff_distance_metric = self.__hausdorff_distance_metric
         mean_intersection_over_union_metric = self.__mean_intersection_over_union_metric
 
-        preds = _torch.sigmoid(preds) > 0.5
+        preds = (_torch.sigmoid(preds) > 0.5).detach().to(device)
+        target = target.detach().to(device)
         dice_score_metric += dice_score(preds, target).item()
         generalized_dice_score_metric += generalized_dice_score(preds, target).item()
         hausdorff_distance_metric += hausdorff_distance(preds.int(), target.int()).item()
