@@ -115,9 +115,9 @@ class ContrastivePreTraining(_nn.Module):
 
     def __compute_info_nce_loss(self, embeddings1: _torch.Tensor, embeddings2: _torch.Tensor):
         """
-        Compute the InfoNCE loss for a pair of embeddings.
+        Compute the InfoNCE loss for a pair of embeddings in a memory-efficient manner.
 
-        :param embeddings1: Patch embeddings for scale 1 with on type of augmentation.
+        :param embeddings1: Patch embeddings for scale 1 with one type of augmentation.
         :param embeddings2: Patch embeddings for scale 2 with another type of augmentation.
         :return: The InfoNCE loss.
         """
@@ -127,31 +127,34 @@ class ContrastivePreTraining(_nn.Module):
         embeddings1 = _F.normalize(embeddings1, dim=1)
         embeddings2 = _F.normalize(embeddings2, dim=1)
 
-        # Concatenate the embeddings to form the positive pair (2N, D)
+        # Compute positive similarities (dot product of embeddings1 and embeddings2)
+        positive_similarities = (embeddings1 * embeddings2).sum(dim=1) / temperature
+
+        # Concatenate embeddings for calculating negative similarities
         embeddings = _torch.cat([embeddings1, embeddings2], dim=0)  # Shape: (2N, D)
-
-        # Compute the similarity matrix (2N, 2N)
-        similarity_matrix = _torch.mm(embeddings, embeddings.t())  # (2N, 2N)
-
-        # Create labels for positive pairs (i.e., first N are positive to second N)
         N = embeddings1.size(0)
-        labels = _torch.arange(N, dtype=_torch.long, device=embeddings.device)
-        labels = _torch.cat([labels, labels], dim=0)  # Shape: (2N,)
+
+        # Compute all similarities with efficient matrix multiplication
+        logits = _torch.mm(embeddings, embeddings.t()) / temperature  # Shape: (2N, 2N)
 
         # Mask out self-similarities to avoid trivial positives
         mask = _torch.eye(2 * N, device=embeddings.device).bool()
-        similarity_matrix = similarity_matrix.masked_fill(mask, float('-inf'))
+        logits = logits.masked_fill(mask, float('-inf'))
 
-        # Apply temperature scaling to similarity matrix
-        similarity_matrix /= temperature
+        # Extract positive logits
+        positive_logits = _torch.cat([positive_similarities, positive_similarities], dim=0)  # Shape: (2N,)
 
-        # Clip similarity values to prevent overflow/underflow
-        similarity_matrix = _torch.clamp(similarity_matrix, min=-10.0, max=10.0)
+        # Compute labels
+        labels = _torch.arange(N, dtype=_torch.long, device=embeddings.device)
+        labels = _torch.cat([labels, labels], dim=0)  # Shape: (2N,)
 
-        # Subtract the max value from each row for numerically stable softmax
-        similarity_matrix = similarity_matrix - similarity_matrix.max(dim=1, keepdim=True)[0]
+        # Combine positive logits with all logits
+        logits = logits - logits.max(dim=1, keepdim=True)[0]  # Stability adjustment
+        exp_logits = _torch.exp(logits)
+        sum_exp_logits = exp_logits.sum(dim=1)
 
-        # Compute the cross-entropy loss (InfoNCE) using the stable similarity matrix
-        loss = _F.cross_entropy(similarity_matrix, labels)
+        # Compute loss
+        loss = -positive_logits + _torch.log(sum_exp_logits)
+        loss = loss.mean()
 
         return loss
