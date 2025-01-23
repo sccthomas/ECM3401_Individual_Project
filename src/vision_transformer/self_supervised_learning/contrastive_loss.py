@@ -49,6 +49,15 @@ class ContrastivePreTraining(_nn.Module):
         ]
         self.__temperature = temperature
 
+    @property
+    def model(self) -> _base.SemanticSegmentationVisionTransformerBase:
+        """
+        Get the model being trained.
+
+        :return: The model.
+        """
+        return self.__model
+
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
         Forward pass of the contrastive pre-training.
