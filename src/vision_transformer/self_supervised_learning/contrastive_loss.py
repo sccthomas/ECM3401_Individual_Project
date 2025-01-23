@@ -83,21 +83,21 @@ class ContrastivePreTraining(_nn.Module):
         x1 = model.apply_patch_embedding_stage(x1)  # Output -> dict[str, _torch.Tensor]
         x2 = model.apply_patch_embedding_stage(x2)  # Output -> dict[str, _torch.Tensor]
         # - Encode patch embeddings
-        y1 = model.apply_encoder_stage(**x1)  # Output -> dict[str, _torch.Tensor]
-        y2 = model.apply_encoder_stage(**x2)  # Output -> dict[str, _torch.Tensor]
+        x1 = model.apply_encoder_stage(**x1)  # Output -> dict[str, _torch.Tensor]
+        x2 = model.apply_encoder_stage(**x2)  # Output -> dict[str, _torch.Tensor]
 
         # Apply projection head to each patch embedding scale in the encoder output
-        z1 = [
-            projection_head(y1_)
-            for y1_, projection_head in zip(y1.values(), projection_heads)
+        x1 = [
+            projection_head(x1_)
+            for x1_, projection_head in zip(x1.values(), projection_heads)
         ]
-        z2 = [
-            projection_head(y2_)
-            for y2_, projection_head in zip(y2.values(), projection_heads)
+        x2 = [
+            projection_head(x2_)
+            for x2_, projection_head in zip(x2.values(), projection_heads)
         ]
         # - Reshape the projected embeddings to [B*C, E] from [B, C, E]
-        z1 = [z1_.reshape(-1, z1_.shape[-1]) for z1_ in z1]
-        z2 = [z2_.reshape(-1, z2_.shape[-1]) for z2_ in z2]
+        x1 = [x1_.reshape(-1, x1_.shape[-1]) for x1_ in x1]
+        x2 = [x2_.reshape(-1, x2_.shape[-1]) for x2_ in x2]
 
         # Compute the contrastive loss for each projection head
         # - Combine the contrastive loss from each projection head into a single loss tensor
@@ -105,8 +105,8 @@ class ContrastivePreTraining(_nn.Module):
         loss = _torch.mean(
             _torch.stack(
                 [
-                    self.__compute_info_nce_loss(z1_, z2_)
-                    for z1_, z2_ in zip(z1, z2)
+                    self.__compute_info_nce_loss(x1_, x2_)
+                    for x1_, x2_ in zip(x1, x2)
                 ]
             )
         )
