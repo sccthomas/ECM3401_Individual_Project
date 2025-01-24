@@ -35,9 +35,9 @@ class PatchFusion(_nn.Module):
         feature_projector = self.__feature_projector
         norm = self.__norm
 
-        _, P, _ = target_tensor.shape
-        tensor = feature_projector(tensor).permute(0, 2, 1)
-        tensor = _F.interpolate(tensor, size=(P,), mode="nearest").permute(0, 2, 1)
+        tensor = feature_projector(tensor)
+        P = target_tensor.size(1)
+        tensor = _F.interpolate(tensor.transpose(1, 2), size=P, mode="linear", align_corners=False).transpose(1, 2)
 
         tensor = tensor + target_tensor
 
