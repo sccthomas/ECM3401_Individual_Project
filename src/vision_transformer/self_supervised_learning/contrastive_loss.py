@@ -7,9 +7,10 @@ import torch.nn.functional as _F
 import torchvision.transforms as _T
 
 import src.vision_transformer.model.base as _base
+import src.vision_transformer.self_supervised_learning.base as _ssl_base
 
 
-class ContrastivePreTraining(_nn.Module):
+class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
     """
     Contrastive pre-training for semantic segmentation vision transformers.
     """
@@ -29,8 +30,7 @@ class ContrastivePreTraining(_nn.Module):
         :param projection_dim: Dimension of the projection space.
         :param temperature: Temperature parameter for scaling the logits.
         """
-        super(ContrastivePreTraining, self).__init__()
-        self.__model = model
+        super(ContrastivePreTraining, self).__init__(model=model)
         self.__projection_heads = _nn.ModuleList(
             [
                 _nn.Sequential(
@@ -49,15 +49,6 @@ class ContrastivePreTraining(_nn.Module):
         ]
         self.__temperature = temperature
 
-    @property
-    def model(self) -> _base.SemanticSegmentationVisionTransformerBase:
-        """
-        Get the model being trained.
-
-        :return: The model.
-        """
-        return self.__model
-
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
         Forward pass of the contrastive pre-training.
@@ -65,7 +56,7 @@ class ContrastivePreTraining(_nn.Module):
         :param x: The input tensor.
         :return: The contrastive loss.
         """
-        model = self.__model
+        model = self.model
         projection_heads = self.__projection_heads
         transformations = self.__transformations
         temperature = self.__temperature
@@ -105,7 +96,7 @@ class ContrastivePreTraining(_nn.Module):
         loss = _torch.mean(
             _torch.stack(
                 [
-                    self.__compute_info_nce_loss(x1_, x2_)
+                    self.__loss_fn(x1_, x2_)
                     for x1_, x2_ in zip(x1, x2)
                 ]
             )
@@ -113,7 +104,7 @@ class ContrastivePreTraining(_nn.Module):
 
         return loss
 
-    def __compute_info_nce_loss(self, embeddings1: _torch.Tensor, embeddings2: _torch.Tensor):
+    def __loss_fn(self, embeddings1: _torch.Tensor, embeddings2: _torch.Tensor):
         """
         Compute the InfoNCE loss for a pair of embeddings in a memory-efficient manner.
 
