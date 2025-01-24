@@ -1,5 +1,6 @@
 import torch as _torch
 import torch.nn as _nn
+import torch.nn.functional as _F
 
 
 class PatchFusion(_nn.Module):
@@ -19,9 +20,6 @@ class PatchFusion(_nn.Module):
         super(PatchFusion, self).__init__()
 
         self.__feature_projector = _nn.Linear(in_embed, out_embed)
-        self.__sequence_expander = _nn.ConvTranspose1d(
-            in_channels=in_patches, out_channels=out_patches, kernel_size=1
-        )
         self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
         self.__initialize_weights()
@@ -35,11 +33,11 @@ class PatchFusion(_nn.Module):
         :return: Fused tensor.
         """
         feature_projector = self.__feature_projector
-        sequence_expander = self.__sequence_expander
         norm = self.__norm
 
-        tensor = feature_projector(tensor)
-        tensor = sequence_expander(tensor)
+        _, P, _ = target_tensor.shape
+        tensor = feature_projector(tensor).permute(0, 2, 1)
+        tensor = _F.interpolate(tensor, size=(P,), mode="nearest").permute(0, 2, 1)
 
         tensor = tensor + target_tensor
 
@@ -52,10 +50,6 @@ class PatchFusion(_nn.Module):
         Initialize the weights of the patch fusion layer.
         """
         feature_projector = self.__feature_projector
-        sequence_expander = self.__sequence_expander
 
         _nn.init.xavier_uniform_(feature_projector.weight)
         _nn.init.constant_(feature_projector.bias, 0)
-
-        _nn.init.xavier_uniform_(sequence_expander.weight)
-        _nn.init.constant_(sequence_expander.bias, 0)
