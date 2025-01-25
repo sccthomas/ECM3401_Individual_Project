@@ -1,6 +1,5 @@
 import torch as _torch
 import torch.nn as _nn
-import torch.nn.functional as _F
 
 
 class PatchFusion(_nn.Module):
@@ -20,9 +19,10 @@ class PatchFusion(_nn.Module):
         super(PatchFusion, self).__init__()
 
         self.__feature_projector = _nn.Linear(in_embed, out_embed)
-        self.__post_interpolation_norm = _nn.LayerNorm(out_embed, eps=1e-6)
-        self.__fusion_layer = _nn.Linear(out_embed * 2, out_embed)
-        self.__post_fusion_norm = _nn.LayerNorm(out_embed, eps=1e-6)
+        self.__sequence_expander = _nn.ConvTranspose1d(
+            in_channels=in_patches, out_channels=out_patches, kernel_size=1
+        )
+        self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
         self.__initialize_weights()
 
@@ -35,38 +35,27 @@ class PatchFusion(_nn.Module):
         :return: Fused tensor.
         """
         feature_projector = self.__feature_projector
-        fusion_layer = self.__fusion_layer
-        post_interpolation_norm = self.__post_interpolation_norm
-        post_fusion_norm = self.__post_fusion_norm
+        sequence_expander = self.__sequence_expander
+        norm = self.__norm
 
-        # Increase the number of feature channels to the number of target channels
         tensor = feature_projector(tensor)
+        tensor = sequence_expander(tensor)
 
-        # Increase the number of patch embeddings
-        P = int(target_tensor.size(1) ** 0.5)
-        B, N, C = tensor.shape
-        H = W = int(N ** 0.5)
-        tensor = tensor.reshape(B, C, H, W)
+        tensor = tensor + target_tensor
 
-        tensor = _F.interpolate(tensor, size=(P, P), mode="bilinear", align_corners=False)
-        tensor = tensor.reshape(B, P * P, C)
-        tensor = post_interpolation_norm(tensor).float()
+        tensor = norm(tensor).float()
 
-        # Fusion (Concatenation + Learnable Fusion)
-        fused = _torch.cat([tensor, target_tensor], dim=-1)  # Concatenate embeddings
-        fused = fusion_layer(fused)  # Learnable fusion layer
-        fused = post_fusion_norm(fused).float()
-
-        return fused
+        return tensor
 
     def __initialize_weights(self) -> None:
         """
         Initialize the weights of the patch fusion layer.
         """
         feature_projector = self.__feature_projector
-        fusion_layer = self.__fusion_layer
+        sequence_expander = self.__sequence_expander
 
         _nn.init.xavier_uniform_(feature_projector.weight)
         _nn.init.constant_(feature_projector.bias, 0)
-        _nn.init.xavier_uniform_(fusion_layer.weight)
-        _nn.init.constant_(fusion_layer.bias, 0)
+
+        _nn.init.xavier_uniform_(sequence_expander.weight)
+        _nn.init.constant_(sequence_expander.bias, 0)
