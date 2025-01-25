@@ -46,7 +46,7 @@ class PatchFusion(_nn.Module):
         fused = _torch.cat([tensor, target_tensor], dim=-1)  # Concatenate embeddings
         fused = fusion_layer(fused)  # Learnable fusion layer
 
-        fused = fused + target_tensor  # Residual connection
+        # fused = fused + target_tensor  # Residual connection
 
         return fused
 
