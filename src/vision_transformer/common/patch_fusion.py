@@ -1,5 +1,6 @@
 import torch as _torch
 import torch.nn as _nn
+import torch.nn.functional as _F
 
 
 class PatchFusion(_nn.Module):
@@ -19,10 +20,8 @@ class PatchFusion(_nn.Module):
         super(PatchFusion, self).__init__()
 
         self.__feature_projector = _nn.Linear(in_embed, out_embed)
-        self.__sequence_expander = _nn.ConvTranspose1d(
-            in_channels=in_patches, out_channels=out_patches, kernel_size=1
-        )
         self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
+        self.__fusion_layer = _nn.Linear(out_embed * 2, out_embed)
 
         self.__initialize_weights()
 
@@ -35,27 +34,30 @@ class PatchFusion(_nn.Module):
         :return: Fused tensor.
         """
         feature_projector = self.__feature_projector
-        sequence_expander = self.__sequence_expander
+        fusion_layer = self.__fusion_layer
         norm = self.__norm
 
-        tensor = feature_projector(tensor)
-        tensor = sequence_expander(tensor)
-
-        tensor = tensor + target_tensor
-
+        P = target_tensor.size(1)
+        tensor = feature_projector(tensor).permute(0, 2, 1)
+        tensor = _F.interpolate(tensor, size=(P,), mode="linear", align_corners=False).permute(0, 2, 1)
         tensor = norm(tensor).float()
 
-        return tensor
+        # Fusion (Concatenation + Learnable Fusion)
+        fused = _torch.cat([tensor, target_tensor], dim=-1)  # Concatenate embeddings
+        fused = fusion_layer(fused)  # Learnable fusion layer
+
+        fused = fused + target_tensor  # Residual connection
+
+        return fused
 
     def __initialize_weights(self) -> None:
         """
         Initialize the weights of the patch fusion layer.
         """
         feature_projector = self.__feature_projector
-        sequence_expander = self.__sequence_expander
+        fusion_layer = self.__fusion_layer
 
         _nn.init.xavier_uniform_(feature_projector.weight)
         _nn.init.constant_(feature_projector.bias, 0)
-
-        _nn.init.xavier_uniform_(sequence_expander.weight)
-        _nn.init.constant_(sequence_expander.bias, 0)
+        _nn.init.xavier_uniform_(fusion_layer.weight)
+        _nn.init.constant_(fusion_layer.bias, 0)
