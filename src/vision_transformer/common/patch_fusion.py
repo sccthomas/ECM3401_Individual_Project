@@ -39,9 +39,17 @@ class PatchFusion(_nn.Module):
         post_interpolation_norm = self.__post_interpolation_norm
         post_fusion_norm = self.__post_fusion_norm
 
-        P = target_tensor.size(1)
-        tensor = feature_projector(tensor).permute(0, 2, 1)
-        tensor = _F.interpolate(tensor, size=(P,), mode="nearest").permute(0, 2, 1)
+        # Increase the number of feature channels to the number of target channels
+        tensor = feature_projector(tensor)
+
+        # Increase the number of patch embeddings
+        P = int(target_tensor.size(1) ** 0.5)
+        B, N, C = tensor.shape
+        H = W = int(N ** 0.5)
+        tensor = tensor.reshape(B, C, H, W)
+
+        tensor = _F.interpolate(tensor, size=(P, P), mode="bilinear", align_corners=False)
+        tensor = tensor.reshape(B, P * P, C)
         tensor = post_interpolation_norm(tensor).float()
 
         # Fusion (Concatenation + Learnable Fusion)
