@@ -21,7 +21,7 @@ class TestContrastivePreTraining(unittest.TestCase):
 
         contrastive_model = ContrastivePreTraining(
             model=model,
-            encoder_dims=[(256, 1024), (1024, 768)],
+            encoder_dims=[1024, 768],
             projection_dim=128,
         )
 

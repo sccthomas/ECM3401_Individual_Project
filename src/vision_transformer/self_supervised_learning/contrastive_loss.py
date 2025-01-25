@@ -3,7 +3,6 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
-import torch.nn.functional as _F
 import torchvision.transforms as _T
 
 import src.vision_transformer.model.base as _base
@@ -18,9 +17,9 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
     def __init__(
             self,
             model: _base.SemanticSegmentationVisionTransformerBase,
-            encoder_dims: _t.List[_t.Tuple[int, int]],
+            encoder_dims: _t.List[int],
             projection_dim: int,
-            temperature: float = 1
+            temperature: float = 0.5
     ) -> None:
         """
         Initialize the contrastive pre-training mixin.
@@ -30,17 +29,20 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         :param projection_dim: Dimension of the projection space.
         :param temperature: Temperature parameter for scaling the logits.
         """
+        assert temperature > 0, "Temperature must be positive and non-zero."
+
         super(ContrastivePreTraining, self).__init__(model=model)
         self.__projection_heads = _nn.ModuleList(
             [
                 _nn.Sequential(
-                    _nn.Linear(encoder_dim, encoder_dim),
-                    _nn.BatchNorm1d(num_patches),
+                    _nn.Linear(encoder_dim, hidden_dim),
+                    _nn.LayerNorm(hidden_dim),
                     _nn.ReLU(),
-                    _nn.Linear(encoder_dim, projection_dim),
-                    _nn.BatchNorm1d(num_patches),
+                    _nn.Linear(hidden_dim, projection_dim),
+                    _nn.LayerNorm(projection_dim),
                 )
-                for num_patches, encoder_dim in encoder_dims
+                for encoder_dim in encoder_dims
+                if (hidden_dim := encoder_dim // 2) > projection_dim
             ]
         )
         self.__transformations = [
@@ -48,6 +50,9 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
         ]
         self.__temperature = temperature
+
+        # Initialize weights
+        self.__initialize_weights()
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -65,6 +70,9 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # - Select two random transformations
         t1 = _random.choice(transformations)
         t2 = _random.choice(transformations)
+        while t1 == t2:
+            t2 = _random.choice(transformations)
+
         # - Apply transformations
         x1 = t1(x)
         x2 = t2(x)
@@ -114,38 +122,24 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         """
         temperature = self.__temperature
 
-        # Normalize the embeddings
-        embeddings1 = _F.normalize(embeddings1, dim=1)
-        embeddings2 = _F.normalize(embeddings2, dim=1)
-
-        # Compute positive similarities (dot product of embeddings1 and embeddings2)
-        positive_similarities = (embeddings1 * embeddings2).sum(dim=1) / temperature
-
-        # Concatenate embeddings for calculating negative similarities
-        embeddings = _torch.cat([embeddings1, embeddings2], dim=0)  # Shape: (2N, D)
-        N = embeddings1.size(0)
-
-        # Compute all similarities with efficient matrix multiplication
-        logits = _torch.mm(embeddings, embeddings.t()) / temperature  # Shape: (2N, 2N)
-
-        # Mask out self-similarities to avoid trivial positives
-        mask = _torch.eye(2 * N, device=embeddings.device).bool()
-        logits = logits.masked_fill(mask, float('-inf'))
-
-        # Extract positive logits
-        positive_logits = _torch.cat([positive_similarities, positive_similarities], dim=0)  # Shape: (2N,)
-
-        # Compute labels
-        labels = _torch.arange(N, dtype=_torch.long, device=embeddings.device)
-        labels = _torch.cat([labels, labels], dim=0)  # Shape: (2N,)
-
-        # Combine positive logits with all logits
-        logits = logits - logits.max(dim=1, keepdim=True)[0]  # Stability adjustment
-        exp_logits = _torch.exp(logits)
-        sum_exp_logits = exp_logits.sum(dim=1)
-
-        # Compute loss
-        loss = -positive_logits + _torch.log(sum_exp_logits)
-        loss = loss.mean()
+        similarity = _torch.matmul(embeddings1, embeddings2.T) / temperature
+        similarity = similarity / (similarity.norm(dim=-1, keepdim=True) + 1e-8)
+        labels = _torch.arange(embeddings1.size(0)).to(embeddings1.device)
+        loss = _nn.CrossEntropyLoss()(similarity, labels)
 
         return loss
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the contrastive loss module.
+        """
+        projection_heads = self.__projection_heads
+
+        for projection_head in projection_heads:
+            for layer in projection_head.modules():
+                if isinstance(layer, _nn.Linear):
+                    _nn.init.kaiming_normal_(layer.weight)
+                    _nn.init.zeros_(layer.bias)
+                elif isinstance(layer, _nn.LayerNorm):
+                    _nn.init.ones_(layer.weight)
+                    _nn.init.zeros_(layer.bias)
