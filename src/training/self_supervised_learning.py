@@ -38,8 +38,8 @@ def train_model(
         print(f"\n Epoch {epoch + 1}/{num_epochs}")
         ssl_model.train()
         train_loss = 0
-        for images, masks in _tqdm.tqdm(train_loader, desc=f"Training"):
-            images, masks = images.to(device), masks.to(device)
+        for images, _ in _tqdm.tqdm(train_loader, desc=f"Training"):
+            images = images.to(device)
             # - Mixed Precision Forward Pass
             with torch.amp.autocast(device.type):
                 loss = ssl_model.forward_loss(images)
@@ -59,8 +59,8 @@ def train_model(
         ssl_model.eval()
         val_loss = 0
         with torch.no_grad():
-            for images, masks in _tqdm.tqdm(val_loader, desc=f"Validation"):
-                images, masks = images.to(device), masks.to(device)
+            for images, _ in _tqdm.tqdm(val_loader, desc=f"Validation"):
+                images = images.to(device)
                 # - Mixed Precision Forward Pass
                 with torch.amp.autocast(device.type):
                     loss = ssl_model.forward_loss(images)
@@ -75,6 +75,7 @@ def train_model(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
+            torch.save(ssl_model.state_dict(), f"best_model_ssl.pth")
             torch.save(ssl_model.model.state_dict(), f"best_model.pth")
         else:
             patience_counter += 1
@@ -82,4 +83,5 @@ def train_model(
                 print("Early stopping triggered")
                 break
         # - Save model checkpoint every epoch
+        torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
         torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")

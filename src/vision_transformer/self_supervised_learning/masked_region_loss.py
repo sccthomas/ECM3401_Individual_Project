@@ -3,6 +3,7 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
+import torchvision.transforms.v2 as _transforms
 
 import src.vision_transformer.model.base as _base
 import src.vision_transformer.self_supervised_learning.base as _ssl_base
@@ -33,6 +34,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
                 model.decoder.prediction_head.in_channels, 3, kernel_size=1, stride=1
             ),
             _nn.Sigmoid(),
+            _transforms.Normalize(mean=_MEAN, std=_STD),
         )
         # Initialize Weights
         self.__initialize_weights()
@@ -54,7 +56,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
         # Forward Pass
         # - Patch Embedding
-        kwargs = model.apply_patch_embedding_stage(x)
+        kwargs = model.apply_patch_embedding_stage(masked_image)
         # - Encoder Stage
         kwargs = model.apply_encoder_stage(**kwargs)
         # - Decoder Stage
@@ -62,7 +64,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         reconstructed = model.decoder.apply_transposed_convolutions(reconstructed)
         reconstructed = projection_head(reconstructed)
 
-        assert x.shape == reconstructed.shape, f"Expected {x.shape} but got {reconstructed.shape}"
+        assert reconstructed.shape == x.shape, f"Expected {x.shape} but got {reconstructed.shape}"
 
         return reconstructed, mask
 
@@ -144,3 +146,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
             if isinstance(layer, _nn.ConvTranspose2d):
                 _nn.init.kaiming_normal_(layer.weight)
                 _nn.init.zeros_(layer.bias)
+
+
+_MEAN = [0.4808, 0.4178, 0.5046]
+_STD = [0.2637, 0.2751, 0.2425]
