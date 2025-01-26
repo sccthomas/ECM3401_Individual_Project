@@ -1,62 +1,134 @@
+import random as _random
+import typing as _t
+
 import torch as _torch
+import torch.nn as _nn
 
 import src.vision_transformer.model.base as _base
 import src.vision_transformer.self_supervised_learning.base as _ssl_base
 
 
-# Could we get away with only using one learnable operation in patch fusion so that the number of patches dimension
-# is not statically defined?
-# Potentially we could move the F.Interpolate with nearest to be in the forward method and be entirely dynamic since we
-# both tensor shapes. Therefore, there is no need for the number of patches kwarg in the constructor.
-# 1. We can split the patch embeddings into the 75% and 25% split
-# 2. We can then encode the patch embeddings since there is no deependence on the number of patches
-# 3. Then add the patches back together.
-# 4. Then pass them into the decoder layer with the correct number of patches (total). 
-
 class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
+    """
+    Masked Region Loss for Self-Supervised Learning.
+    """
+
     def __init__(
             self,
             model: _base.SemanticSegmentationVisionTransformerBase,
-            mask_ratio=0.75,
+            max_patch_size: int,
+            mask_ratio=0.40,
     ) -> None:
-        super(MaskedRegionLoss, self).__init__(model=model)
+        """
 
+        :param model: The Vision Transformer Model to train.
+        :param max_patch_size: The maximum size of the patches to mask.
+        :param mask_ratio: The ratio of patches to mask.
+        """
+        super(MaskedRegionLoss, self).__init__(model=model)
+        self.__max_patch_size = max_patch_size
         self.__mask_ratio = mask_ratio
+        self.__projection_head = x = _nn.Sequential(
+            _nn.ConvTranspose2d(
+                model.decoder.prediction_head.in_channels, 3, kernel_size=1, stride=1
+            ),
+            _nn.Sigmoid(),
+        )
+        # Initialize Weights
+        self.__initialize_weights()
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+        """
+        Forward Pass for the Masked Region Loss.
+
+        :param x: The input tensor.
+        :return: The loss.
+        """
         model = self.model
+        projection_head = self.__projection_head
 
-        # - Mask image
-        masked_image = self.__mask_image(x)
+        # Mask Image
+        masked_image, mask = self.__mask_image(x)
 
-        # - Forward pass
-        predicted_mask = model(masked_image)
+        # Forward Pass
+        # - Patch Embedding
+        kwargs = model.apply_patch_embedding_stage(x)
+        # - Encoder Stage
+        kwargs = model.apply_encoder_stage(**kwargs)
+        # - Decoder Stage
+        reconstructed = model.apply_decoder_fusion(**kwargs)
+        reconstructed = model.decoder.apply_transposed_convolutions(reconstructed)
+        reconstructed = projection_head(reconstructed)
 
-        # - Calculate loss
-        loss = self.__loss_fn(reconstucted_image, x)
+        assert x.shape == reconstructed.shape, f"Expected {x.shape} but got {reconstructed.shape}"
+
+        # Calculate Loss
+        mask = 1 - mask
+        loss = self.__loss_fn(reconstructed, x, mask)
 
         return loss
 
-    def __mask_image(self, x: _torch.Tensor) -> _torch.Tensor:
+    def __mask_image(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+        """
+        Mask the input image.
+
+        :param x: The input image tensor.
+        :return: The masked image and the mask.
+        """
+        max_patch_size = self.__max_patch_size
         mask_ratio = self.__mask_ratio
 
-        # Compute the number of pixels to mask
-        _, H, W = x.shape
-        num_mask_pixels = int((mask_ratio / 100) * H * W)
+        B, C, H, W = x.shape
+        masked_tensor = x.clone()
 
-        # Generate a random mask
-        mask = _torch.rand(H, W) < (num_mask_pixels / (H * W))
+        # Calculate the number of patches along each dimension
+        num_patches_h = H // max_patch_size
+        num_patches_w = W // max_patch_size
+        total_patches = num_patches_h * num_patches_w
 
-        # Apply the mask to the image (broadcast across channels)
-        masked_image = x.clone()
-        masked_image[:, mask] = 0  # Replace masked pixels with 0 (black)
+        # Determine how many patches to mask
+        num_patches_to_mask = int(total_patches * mask_ratio)
 
-        return masked_image
+        # Create a binary mask initialized to all ones
+        mask = _torch.ones((1, 1, H, W), device=x.device)
 
-    def __loss_fn(self, reconstructed: _torch.Tensor, original: _torch.Tensor) -> _torch.Tensor:
+        # Randomly select patches to mask
+        patches = [(i, j) for i in range(num_patches_h) for j in range(num_patches_w)]
+        random_patches = _random.sample(patches, num_patches_to_mask)
+
+        # Mask selected patches
+        for i, j in random_patches:
+            h_start = i * max_patch_size
+            h_end = h_start + max_patch_size
+            w_start = j * max_patch_size
+            w_end = w_start + max_patch_size
+            mask[:, :, h_start:h_end, w_start:w_end] = 0
+
+        masked_tensor = masked_tensor * mask
+
+        return masked_tensor, mask
+
+    def __loss_fn(self, reconstructed: _torch.Tensor, original: _torch.Tensor, mask: _torch.Tensor) -> _torch.Tensor:
         """
+        Calculate the loss between the reconstructed and original image.
 
-        :param reconstructed:
-        :param original:
-        :return:
+        :param reconstructed: The reconstructed image.
+        :param original: The original image.
+        :return: The loss.
         """
+        mask_ratio = self.__mask_ratio
+
+        loss = _torch.mean((reconstructed - original) ** 2 * mask) / mask_ratio
+
+        return loss
+
+    def __initialize_weights(self) -> None:
+        """
+        Initialize the weights of the masked region loss module.
+        """
+        projection_head = self.__projection_head
+
+        for layer in projection_head:
+            if isinstance(layer, _nn.ConvTranspose2d):
+                _nn.init.kaiming_normal_(layer.weight)
+                _nn.init.zeros_(layer.bias)
