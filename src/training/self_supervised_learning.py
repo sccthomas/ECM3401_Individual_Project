@@ -63,7 +63,7 @@ def train_model(
                 images, masks = images.to(device), masks.to(device)
                 # - Mixed Precision Forward Pass
                 with torch.amp.autocast(device.type):
-                    loss = ssl_model(images)
+                    loss = ssl_model.forward_loss(images)
                 # - Update Metrics
                 val_loss += loss.item()
         # - Print Validation Metrics
