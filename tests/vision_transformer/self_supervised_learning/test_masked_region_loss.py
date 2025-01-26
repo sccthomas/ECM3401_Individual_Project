@@ -22,7 +22,7 @@ class TestMaskedRegionLoss(unittest.TestCase):
             mask_ratio=0.4,
         )
 
-        y = masked_region_loss(x)
+        y = masked_region_loss.forward_loss(x)
 
         self.assertEqual(y.shape, torch.Size([]))
 

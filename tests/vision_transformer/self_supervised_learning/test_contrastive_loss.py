@@ -22,7 +22,7 @@ class TestContrastivePreTraining(unittest.TestCase):
             projection_dim=128,
         )
 
-        y = contrastive_model(x)
+        y = contrastive_model.forward_loss(x)
 
         self.assertEqual(y.shape, torch.Size([]))
 

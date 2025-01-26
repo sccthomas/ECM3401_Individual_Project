@@ -33,9 +33,9 @@ class SelfSupervisedLoss(_nn.Module):
         return self.__model
 
     @_abc.abstractmethod
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
         """
-        Forward pass of the self supervised pre-training.
+        Forward loss pass of the self supervised pre-training.
 
         :param x: The input tensor.
         :return: The self-supervised loss.

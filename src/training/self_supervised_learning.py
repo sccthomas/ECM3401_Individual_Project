@@ -1,11 +1,12 @@
 import torch
-import torch.nn as nn
 import torch.utils.data as _data
 import tqdm as _tqdm
 
+import src.vision_transformer.self_supervised_learning.base as _base
+
 
 def train_model(
-        ssl_model: nn.Module,
+        ssl_model: _base.SelfSupervisedLoss,
         num_epochs: int,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
@@ -41,7 +42,7 @@ def train_model(
             images, masks = images.to(device), masks.to(device)
             # - Mixed Precision Forward Pass
             with torch.amp.autocast(device.type):
-                loss = ssl_model(images)
+                loss = ssl_model.forward_loss(images)
             # - Update Metrics
             train_loss += loss.item()
 

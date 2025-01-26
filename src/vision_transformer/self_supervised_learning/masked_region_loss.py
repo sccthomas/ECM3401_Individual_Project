@@ -37,41 +37,14 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         # Initialize Weights
         self.__initialize_weights()
 
-    @property
-    def projection_head(self) -> _nn.Module:
-        """
-        Get the projection head of the Masked Region Loss.
-
-        :return: Projection head.
-        """
-        return self.__projection_head
-
-    @property
-    def max_patch_size(self) -> int:
-        """
-        Get the maximum patch size.
-
-        :return: Maximum patch size.
-        """
-        return self.__max_patch_size
-
-    @property
-    def mask_ratio(self) -> float:
-        """
-        Get the mask ratio.
-
-        :return: Mask ratio.
-        """
-        return self.__mask_ratio
-
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    def forward(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
         """
         Forward Pass for the Masked Region Loss pre-training. This method masks random patches of a given size in the
-        input tensor and then applies the model's encoder and decoder to the masked tensor. The loss is calculated
-        between the reconstructed patches ad the original patches.
+        input tensor and then applies the model's encoder and decoder to the masked tensor to reconstruct the original
+        image.
 
         :param x: The input tensor.
-        :return: The loss.
+        :return: The reconstructed image and the mask.
         """
         model = self.model
         projection_head = self.__projection_head
@@ -91,7 +64,17 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
         assert x.shape == reconstructed.shape, f"Expected {x.shape} but got {reconstructed.shape}"
 
-        # Calculate Loss
+        return reconstructed, mask
+
+    def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
+        """
+        Forward Pass for the Masked Region Loss pre-training. This method wraps the forward pass and calculates the
+        loss between the reconstructed image and the original image.
+
+        :param x: The input tensor.
+        :return: The loss.
+        """
+        reconstructed, mask = self.forward(x)
         mask = 1 - mask
         loss = self.__loss_fn(reconstructed, x, mask)
 

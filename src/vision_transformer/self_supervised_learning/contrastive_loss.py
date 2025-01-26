@@ -54,34 +54,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Initialize weights
         self.__initialize_weights()
 
-    @property
-    def projection_heads(self) -> _nn.ModuleList:
-        """
-        Get the projection heads of the contrastive loss.
-
-        :return: The projection heads.
-        """
-        return self.__projection_heads
-
-    @property
-    def transformations(self) -> _t.List[_nn.Module]:
-        """
-        Get the transformations applied to the input tensor.
-
-        :return: The transformations.
-        """
-        return self.__transformations
-
-    @property
-    def temperature(self) -> float:
-        """
-        Get the temperature parameter.
-
-        :return: The temperature parameter.
-        """
-        return self.__temperature
-
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    def forward(self, x: _torch.Tensor) -> _t.Tuple[_t.List[_torch.Tensor], _t.List[_torch.Tensor]]:
         """
         Forward pass of the contrastive pre-training. This method applied 2 random transformations to the input tensor
         which represent positive pairs. The model encoder is then applied to the transformed tensors and the contrastive
@@ -91,7 +64,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         different images (2N -1).
 
         :param x: The input tensor.
-        :return: The mean contrastive loss over all scales.
+        :return: The positive and negative patch embeddings.
         """
         model = self.model
         projection_heads = self.__projection_heads
@@ -126,6 +99,19 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             projection_head(x2_)
             for x2_, projection_head in zip(x2.values(), projection_heads)
         ]
+
+        return x1, x2
+
+    def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
+        """
+        Forward pass for the contrastive pre-training. This method wraps the forward pass and calculates the
+        loss between the positive patch embeddings and the negative patch embeddings.
+
+        :param x: The input tensor.
+        :return: The loss.
+        """
+        x1, x2 = self.forward(x)
+
         # - Reshape the projected embeddings to [B, C * E] from [B, C, E]
         x1 = [x1_.reshape(x1_.shape[0], -1) for x1_ in x1]
         x2 = [x2_.reshape(x2_.shape[0], -1) for x2_ in x2]
