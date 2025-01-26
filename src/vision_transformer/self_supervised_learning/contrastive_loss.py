@@ -12,7 +12,7 @@ import src.vision_transformer.self_supervised_learning.base as _ssl_base
 
 class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
     """
-    Contrastive pre-training for semantic segmentation vision transformers.
+    Contrastive Self-Supervised pre-training for semantic segmentation vision transformers.
     """
 
     def __init__(
@@ -23,7 +23,6 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             temperature: float = 0.5
     ) -> None:
         """
-        Initialize the contrastive pre-training mixin.
 
         :param model: The model to be trained.
         :param encoder_dims: Dimensions of the encoder's output features.
@@ -55,12 +54,44 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Initialize weights
         self.__initialize_weights()
 
+    @property
+    def projection_heads(self) -> _nn.ModuleList:
+        """
+        Get the projection heads of the contrastive loss.
+
+        :return: The projection heads.
+        """
+        return self.__projection_heads
+
+    @property
+    def transformations(self) -> _t.List[_nn.Module]:
+        """
+        Get the transformations applied to the input tensor.
+
+        :return: The transformations.
+        """
+        return self.__transformations
+
+    @property
+    def temperature(self) -> float:
+        """
+        Get the temperature parameter.
+
+        :return: The temperature parameter.
+        """
+        return self.__temperature
+
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
-        Forward pass of the contrastive pre-training.
+        Forward pass of the contrastive pre-training. This method applied 2 random transformations to the input tensor
+        which represent positive pairs. The model encoder is then applied to the transformed tensors and the contrastive
+        loss is computed between the positive patch embeddings pairs and the negative patch embedding pairs which are
+        all other images which have been transformed. The loss is aimed at maximizing the similarity between the
+        positive pairs which are the same image and minimizing the similarity between the negative pairs which are
+        different images (2N -1).
 
         :param x: The input tensor.
-        :return: The contrastive loss.
+        :return: The mean contrastive loss over all scales.
         """
         model = self.model
         projection_heads = self.__projection_heads
@@ -111,7 +142,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
     def __loss_fn(self, features: _torch.Tensor):
         """
-        Compute the InfoNCE loss for a pair of embeddings in a memory-efficient manner.
+        Compute the InfoNCE loss.
 
         :param features: The features to compute the loss for.
         :return: The InfoNCE loss.

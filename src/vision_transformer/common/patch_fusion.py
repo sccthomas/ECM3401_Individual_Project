@@ -4,8 +4,7 @@ import torch.nn as _nn
 
 class PatchFusion(_nn.Module):
     """
-    Patch Fusion layer.
-    - Fuses patches from different scales to a common scale.
+    Patch fusion layer that will fuse the embeddings of the patches to a common scale.
     """
 
     def __init__(self, *, in_patches: int, in_embed: int, out_patches: int, out_embed: int):
@@ -28,7 +27,8 @@ class PatchFusion(_nn.Module):
 
     def forward(self, tensor: _torch.Tensor, target_tensor: _torch.Tensor) -> _torch.Tensor:
         """
-        Forward pass of the patch fusion layer.
+        Forward pass of the patch fusion layer to merge together a given tensor with a target tensor by modifying
+        spatial dimension using learnable operations.
 
         :param tensor: Tensor to be fused.
         :param target_tensor: Target tensor to be fused with.

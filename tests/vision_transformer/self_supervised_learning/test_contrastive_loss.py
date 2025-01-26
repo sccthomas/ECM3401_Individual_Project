@@ -24,6 +24,8 @@ class TestContrastivePreTraining(unittest.TestCase):
 
         y = contrastive_model(x)
 
+        self.assertEqual(y.shape, torch.Size([]))
+
 
 if __name__ == '__main__':
     unittest.main()

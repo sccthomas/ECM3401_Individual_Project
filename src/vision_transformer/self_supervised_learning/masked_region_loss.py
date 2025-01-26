@@ -10,14 +10,14 @@ import src.vision_transformer.self_supervised_learning.base as _ssl_base
 
 class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
     """
-    Masked Region Loss for Self-Supervised Learning.
+    Masked Region Self-Supervised pre-training for semantic segmentation vision transformers.
     """
 
     def __init__(
             self,
             model: _base.SemanticSegmentationVisionTransformerBase,
             max_patch_size: int,
-            mask_ratio=0.40,
+            mask_ratio: float = 0.40,
     ) -> None:
         """
 
@@ -29,7 +29,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         self.__max_patch_size = max_patch_size
         self.__mask_ratio = mask_ratio
         self.__projection_head = x = _nn.Sequential(
-            _nn.ConvTranspose2d(
+            _nn.Conv2d(
                 model.decoder.prediction_head.in_channels, 3, kernel_size=1, stride=1
             ),
             _nn.Sigmoid(),
@@ -37,9 +37,38 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         # Initialize Weights
         self.__initialize_weights()
 
+    @property
+    def projection_head(self) -> _nn.Module:
+        """
+        Get the projection head of the Masked Region Loss.
+
+        :return: Projection head.
+        """
+        return self.__projection_head
+
+    @property
+    def max_patch_size(self) -> int:
+        """
+        Get the maximum patch size.
+
+        :return: Maximum patch size.
+        """
+        return self.__max_patch_size
+
+    @property
+    def mask_ratio(self) -> float:
+        """
+        Get the mask ratio.
+
+        :return: Mask ratio.
+        """
+        return self.__mask_ratio
+
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
-        Forward Pass for the Masked Region Loss.
+        Forward Pass for the Masked Region Loss pre-training. This method masks random patches of a given size in the
+        input tensor and then applies the model's encoder and decoder to the masked tensor. The loss is calculated
+        between the reconstructed patches ad the original patches.
 
         :param x: The input tensor.
         :return: The loss.
@@ -48,7 +77,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         projection_head = self.__projection_head
 
         # Mask Image
-        masked_image, mask = self.__mask_image(x)
+        masked_image, mask = self._mask_image(x)
 
         # Forward Pass
         # - Patch Embedding
@@ -68,9 +97,9 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
         return loss
 
-    def __mask_image(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+    def _mask_image(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
         """
-        Mask the input image.
+        Randomly mask patches of the input image tensor.
 
         :param x: The input image tensor.
         :return: The masked image and the mask.
@@ -110,7 +139,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
     def __loss_fn(self, reconstructed: _torch.Tensor, original: _torch.Tensor, mask: _torch.Tensor) -> _torch.Tensor:
         """
-        Calculate the loss between the reconstructed and original image.
+        Calculate the MSE loss between the reconstructed and original image.
 
         :param reconstructed: The reconstructed image.
         :param original: The original image.

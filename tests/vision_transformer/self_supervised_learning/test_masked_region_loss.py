@@ -24,6 +24,8 @@ class TestMaskedRegionLoss(unittest.TestCase):
 
         y = masked_region_loss(x)
 
+        self.assertEqual(y.shape, torch.Size([]))
+
 
 if __name__ == '__main__':
     unittest.main()

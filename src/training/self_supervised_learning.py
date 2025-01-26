@@ -16,7 +16,7 @@ def train_model(
         device: torch.device,
 ) -> None:
     """
-    Function to train the model.
+    Function to train the model using self-supervised learning.
 
     :param ssl_model: SSL API to train the model.
     :param num_epochs: The number of epochs to train the model.

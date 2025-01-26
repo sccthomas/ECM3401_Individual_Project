@@ -11,7 +11,12 @@ from torch.utils.data import Dataset as _Dataset
 
 class SnowDataset(_Dataset):
     """
-    A dataset class for the snow dataset.
+    Dataset class for the Snow dataset. This dataset contains images of histopathological slides of human breast tissue
+    and their corresponding masks. The images are RGB images of size 512x512 and the masks are binary images of size
+    512x512. The dataset contains 20,000 images and their corresponding masks. The images and masks are stored in two
+    separate directories. The images are stored in a directory named 'image' and the masks are stored in a directory
+    named 'mask'. The images and masks are stored in the same order. The images and masks are named using the same
+    file name.
     """
 
     def __init__(
@@ -59,10 +64,20 @@ class SnowDataset(_Dataset):
         self.__cache = {} if cache is None else cache
 
     def __len__(self) -> int:
+        """
+        Returns the length of the dataset.
+        :return: The length of the dataset.
+        """
         count = self.__count
         return count
 
     def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
+        """
+        Returns the image and target at the given index.
+
+        :param idx: The index of the image and target.
+        :return: A tuple containing the image and target.
+        """
         image_target_paths = self.__image_target_paths
         cache = self.__cache
         normalize = self.__normalize
@@ -91,8 +106,13 @@ class SnowDataset(_Dataset):
 
     @staticmethod
     def _rotate(image: _Image, target: _Image) -> Tuple[_torch.Tensor, _torch.Tensor]:
+        """
+        Rotates the image and target by a random multiple of 90 degrees.
 
-        # Random horizontal and vertical flip
+        :param image: The image to rotate.
+        :param target: The target to rotate.
+        :return: A tuple containing the rotated image and target.
+        """
         k = _random.randint(0, 3)  # 0, 1, 2, or 3
 
         # Rotate both tensors by the same amount

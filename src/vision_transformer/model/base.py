@@ -12,7 +12,9 @@ import src.vision_transformer.common.swin_transformer_encoder as _swin_transform
 
 class SemanticSegmentationVisionTransformerBase(_nn.Module):
     """
-    Semantic Segmentation Vision Transformer Base Class.
+    Semantic Segmentation Vision Transformer Base Class. This class defines the base architecture for the vision
+    transformer model. Child classes should define the abstract methods and use the provided methods to create the
+    essential components of the model.
     """
 
     def __init__(
@@ -98,7 +100,9 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
-        Forward pass.
+        Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
+        stages to the input tensor. Each stage returns a dictionary of tensors that are passed to the next stage. These
+        represent the different patch embedding scales.
 
         :param x: The input tensor.
         :return: The output tensor.
@@ -123,7 +127,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             self, embed_dim: int,
     ) -> '_nn.ModuleList[_nn.TransformerEncoderLayer]':
         """
-        Create Swin Transformer encoder layers for scale X.
+        Create Classic Transformer encoder layers for scale X.
 
         :param embed_dim: Patch embedding dimension.
         :return: Module list of Transformer encoder layers.
