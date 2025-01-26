@@ -3,6 +3,7 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
+import torch.nn.functional as _F
 import torchvision.transforms as _T
 
 import src.vision_transformer.model.base as _base
@@ -94,38 +95,48 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             projection_head(x2_)
             for x2_, projection_head in zip(x2.values(), projection_heads)
         ]
-        # - Reshape the projected embeddings to [B*C, E] from [B, C, E]
-        x1 = [x1_.reshape(-1, x1_.shape[-1]) for x1_ in x1]
-        x2 = [x2_.reshape(-1, x2_.shape[-1]) for x2_ in x2]
+        # - Reshape the projected embeddings to [B, C * E] from [B, C, E]
+        x1 = [x1_.reshape(x1_.shape[0], -1) for x1_ in x1]
+        x2 = [x2_.reshape(x2_.shape[0], -1) for x2_ in x2]
 
-        # Compute the contrastive loss for each projection head
-        # - Combine the contrastive loss from each projection head into a single loss tensor
-        # - Compute the mean loss over all projection heads
-        loss = _torch.mean(
-            _torch.stack(
-                [
-                    self.__loss_fn(x1_, x2_)
-                    for x1_, x2_ in zip(x1, x2)
-                ]
-            )
-        )
+        # Compute the contrastive loss
+        loss = []
+        for x1_, x2_ in zip(x1, x2):
+            features = _torch.cat([x1_, x2_], dim=0)
+            scale_loss = self.__loss_fn(features)
+            loss.append(scale_loss)
+        loss = _torch.stack(loss).mean()
 
         return loss
 
-    def __loss_fn(self, embeddings1: _torch.Tensor, embeddings2: _torch.Tensor):
+    def __loss_fn(self, features: _torch.Tensor):
         """
         Compute the InfoNCE loss for a pair of embeddings in a memory-efficient manner.
 
-        :param embeddings1: Patch embeddings for scale 1 with one type of augmentation.
-        :param embeddings2: Patch embeddings for scale 2 with another type of augmentation.
+        :param features: The features to compute the loss for.
         :return: The InfoNCE loss.
         """
         temperature = self.__temperature
 
-        similarity = _torch.matmul(embeddings1, embeddings2.T) / temperature
-        similarity = similarity / (similarity.norm(dim=-1, keepdim=True) + 1e-8)
-        labels = _torch.arange(embeddings1.size(0)).to(embeddings1.device)
-        loss = _nn.CrossEntropyLoss()(similarity, labels)
+        # Normalize features to have unit norm
+        features = _F.normalize(features, dim=1)
+
+        # Compute similarity matrix
+        similarity_matrix = _torch.matmul(features, features.T) / temperature
+
+        # Get batch size
+        batch_size = features.shape[0] // 2
+
+        # Construct labels where each sample's positive pair is in the other view
+        labels = _torch.arange(batch_size, device=features.device)
+        labels = _torch.cat([labels + batch_size, labels], dim=0)
+
+        # Mask out self-similarities by setting the diagonal elements to -inf
+        mask = _torch.eye(2 * batch_size, dtype=_torch.bool, device=features.device)
+        similarity_matrix = similarity_matrix.masked_fill(mask, -float('inf'))
+
+        # InfoNCE loss
+        loss = _F.cross_entropy(similarity_matrix, labels)
 
         return loss
 
