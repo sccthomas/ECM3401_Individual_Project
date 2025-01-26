@@ -2,7 +2,6 @@ import typing as _t
 
 import torch as _torch
 
-import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 import src.vision_transformer.model.base as _base
@@ -30,20 +29,21 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         :param patch_embedding_scale_2: The patch embedding configuration for scale 2.
         :param patch_embedding_scale_3: The patch embedding configuration for scale 3.
         """
-        super(SemanticSegmentationVisionTransformer, self).__init__(
-            image_dims=image_dims,
-            num_encoder_layers=num_encoder_layers
-        )
-
-        in_channels, height, width = image_dims
-
         # Patch Embedding
+        in_channels, height, width = image_dims
         kwargs = {'in_channels': in_channels, 'image_size': height}
-        self.__patch_embedding_scale_1 = _patch_embedding.PatchEmbedding(
+        patch_embedding_scale_1_ = _patch_embedding.PatchEmbedding(
             patch_size=patch_embedding_scale_1[0],
             embed_dim=patch_embedding_scale_1[1],
             **kwargs,
         )
+        super(SemanticSegmentationVisionTransformer, self).__init__(
+            image_dims=image_dims,
+            num_encoder_layers=num_encoder_layers,
+            final_num_patches=patch_embedding_scale_1_.num_patches,
+            final_embed_dim=patch_embedding_scale_1[1],
+        )
+        self.__patch_embedding_scale_1 = patch_embedding_scale_1_
         self.__patch_embedding_scale_2 = _patch_embedding.PatchEmbedding(
             patch_size=patch_embedding_scale_2[0],
             embed_dim=patch_embedding_scale_2[1],
@@ -120,11 +120,6 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             in_embed=patch_embedding_scale_2[1],
             out_patches=self.__patch_embedding_scale_1.num_patches,
             out_embed=patch_embedding_scale_1[1]
-        )
-        self.__decoder = _decoder.Decoder.create(
-            final_num_patches=self.__patch_embedding_scale_1.num_patches,
-            final_embed_dim=patch_embedding_scale_1[1],
-            output_dims=(1, height, width)
         )
 
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
@@ -207,7 +202,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         return {'x1': x1, 'x2': x2, 'x3': x3}
 
-    def apply_decoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor, x3: _torch.Tensor) -> _torch.Tensor:
+    def apply_decoder_fusion(self, x1: _torch.Tensor, x2: _torch.Tensor, x3: _torch.Tensor) -> _torch.Tensor:
         """
         Apply the decoder stage to the input tensors.
 
@@ -218,13 +213,9 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         """
         decoder_patch_fusion_scale_3_to_2 = self.__decoder_patch_fusion_scale_3_to_2
         decoder_patch_fusion_scale_2_to_1 = self.__decoder_patch_fusion_scale_2_to_1
-        decoder = self.__decoder
 
         # Upsample x3 to x2, x2 to x1
         x2 = decoder_patch_fusion_scale_3_to_2(x3, x2)
         x1 = decoder_patch_fusion_scale_2_to_1(x2, x1)
-
-        # Final Decoder Head
-        x1 = decoder(x1)
 
         return x1

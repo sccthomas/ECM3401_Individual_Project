@@ -5,6 +5,7 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _f
 
+import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
 
@@ -17,13 +18,16 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
     def __init__(
             self,
             image_dims: _t.Tuple[int, int, int],
-            num_encoder_layers: int
+            num_encoder_layers: int,
+            final_num_patches: int,
+            final_embed_dim: int,
     ) -> None:
         """
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
+        :param decoder: The decoder module.
         """
         super(SemanticSegmentationVisionTransformerBase, self).__init__()
 
@@ -34,6 +38,11 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers
         self.__num_patch_fusion_layers = num_encoder_layers - 1
+        self.__decoder = _decoder.Decoder.create(
+            final_num_patches=final_num_patches,
+            final_embed_dim=final_embed_dim,
+            output_dims=(1, height, width),
+        )
 
     @property
     def image_dims(self) -> _t.Tuple[int, int]:
@@ -53,6 +62,15 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         """
         return self.__num_encoder_layers
 
+    @property
+    def decoder(self) -> _decoder.Decoder:
+        """
+        Get the decoder module.
+
+        :return: The decoder module.
+        """
+        return self.__decoder
+
     @_abc.abstractmethod
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
         """
@@ -71,7 +89,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         """
 
     @_abc.abstractmethod
-    def apply_decoder_stage(self, **kwargs) -> _torch.Tensor:
+    def apply_decoder_fusion(self, **kwargs) -> _torch.Tensor:
         """
         Apply the decoder stage to the input tensors.
 
@@ -86,14 +104,17 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :return: The output tensor.
         """
         image_dims = self.__image_dims
+        decoder = self.__decoder
 
         # Patch Embedding
         kwargs = self.apply_patch_embedding_stage(x)
         # Encoder Stage
         kwargs = self.apply_encoder_stage(**kwargs)
         # Decoder Stage
-        x1 = self.apply_decoder_stage(**kwargs)
-
+        # - Patch Fusion
+        x1 = self.apply_decoder_fusion(**kwargs)
+        # - Upsample to the output dimensions
+        x1 = decoder(x1)
         assert x1.shape[2:] == image_dims
 
         return x1

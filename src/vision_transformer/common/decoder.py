@@ -9,15 +9,17 @@ class Decoder(_nn.Module):
     Decoder module that will upsample the final embeddings to the output dimensions.
     """
 
-    def __init__(self, resolution: int, transposed_convolutions: _nn.Sequential) -> None:
+    def __init__(self, resolution: int, transposed_convolutions: _nn.Sequential, prediction_head: _nn.Module) -> None:
         """
 
         :param resolution: Resolution of the image after applying patch embeddings.
         :param transposed_convolutions: Transposed convolutions to upsample the embeddings.
+        :param prediction_head: Prediction head to predict the output.
         """
         super(Decoder, self).__init__()
         self.__resolution = resolution
         self.__transposed_convolutions = transposed_convolutions
+        self.__prediction_head = prediction_head
 
         self.__initialize_weights()
 
@@ -67,11 +69,29 @@ class Decoder(_nn.Module):
             transposed_convolutions.append(_nn.ReLU())
 
         # Add the final transposed convolution to predict the number of classes and a ReLU activation
-        transposed_convolutions.append(
-            _nn.ConvTranspose2d(transposed_dims[-1], num_classes, kernel_size=1, stride=1)
+        prediction_head = _nn.ConvTranspose2d(transposed_dims[-1], num_classes, kernel_size=1, stride=1)
+
+        return cls(
+            resolution=resolution, transposed_convolutions=transposed_convolutions, prediction_head=prediction_head
         )
 
-        return cls(resolution=resolution, transposed_convolutions=transposed_convolutions)
+    @property
+    def prediction_head(self) -> _nn.Module:
+        """
+        Get the prediction head of the decoder
+
+        :return: Prediction head.
+        """
+        return self.__prediction_head
+
+    def apply_transposed_convolutions(self, x: _torch.Tensor) -> _torch.Tensor:
+        resolution = self.__resolution
+        transposed_convolutions = self.__transposed_convolutions
+
+        x = x.transpose(1, 2).reshape(-1, x.shape[-1], resolution, resolution)
+        x = transposed_convolutions(x)
+
+        return x
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -82,9 +102,10 @@ class Decoder(_nn.Module):
         """
         resolution = self.__resolution
         transposed_convolutions = self.__transposed_convolutions
+        prediction_head = self.__prediction_head
 
-        x = x.transpose(1, 2).reshape(-1, x.shape[-1], resolution, resolution)
-        x = transposed_convolutions(x)
+        x = self.apply_transposed_convolutions(x)
+        x = prediction_head(x)
 
         return x
 
