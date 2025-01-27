@@ -20,7 +20,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             model: _base.SemanticSegmentationVisionTransformerBase,
             encoder_dims: _t.List[int],
             projection_dim: int,
-            temperature: float = 0.5
+            temperature: float = 0.1
     ) -> None:
         """
 
@@ -34,13 +34,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         super(ContrastivePreTraining, self).__init__(model=model)
         self.__projection_heads = _nn.ModuleList(
             [
-                _nn.Sequential(
-                    _nn.Linear(encoder_dim, hidden_dim),
-                    _nn.LayerNorm(hidden_dim),
-                    _nn.ReLU(),
-                    _nn.Linear(hidden_dim, projection_dim),
-                    _nn.LayerNorm(projection_dim),
-                )
+                _ProjectionHead(encoder_dim, hidden_dim, projection_dim)
                 for encoder_dim in encoder_dims
                 if (hidden_dim := encoder_dim // 2) > projection_dim
             ]
@@ -50,6 +44,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
         ]
         self.__temperature = temperature
+        self.__criterion = _nn.CrossEntropyLoss()
 
         # Initialize weights
         self.__initialize_weights()
@@ -112,49 +107,44 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         """
         x1, x2 = self.forward(x)
 
-        # - Reshape the projected embeddings to [B, C * E] from [B, C, E]
-        x1 = [x1_.reshape(x1_.shape[0], -1) for x1_ in x1]
-        x2 = [x2_.reshape(x2_.shape[0], -1) for x2_ in x2]
-
         # Compute the contrastive loss
-        loss = []
-        for x1_, x2_ in zip(x1, x2):
-            features = _torch.cat([x1_, x2_], dim=0)
-            scale_loss = self.__loss_fn(features)
-            loss.append(scale_loss)
+        loss = [
+            self.__loss_fn(x1_, x2_)
+            for x1_, x2_ in zip(x1, x2)
+        ]
         loss = _torch.stack(loss).mean()
 
         return loss
 
-    def __loss_fn(self, features: _torch.Tensor):
+    def __loss_fn(self, z1: _torch.Tensor, z2: _torch.Tensor):
         """
         Compute the InfoNCE loss.
 
-        :param features: The features to compute the loss for.
+        :param z1: The first set of embeddings.
+        :param z2: The second set of embeddings.
         :return: The InfoNCE loss.
         """
         temperature = self.__temperature
+        criterion = self.__criterion
 
-        # Normalize features to have unit norm
-        features = _F.normalize(features, dim=1)
+        B, P, _ = z1.shape
+        z1 = _F.normalize(z1, dim=-1)  # Normalize along the embedding dimension
+        z2 = _F.normalize(z2, dim=-1)
 
         # Compute similarity matrix
-        similarity_matrix = _torch.matmul(features, features.T) / temperature
+        z1_flat = z1.view(B * P, -1)
+        z2_flat = z2.view(B * P, -1)
+        similarity_matrix = _torch.mm(z1_flat, z2_flat.t()) / temperature
 
-        # Get batch size
-        batch_size = features.shape[0] // 2
+        # Labels for contrastive loss
+        labels = _torch.arange(B * P).to(z1.device)
 
-        # Construct labels where each sample's positive pair is in the other view
-        labels = _torch.arange(batch_size, device=features.device)
-        labels = _torch.cat([labels + batch_size, labels], dim=0)
+        # Loss for z1 -> z2 and z2 -> z1
+        loss_1 = criterion(similarity_matrix, labels)
+        loss_2 = criterion(similarity_matrix.t(), labels)
 
-        # Mask out self-similarities by setting the diagonal elements to -inf
-        mask = _torch.eye(2 * batch_size, dtype=_torch.bool, device=features.device)
-        similarity_matrix = similarity_matrix.masked_fill(mask, -float('inf'))
-
-        # InfoNCE loss
-        loss = _F.cross_entropy(similarity_matrix, labels)
-
+        # Average the losses
+        loss = (loss_1 + loss_2) / 2
         return loss
 
     def __initialize_weights(self) -> None:
@@ -171,3 +161,50 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
                 elif isinstance(layer, _nn.LayerNorm):
                     _nn.init.ones_(layer.weight)
                     _nn.init.zeros_(layer.bias)
+
+
+########################################################################################################################
+# Private Classes
+########################################################################################################################
+
+
+class _ProjectionHead(_nn.Module):
+    """
+    Projection head for the contrastive self-supervised learning.
+
+    """
+
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int) -> None:
+        """
+
+        :param input_dim: The input dimension.
+        :param hidden_dim: The hidden dimension.
+        :param output_dim: The output dimension.
+        """
+        super(_ProjectionHead, self).__init__()
+        self.__fc1 = _nn.Linear(input_dim, hidden_dim)
+        self.__bn1 = _nn.BatchNorm1d(hidden_dim)
+        self.__fc2 = _nn.Linear(hidden_dim, output_dim)
+        self.__bn2 = _nn.BatchNorm1d(output_dim)
+
+    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+        """
+        Forward pass of the projection head.
+        :param x: The input tensor.
+        :return: The output tensor.
+        """
+        fc1 = self.__fc1
+        bn1 = self.__bn1
+        fc2 = self.__fc2
+        bn2 = self.__bn2
+
+        # x shape: [B, P, C]
+        B, P, C = x.shape
+        x = x.view(-1, C)  # Flatten patches into batch dimension
+        x = fc1(x)
+        x = _F.relu(bn1(x))
+        x = fc2(x)
+        x = bn2(x)
+        x = x.view(B, P, -1)  # Reshape back to [B, P, output_dim]
+
+        return x
