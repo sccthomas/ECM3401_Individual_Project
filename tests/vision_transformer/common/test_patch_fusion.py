@@ -2,12 +2,12 @@ import unittest
 
 import torch
 
-from src.vision_transformer.common.patch_fusion import PatchFusion
+from src.vision_transformer.common.patch_fusion import PatchFusionLearnable, PatchFusionNonLearnable
 
 
-class TestPatchFusion(unittest.TestCase):
+class TestPatchFusionLearnable(unittest.TestCase):
     def test_forward(self) -> None:
-        patch_fusion = PatchFusion(
+        patch_fusion = PatchFusionLearnable(
             in_patches=256,
             in_embed=768,
             out_patches=1024,
@@ -21,10 +21,37 @@ class TestPatchFusion(unittest.TestCase):
 
         self.assertEqual(y.shape, (10, 1024, 512))
 
-        patch_fusion = PatchFusion(
+        patch_fusion = PatchFusionLearnable(
             in_patches=1024,
             in_embed=512,
             out_patches=256,
+            out_embed=768,
+        )
+
+        x1 = torch.randn(10, 1024, 512)
+        x2 = torch.randn(10, 256, 768)
+
+        y = patch_fusion(x1, x2)
+
+        self.assertEqual(y.shape, (10, 256, 768))
+
+
+class TestPatchFusionNonLearnable(unittest.TestCase):
+    def test_forward(self) -> None:
+        patch_fusion = PatchFusionNonLearnable(
+            in_embed=768,
+            out_embed=512,
+        )
+
+        x1 = torch.randn(10, 256, 768)
+        x2 = torch.randn(10, 1024, 512)
+
+        y = patch_fusion(x1, x2)
+
+        self.assertEqual(y.shape, (10, 1024, 512))
+
+        patch_fusion = PatchFusionNonLearnable(
+            in_embed=512,
             out_embed=768,
         )
 
