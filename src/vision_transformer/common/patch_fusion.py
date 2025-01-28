@@ -84,7 +84,7 @@ class PatchFusionNonLearnable(_nn.Module):
         """
         super(PatchFusionNonLearnable, self).__init__()
 
-        self.__attention = _nn.MultiheadAttention(embed_dim=out_embed, num_heads=4, batch_first=True)
+        # self.__attention = _nn.MultiheadAttention(embed_dim=out_embed, num_heads=4, batch_first=True)
         self.__feature_projector = _nn.Linear(in_embed, out_embed)
         self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
@@ -98,7 +98,7 @@ class PatchFusionNonLearnable(_nn.Module):
         :param target_tensor: Target tensor to be fused with.
         :return: Fused tensor.
         """
-        attention = self.__attention
+        # attention = self.__attention
         feature_projector = self.__feature_projector
         norm = self.__norm
 
@@ -113,7 +113,7 @@ class PatchFusionNonLearnable(_nn.Module):
         # - Project the features to the target feature size
         tensor = feature_projector(tensor)
         # - Apply cross multi-head attention
-        tensor, _ = attention(query=target_tensor, key=tensor, value=tensor)
+        # tensor, _ = attention(query=target_tensor, key=tensor, value=tensor)
 
         # Fuse the tensor with the target tensor
         tensor = tensor + target_tensor
