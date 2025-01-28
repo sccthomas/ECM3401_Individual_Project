@@ -49,12 +49,11 @@ class PatchFusionLearnable(_nn.Module):
 
         tensor = feature_projector(tensor)
         tensor = sequence_projector(tensor)
-
-        tensor = tensor + target_tensor
-
         tensor = norm(tensor).float()
 
-        return tensor
+        target_tensor = target_tensor + tensor
+
+        return target_tensor
 
     def __initialize_weights(self) -> None:
         """
@@ -84,7 +83,6 @@ class PatchFusionNonLearnable(_nn.Module):
         """
         super(PatchFusionNonLearnable, self).__init__()
 
-        # self.__attention = _nn.MultiheadAttention(embed_dim=out_embed, num_heads=4, batch_first=True)
         self.__feature_projector = _nn.Linear(in_embed, out_embed)
         self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
 
@@ -112,14 +110,12 @@ class PatchFusionNonLearnable(_nn.Module):
         tensor = tensor.reshape(B, P * P, C)
         # - Project the features to the target feature size
         tensor = feature_projector(tensor)
-        # - Apply cross multi-head attention
-        # tensor, _ = attention(query=target_tensor, key=tensor, value=tensor)
-
-        # Fuse the tensor with the target tensor
-        tensor = tensor + target_tensor
         tensor = norm(tensor).float()
 
-        return tensor
+        # Fuse the tensor with the target tensor
+        target_tensor = target_tensor + tensor
+
+        return target_tensor
 
     def __initialize_weights(self) -> None:
         """
