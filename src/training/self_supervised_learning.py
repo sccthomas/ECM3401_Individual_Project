@@ -10,6 +10,7 @@ def train_model(
         num_epochs: int,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
+        scaler: torch.cuda.amp.GradScaler,
         train_loader: _data.DataLoader,
         val_loader: _data.DataLoader,
         patience: int,
@@ -22,6 +23,7 @@ def train_model(
     :param num_epochs: The number of epochs to train the model.
     :param optimizer: The optimizer to use.
     :param scheduler: The learning rate scheduler to use.
+    :param scaler: The gradient scaler to use.
     :param train_loader: The training data loader.
     :param val_loader: The validation data loader.
     :param patience: The number of epochs to wait before early stopping.
@@ -38,14 +40,17 @@ def train_model(
         train_loss = 0
         for images, _ in _tqdm.tqdm(train_loader, desc=f"Training"):
             images = images.to(device)
-            loss = ssl_model.forward_loss(images)
+            # - Mixed Precision Forward Pass
+            with torch.amp.autocast(device.type):
+                loss = ssl_model.forward_loss(images)
             # - Update Metrics
             train_loss += loss.item()
 
-            # - Backward Pass
+            # - Scaler for Backward Pass
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
         # - Print Training Metrics
         train_loss /= len_train_loader
         print(f"Training Loss: {train_loss}")
@@ -57,7 +62,8 @@ def train_model(
             for images, _ in _tqdm.tqdm(val_loader, desc=f"Validation"):
                 images = images.to(device)
                 # - Mixed Precision Forward Pass
-                loss = ssl_model.forward_loss(images)
+                with torch.amp.autocast(device.type):
+                    loss = ssl_model.forward_loss(images)
                 # - Update Metrics
                 val_loss += loss.item()
         # - Print Validation Metrics

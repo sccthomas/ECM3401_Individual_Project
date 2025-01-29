@@ -13,6 +13,7 @@ def train_model(
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
+        scaler: torch.cuda.amp.GradScaler,
         train_loader: _data.DataLoader,
         val_loader: _data.DataLoader,
         patience: int,
@@ -26,6 +27,7 @@ def train_model(
     :param criterion: The loss function to use.
     :param optimizer: The optimizer to use.
     :param scheduler: The learning rate scheduler to use.
+    :param scaler: The gradient scaler to use.
     :param train_loader: The training data loader.
     :param val_loader: The validation data loader.
     :param patience: The number of epochs to wait before early stopping.
@@ -42,15 +44,16 @@ def train_model(
         for images, masks in _tqdm.tqdm(train_loader, desc=f"Training"):
             images, masks = images.to(device), masks.to(device)
             # - Mixed Precision Forward Pass
-            outputs = model(images)
-            loss = criterion(outputs, masks)
+            with torch.amp.autocast(device.type):
+                outputs = model(images)
+                loss = criterion(outputs, masks)
             # - Update Metrics
             train_metrics.update_metrics(outputs, masks, loss.item())
-            # - Backward Pass
+            # - Scaler for Backward Pass
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
         # - Print Training Metrics
         train_metrics.end_of_epoch()
         print("------- Training Metrics -------")
@@ -61,8 +64,10 @@ def train_model(
         with torch.no_grad():
             for images, masks in _tqdm.tqdm(val_loader, desc=f"Validation"):
                 images, masks = images.to(device), masks.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, masks)
+                # - Mixed Precision Forward Pass
+                with torch.amp.autocast(device.type):
+                    outputs = model(images)
+                    loss = criterion(outputs, masks)
                 # - Update Metrics
                 val_metrics.update_metrics(outputs, masks, loss.item())
         # - Print Validation Metrics
