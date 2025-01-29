@@ -17,20 +17,30 @@ class PatchFusion(_nn.Module):
         """
         super(PatchFusion, self).__init__()
 
-        self.__feature_projector = _nn.Linear(in_embed, out_embed)
-        self.__sequence_projector = (
-            _nn.ConvTranspose1d(
-                in_channels=in_patches, out_channels=out_patches, kernel_size=1
-            )
-            if in_patches < out_patches else
-            _nn.Conv1d(
-                in_channels=in_patches, out_channels=out_patches, kernel_size=1
-            )
-            if in_patches > out_patches else
-            _nn.Identity()
-        )
-        self.__norm = _nn.LayerNorm(out_embed, eps=1e-6)
+        in_resolution = int(in_patches ** 0.5)
+        out_resolution = int(out_patches ** 0.5)
 
+        if in_patches < out_patches:
+            scale = out_resolution // in_resolution
+            operation = _nn.ConvTranspose2d(
+                in_channels=in_embed, out_channels=out_embed, kernel_size=scale, stride=scale
+            )
+        elif in_patches > out_patches:
+            scale = in_resolution // out_resolution
+            operation = _nn.Conv2d(
+                in_channels=in_embed, out_channels=out_embed, kernel_size=scale, stride=scale
+            )
+        else:
+            operation = _nn.Identity()
+
+        self.__patch_embedding_projector = _nn.Sequential(
+            operation,
+            _nn.BatchNorm2d(out_embed),
+            _nn.GELU(),
+        )
+        self.__in_resolution = in_resolution
+        self.__out_patches = out_patches
+        self.__out_embed = out_embed
         self.__initialize_weights()
 
     def forward(self, tensor: _torch.Tensor, target_tensor: _torch.Tensor) -> _torch.Tensor:
@@ -42,28 +52,30 @@ class PatchFusion(_nn.Module):
         :param target_tensor: Target tensor to be fused with. Shape (batch_size, out_patches, out_embed).
         :return: Fused tensor. Shape (batch_size, out_patches, out_embed).
         """
-        feature_projector = self.__feature_projector
-        sequence_projector = self.__sequence_projector
-        norm = self.__norm
+        patch_embedding_projector = self.__patch_embedding_projector
+        in_resolution = self.__in_resolution
+        out_patches = self.__out_patches
+        out_embed = self.__out_embed
 
-        tensor = feature_projector(tensor)
-        tensor = sequence_projector(tensor)
+        B, P, E = tensor.shape
+        tensor = tensor.reshape(B, E, in_resolution, in_resolution)
+        tensor = patch_embedding_projector(tensor)
+        tensor = tensor.reshape(B, out_patches, out_embed)
 
-        tensor = tensor + target_tensor
+        target_tensor = (tensor + target_tensor).float()
 
-        tensor = norm(tensor).float()
-
-        return tensor
+        return target_tensor
 
     def __initialize_weights(self) -> None:
         """
         Initialize the weights of the patch fusion layer.
         """
-        feature_projector = self.__feature_projector
-        sequence_projector = self.__sequence_projector
+        patch_embedding_projector = self.__patch_embedding_projector
 
-        _nn.init.xavier_uniform_(feature_projector.weight)
-        _nn.init.constant_(feature_projector.bias, 0)
-
-        _nn.init.xavier_uniform_(sequence_projector.weight)
-        _nn.init.constant_(sequence_projector.bias, 0)
+        for module in patch_embedding_projector:
+            if isinstance(module, _nn.Conv2d) or isinstance(module, _nn.ConvTranspose2d):
+                _nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
+                _nn.init.zeros_(module.bias)
+            elif isinstance(module, _nn.BatchNorm2d):
+                _nn.init.ones_(module.weight)
+                _nn.init.zeros_(module.bias)
