@@ -2,7 +2,7 @@ import torch
 import torch.utils.data as _data
 import tqdm as _tqdm
 
-import src.vision_transformer.self_supervised_learning.base as _base
+import src.self_supervised_learning.base as _base
 
 
 def train_model(

@@ -6,8 +6,8 @@ import torch.nn as _nn
 import torch.nn.functional as _F
 import torchvision.transforms as _T
 
+import src.self_supervised_learning.base as _ssl_base
 import src.vision_transformer.model.base as _base
-import src.vision_transformer.self_supervised_learning.base as _ssl_base
 
 
 class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):

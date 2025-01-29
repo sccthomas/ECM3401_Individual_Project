@@ -127,7 +127,7 @@ class Decoder(_nn.Module):
 
     def forward_(self, patch_embeddings: _t.Dict[str, _torch.Tensor]) -> _torch.Tensor:
         """
-        Forward pass of the decoder to up sample and apply prediction head to a patch embedding tensor.
+        Forward pass of the decoder to up sample all patch embedding tensors.
 
         :param patch_embeddings: Patch embeddings to up sample.
         :return: The final embedding tensor.

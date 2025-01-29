@@ -5,8 +5,8 @@ import torch as _torch
 import torch.nn as _nn
 import torchvision.transforms.v2 as _transforms
 
+import src.self_supervised_learning.base as _ssl_base
 import src.vision_transformer.model.base as _base
-import src.vision_transformer.self_supervised_learning.base as _ssl_base
 
 
 class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):

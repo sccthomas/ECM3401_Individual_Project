@@ -2,8 +2,8 @@ import unittest
 
 import torch
 
+from src.self_supervised_learning.masked_region_loss import MaskedRegionLoss
 from src.vision_transformer.model.two_scales import SemanticSegmentationVisionTransformer
-from src.vision_transformer.self_supervised_learning.masked_region_loss import MaskedRegionLoss
 
 
 class TestMaskedRegionLoss(unittest.TestCase):
