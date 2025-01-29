@@ -60,8 +60,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         # - Encoder Stage
         kwargs = model.apply_encoder_stage(**kwargs)
         # - Decoder Stage
-        reconstructed = model.apply_decoder_fusion(**kwargs)
-        reconstructed = model.decoder.apply_transposed_convolutions(reconstructed)
+        reconstructed = model.decoder.forward_(kwargs)
         reconstructed = projection_head(reconstructed)
 
         assert reconstructed.shape == x.shape, f"Expected {x.shape} but got {reconstructed.shape}"

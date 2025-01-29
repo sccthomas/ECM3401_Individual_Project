@@ -21,15 +21,14 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             self,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
-            final_num_patches: int,
-            final_embed_dim: int,
+            patch_embedding_scales: _t.List[_t.Tuple[int, int]],
     ) -> None:
         """
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
-        :param decoder: The decoder module.
+        :param patch_embedding_scales: The patch embedding configurations for each scale.
         """
         super(SemanticSegmentationVisionTransformerBase, self).__init__()
 
@@ -41,8 +40,8 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__num_encoder_layers = num_encoder_layers
         self.__num_patch_fusion_layers = num_encoder_layers - 1
         self.__decoder = _decoder.Decoder.create(
-            final_num_patches=final_num_patches,
-            final_embed_dim=final_embed_dim,
+            patch_embedding_scales=patch_embedding_scales,
+            input_dims=image_dims,
             output_dims=(1, height, width),
         )
 
@@ -90,14 +89,6 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :return: Encoded tensors for each scale.
         """
 
-    @_abc.abstractmethod
-    def apply_decoder_fusion(self, **kwargs) -> _torch.Tensor:
-        """
-        Apply the decoder stage to the input tensors.
-
-        :return: The decoded tensor.
-        """
-
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
         Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
@@ -115,10 +106,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         # Encoder Stage
         kwargs = self.apply_encoder_stage(**kwargs)
         # Decoder Stage
-        # - Patch Fusion
-        x1 = self.apply_decoder_fusion(**kwargs)
-        # - Upsample to the output dimensions
-        x1 = decoder(x1)
+        x1 = decoder(kwargs)
         assert x1.shape[2:] == image_dims
 
         return x1
@@ -202,7 +190,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         }
         patch_fusion_layers_scale_X_to_Y = _nn.ModuleList(
             [
-                _patch_fusion.PatchFusionNonLearnable(
+                _patch_fusion.PatchFusion(
                     **kwargs,
                 )
                 for _ in range(num_patch_fusion_layers)
