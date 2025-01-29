@@ -173,19 +173,23 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         return encoders_scale_X
 
     def _create_patch_fusion_layers_for_scale_X_to_Y(
-            self, *, in_embed: int, out_embed: int
+            self, *, in_patches: int, in_embed: int, out_patches: int, out_embed: int
     ) -> '_nn.ModuleList[_patch_fusion.PatchFusion]':
         """
         Create patch fusion layers for scale X to Y.
 
+        :param in_patches: In number of patches.
         :param in_embed: In patch embedding dimension.
+        :param out_patches: Out number of patches.
         :param out_embed: Out patch embedding dimension.
         :return: Module list of patch fusion layers.
         """
         num_patch_fusion_layers = self.__num_patch_fusion_layers
 
         kwargs = {
+            'in_patches': in_patches,
             'in_embed': in_embed,
+            'out_patches': out_patches,
             'out_embed': out_embed,
         }
         patch_fusion_layers_scale_X_to_Y = _nn.ModuleList(

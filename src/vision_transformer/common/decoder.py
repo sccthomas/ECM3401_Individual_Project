@@ -2,6 +2,7 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
+import torch.nn.functional as _F
 
 
 class Decoder(_nn.Module):
@@ -133,7 +134,6 @@ class Decoder(_nn.Module):
         """
         up_sample_to_common_scale_convs = self.__up_sample_to_common_scale_convs
         final_embedding_up_sample_convs = self.__final_embedding_up_sample_convs
-        prediction_head = self.__prediction_head
 
         # Reshape the final patch embedding into a 2D tensor
         final_embedding = list(patch_embeddings.values())[-1]
@@ -149,7 +149,7 @@ class Decoder(_nn.Module):
             H = W = int(N ** 0.5)
             patch_embedding = patch_embedding.reshape(B, C, H, W)
             # - Upsample to a common scale
-            final_embedding = final_embedding + conv(patch_embedding)
+            final_embedding = _F.relu(final_embedding + conv(patch_embedding))
 
         # Upsample to the final resolution
         final_embedding = final_embedding_up_sample_convs(final_embedding)
