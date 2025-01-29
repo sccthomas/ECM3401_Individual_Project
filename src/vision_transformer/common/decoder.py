@@ -46,7 +46,7 @@ class Decoder(_nn.Module):
         final_patch_size = patch_embedding_scales[-1][0]
         final_embed_dim = patch_embedding_scales[-1][1]
 
-        up_sample_to_common_scale_convs = {}
+        up_sample_to_common_scale_convs = _nn.ModuleDict()
         for i, patch_embedding_dim in enumerate(patch_embedding_scales[:-1], start=1):
             patch_size = patch_embedding_dim[0]
             embed_dim = patch_embedding_dim[1]
