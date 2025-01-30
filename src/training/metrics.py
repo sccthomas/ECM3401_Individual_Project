@@ -33,6 +33,7 @@ class SegmentationMetrics:
     def binary_cross_entropy_loss(self) -> float:
         """
         Get the Binary Cross Entropy Loss.
+
         :return: The Binary Cross Entropy Loss.
         """
         return self.__binary_cross_entropy_loss
@@ -80,6 +81,11 @@ class SegmentationMetrics:
         self.__mean_intersection_over_union_metric = 0
 
     def __str__(self) -> str:
+        """
+        Return the string representation of the metrics.
+
+        :return: The string representation of the metrics.
+        """
         binary_cross_entropy_loss = self.__binary_cross_entropy_loss
         dice_score_metric = self.__dice_score_metric
         mean_intersection_over_union_metric = self.__mean_intersection_over_union_metric

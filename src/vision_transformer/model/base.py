@@ -5,25 +5,30 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _f
 
+import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
 
 
 class SemanticSegmentationVisionTransformerBase(_nn.Module):
     """
-    Semantic Segmentation Vision Transformer Base Class.
+    Semantic Segmentation Vision Transformer Base Class. This class defines the base architecture for the vision
+    transformer model. Child classes should define the abstract methods and use the provided methods to create the
+    essential components of the model.
     """
 
     def __init__(
             self,
             image_dims: _t.Tuple[int, int, int],
-            num_encoder_layers: int
+            num_encoder_layers: int,
+            patch_embedding_scales: _t.List[_t.Tuple[int, int]],
     ) -> None:
         """
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
+        :param patch_embedding_scales: The patch embedding configurations for each scale.
         """
         super(SemanticSegmentationVisionTransformerBase, self).__init__()
 
@@ -34,6 +39,11 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers
         self.__num_patch_fusion_layers = num_encoder_layers - 1
+        self.__decoder = _decoder.Decoder.create(
+            patch_embedding_scales=patch_embedding_scales,
+            input_dims=image_dims,
+            output_dims=(1, height, width),
+        )
 
     @property
     def image_dims(self) -> _t.Tuple[int, int]:
@@ -53,6 +63,15 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         """
         return self.__num_encoder_layers
 
+    @property
+    def decoder(self) -> _decoder.Decoder:
+        """
+        Get the decoder module.
+
+        :return: The decoder module.
+        """
+        return self.__decoder
+
     @_abc.abstractmethod
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
         """
@@ -70,30 +89,24 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :return: Encoded tensors for each scale.
         """
 
-    @_abc.abstractmethod
-    def apply_decoder_stage(self, **kwargs) -> _torch.Tensor:
-        """
-        Apply the decoder stage to the input tensors.
-
-        :return: The decoded tensor.
-        """
-
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
-        Forward pass.
+        Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
+        stages to the input tensor. Each stage returns a dictionary of tensors that are passed to the next stage. These
+        represent the different patch embedding scales.
 
         :param x: The input tensor.
         :return: The output tensor.
         """
         image_dims = self.__image_dims
+        decoder = self.__decoder
 
         # Patch Embedding
         kwargs = self.apply_patch_embedding_stage(x)
         # Encoder Stage
         kwargs = self.apply_encoder_stage(**kwargs)
         # Decoder Stage
-        x1 = self.apply_decoder_stage(**kwargs)
-
+        x1 = decoder(kwargs)
         assert x1.shape[2:] == image_dims
 
         return x1
@@ -102,7 +115,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             self, embed_dim: int,
     ) -> '_nn.ModuleList[_nn.TransformerEncoderLayer]':
         """
-        Create Swin Transformer encoder layers for scale X.
+        Create Classic Transformer encoder layers for scale X.
 
         :param embed_dim: Patch embedding dimension.
         :return: Module list of Transformer encoder layers.

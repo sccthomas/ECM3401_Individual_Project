@@ -32,7 +32,6 @@ class SnowDataset(_Dataset):
         :param len_override: Optional. Override the length of the dataset. If not provided, the length of the dataset
         :param resize: Optional. Resize the images and targets to 256x256.
         :param normalize: Optional. Normalize the images.
-        :param rotate: Optional. Rotate the images and targets by a random multiple of 90 degrees.
         :param cache: Optional. A shared dictionary to cache the images and targets.
         """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
@@ -42,17 +41,15 @@ class SnowDataset(_Dataset):
             for file_name in set(_os.listdir(targets_dir_path)).intersection(set(_os.listdir(images_dir_path)))
         )
         len_image_target_paths = len(image_target_paths)
+        if len_override is not None and len_override < len_image_target_paths:
+            image_target_paths = image_target_paths[:len_override]
+            len_image_target_paths = len_override
+
         if len_image_target_paths == 0:
             raise ValueError('The dataset directory does not contain any images or targets.')
 
-        count = (
-            len_image_target_paths
-            if len_override is None
-            else len_override
-            if len_override <= len_image_target_paths
-            else len_image_target_paths
-        )
-        self.__count = count
+        self.__count_original = len_image_target_paths
+        self.__count_total = len_image_target_paths * 4
         self.__image_target_paths = image_target_paths
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
         self.__to_tensor = _transforms.PILToTensor()
@@ -65,8 +62,8 @@ class SnowDataset(_Dataset):
         Returns the length of the dataset.
         :return: The length of the dataset.
         """
-        count = self.__count
-        return count
+        count_total = self.__count_total
+        return count_total
 
     def __getitem__(self, idx) -> Tuple[_torch.Tensor, _torch.Tensor]:
         """
@@ -76,6 +73,7 @@ class SnowDataset(_Dataset):
         :return: A tuple containing the image and target.
         """
         image_target_paths = self.__image_target_paths
+        count_original = self.__count_original
         cache = self.__cache
         normalize = self.__normalize
         to_tensor = self.__to_tensor
@@ -85,6 +83,14 @@ class SnowDataset(_Dataset):
         cached_data = cache.get(idx)
         if cached_data is not None:
             image, target = cached_data
+        elif idx >= count_original:
+            # Request for augmented image which is not in cache yet
+            idx_original = idx % count_original
+            # Load the original image and target
+            image, target = self.__getitem__(idx_original)
+            # Rotate the image and target
+            image, target = self._rotate(image, target, k=idx // count_original)
+            cache[idx] = (image, target)
         else:
             # Else, load, resize and convert the image and target to tensors
             image_path, target_path = image_target_paths[idx]
@@ -93,6 +99,23 @@ class SnowDataset(_Dataset):
             image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
             image = normalize(image)
             cache[idx] = (image, target)
+
+        return image, target
+
+    @staticmethod
+    def _rotate(image: _Image, target: _Image, k: int) -> Tuple[_torch.Tensor, _torch.Tensor]:
+        """
+        Rotates the image and target by `k` 90 degrees.
+
+        :param image: The image to rotate.
+        :param target: The target to rotate.
+        :param k: The number of times to rotate the image and target by 90 degrees.
+        :return: A tuple containing the rotated image and target.
+        """
+
+        # Rotate both tensors by the same amount
+        image = _torch.rot90(image, k=k, dims=(1, 2))
+        target = _torch.rot90(target, k=k, dims=(1, 2))
 
         return image, target
 
