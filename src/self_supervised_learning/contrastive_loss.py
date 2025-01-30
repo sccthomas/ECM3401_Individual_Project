@@ -1,6 +1,9 @@
 import random as _random
 import typing as _t
 
+import matplotlib.pyplot as _plt
+import numpy as _np
+import sklearn.manifold as _manifold
 import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
@@ -49,7 +52,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Initialize weights
         self.__initialize_weights()
 
-    def forward(self, x: _torch.Tensor) -> _t.Tuple[_t.List[_torch.Tensor], _t.List[_torch.Tensor]]:
+    def forward(self, x: _torch.Tensor) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _torch.Tensor]]:
         """
         Forward pass of the contrastive pre-training. This method applied 2 random transformations to the input tensor
         which represent positive pairs. The model encoder is then applied to the transformed tensors and the contrastive
@@ -64,7 +67,6 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         model = self.model
         projection_heads = self.__projection_heads
         transformations = self.__transformations
-        temperature = self.__temperature
 
         # Apply random transformations
         # - Select two random transformations
@@ -82,18 +84,15 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         x1 = model.apply_patch_embedding_stage(x1)  # Output -> dict[str, _torch.Tensor]
         x2 = model.apply_patch_embedding_stage(x2)  # Output -> dict[str, _torch.Tensor]
         # - Encode patch embeddings
-        x1 = model.apply_encoder_stage(**x1)  # Output -> dict[str, _torch.Tensor]
-        x2 = model.apply_encoder_stage(**x2)  # Output -> dict[str, _torch.Tensor]
+        x1, _ = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
+        x2, _ = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
 
         # Apply projection head to each patch embedding scale in the encoder output
-        x1 = [
-            projection_head(x1_)
-            for x1_, projection_head in zip(x1.values(), projection_heads)
-        ]
-        x2 = [
-            projection_head(x2_)
-            for x2_, projection_head in zip(x2.values(), projection_heads)
-        ]
+        keys = x1.keys()
+        assert keys == x2.keys(), "Scale names do not match."
+        for key, projection_head in zip(keys, projection_heads):
+            x1[key] = projection_head(x1[key])
+            x2[key] = projection_head(x2[key])
 
         return x1, x2
 
@@ -110,7 +109,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Compute the contrastive loss
         loss = [
             self.__loss_fn(x1_, x2_)
-            for x1_, x2_ in zip(x1, x2)
+            for x1_, x2_ in zip(x1.values(), x2.values())
         ]
         loss = _torch.stack(loss).mean()
 
@@ -161,6 +160,71 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
                 elif isinstance(layer, _nn.LayerNorm):
                     _nn.init.ones_(layer.weight)
                     _nn.init.zeros_(layer.bias)
+
+
+def visualize_tsne(
+        model: ContrastivePreTraining,
+        images: _torch.Tensor,
+        title="t-SNE Visualization of Image-Level Embeddings",
+) -> None:
+    """
+    Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
+
+    :param model: Contrastive pre-training model.
+    :param images: Input images.
+    :param title: Title of the plot.
+    """
+    z1, z2 = model.forward(images)
+
+    scales = z1.keys()
+    assert scales == z2.keys(), "Scale names do not match."
+
+    with _torch.no_grad():
+        for scale in scales:
+            x1 = z1[scale]
+            x2 = z2[scale]
+
+            B, P, E = x1.shape  # Batch, Patches, Embedding Dim
+
+            # Compute mean patch embedding per image [B, E]
+            x1_avg = x1.mean(dim=1).cpu().numpy()  # Averaging over patches
+            x2_avg = x2.mean(dim=1).cpu().numpy()
+
+            # Combine embeddings for t-SNE visualization [2B, E]
+            embeddings = _np.concatenate([x1_avg, x2_avg], axis=0)
+
+            # Create labels: Each image gets a unique label
+            labels = _np.concatenate([_np.arange(B), _np.arange(B)])  # Shape: [2B]
+
+            # Apply t-SNE
+            tsne = _manifold.TSNE(n_components=2, perplexity=10, random_state=42)
+            embeddings_2d = tsne.fit_transform(embeddings)
+
+            # Define a distinct color for each image
+            cmap = _plt.get_cmap("tab10")  # "tab10" has 10 distinct colors
+            colors = [cmap(i % 10) for i in range(B)]  # Assign each image a unique color
+
+            # Plot
+            _plt.figure(figsize=(8, 6))
+
+            for i in range(B):  # Each image
+                idx_x1, idx_x2 = i, B + i  # First and second augmentation indices
+                color = colors[i]  # Unique color for this image
+
+                # Scatter points
+                _plt.scatter(embeddings_2d[idx_x1, 0], embeddings_2d[idx_x1, 1], color=color, label=f'Image {i}',
+                             alpha=0.8,
+                             marker='o')
+                _plt.scatter(embeddings_2d[idx_x2, 0], embeddings_2d[idx_x2, 1], color=color, alpha=0.8, marker='x')
+
+                # Draw line connecting views of the same image
+                _plt.plot([embeddings_2d[idx_x1, 0], embeddings_2d[idx_x2, 0]],
+                          [embeddings_2d[idx_x1, 1], embeddings_2d[idx_x2, 1]],
+                          color=color, alpha=0.5, linestyle="--")
+
+            _plt.legend()
+            _plt.title(f'{title}_{scale}')
+            _plt.show()
 
 
 ########################################################################################################################

@@ -8,6 +8,7 @@ import torch.nn.functional as _f
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
+import src.vision_transformer.common.transformer_encoder_layer as _transformer_encoder_layer
 
 
 class SemanticSegmentationVisionTransformerBase(_nn.Module):
@@ -82,34 +83,49 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         """
 
     @_abc.abstractmethod
-    def apply_encoder_stage(self, **kwargs) -> _t.Dict[str, _torch.Tensor]:
+    def apply_encoder_stage(
+            self,
+            patch_embeddings: _t.Dict[str, _torch.Tensor],
+            return_attention_weights: bool = False,
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
         """
         Apply the encoder stage to the input tensors.
 
+        :param patch_embeddings: The patch embeddings for each scale.
+        :param return_attention_weights: Whether to return the attention weights.
         :return: Encoded tensors for each scale.
         """
 
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    def forward(
+            self, x: _torch.Tensor, return_attention_weights: bool = False
+    ) -> _t.Tuple[_torch.Tensor, _t.Optional[_t.Dict[str, _t.List[_torch.Tensor]]]]:
         """
         Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
         stages to the input tensor. Each stage returns a dictionary of tensors that are passed to the next stage. These
         represent the different patch embedding scales.
 
         :param x: The input tensor.
-        :return: The output tensor.
+        :param return_attention_weights: Whether to return the attention weights.
+        :return: The output tensor and optional attention weights.
         """
         image_dims = self.__image_dims
         decoder = self.__decoder
 
         # Patch Embedding
-        kwargs = self.apply_patch_embedding_stage(x)
+        patch_embeddings = self.apply_patch_embedding_stage(x)
         # Encoder Stage
-        kwargs = self.apply_encoder_stage(**kwargs)
+        patch_embeddings, attention_weights = self.apply_encoder_stage(
+            patch_embeddings=patch_embeddings,
+            return_attention_weights=return_attention_weights
+        )
         # Decoder Stage
-        x1 = decoder(kwargs)
+        x1 = decoder(patch_embeddings)
         assert x1.shape[2:] == image_dims
 
-        return x1
+        if return_attention_weights:
+            return x1, attention_weights
+
+        return x1, None
 
     def _create_encoder_layers_for_scale_X(
             self, embed_dim: int,
@@ -125,7 +141,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         kwargs = {'nhead': 16, 'dropout': 0.25, 'activation': _f.gelu}
         encoders_scale_X = _nn.ModuleList(
             [
-                _nn.TransformerEncoderLayer(
+                _transformer_encoder_layer.TransformerEncoderLayer(
                     d_model=embed_dim,
                     dim_feedforward=int(embed_dim * 2),
                     **kwargs,

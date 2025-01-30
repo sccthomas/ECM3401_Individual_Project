@@ -56,11 +56,12 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
         # Forward Pass
         # - Patch Embedding
-        kwargs = model.apply_patch_embedding_stage(masked_image)
+        patch_embeddings = model.apply_patch_embedding_stage(masked_image)
         # - Encoder Stage
-        kwargs = model.apply_encoder_stage(**kwargs)
+        patch_embeddings, _ = model.apply_encoder_stage(patch_embeddings=patch_embeddings)
         # - Decoder Stage
-        reconstructed = model.decoder.forward_(kwargs)
+        reconstructed = model.decoder.forward_(patch_embeddings)
+        # - Apply temporary projection head to RGB
         reconstructed = projection_head(reconstructed)
 
         assert reconstructed.shape == x.shape, f"Expected {x.shape} but got {reconstructed.shape}"

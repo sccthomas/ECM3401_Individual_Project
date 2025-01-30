@@ -45,7 +45,7 @@ def train_model(
             images, masks = images.to(device), masks.to(device)
             # - Mixed Precision Forward Pass
             with torch.amp.autocast(device.type):
-                outputs = model(images)
+                outputs, _ = model.forward(images)
                 loss = criterion(outputs, masks)
             # - Update Metrics
             train_metrics.update_metrics(outputs, masks, loss.item())
@@ -66,7 +66,7 @@ def train_model(
                 images, masks = images.to(device), masks.to(device)
                 # - Mixed Precision Forward Pass
                 with torch.amp.autocast(device.type):
-                    outputs = model(images)
+                    outputs, _ = model.forward(images)
                     loss = criterion(outputs, masks)
                 # - Update Metrics
                 val_metrics.update_metrics(outputs, masks, loss.item())

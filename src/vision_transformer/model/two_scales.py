@@ -89,22 +89,38 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         return {'x1': x1, 'x2': x2}
 
-    def apply_encoder_stage(self, x1: _torch.Tensor, x2: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
+    def apply_encoder_stage(
+            self,
+            patch_embeddings: _t.Dict[str, _torch.Tensor],
+            return_attention_weights: bool = False,
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
         """
         Apply the encoder stage to the input tensors.
 
-        :param x1: Scale 1 input tensor.
-        :param x2: Scale 2 input tensor.
-        :return: Encoded tensors for scale 1 and scale 2.
+        :param patch_embeddings: The patch embeddings for scale 1 and scale 2.
+        :param return_attention_weights: Whether to return the attention weights.
+        :return: Encoded tensors for scale 1 and scale 2 and attention weights.
         """
         encoder_scale_1 = self.__encoders_scale_1
         encoder_scale_2 = self.__encoders_scale_2
         patch_fusions_scale_1_to_2 = self.__patch_fusions_scale_1_to_2
         patch_fusions_scale_2_to_1 = self.__patch_fusions_scale_2_to_1
 
+        kwargs = {'return_attention_weights': return_attention_weights}
+        weights = {
+            'x1': [],
+            'x2': [],
+        }
+
         # Encoder Stage
-        x1 = encoder_scale_1[0](x1)
-        x2 = encoder_scale_2[0](x2)
+        x1 = patch_embeddings['x1']
+        x2 = patch_embeddings['x2']
+        x1, weights_x1 = encoder_scale_1[0](x1, **kwargs)
+        x2, weights_x2 = encoder_scale_2[0](x2, **kwargs)
+        # Append the weights
+        if return_attention_weights:
+            weights['x1'].append(weights_x1)
+            weights['x2'].append(weights_x2)
 
         for encoder_scale_1, encoder_scale_2, patch_fusion_scale_1_to_2, patch_fusion_scale_2_to_1 in zip(
                 encoder_scale_1[1:],
@@ -117,7 +133,11 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             x2_fused = patch_fusion_scale_1_to_2(x1, x2)
 
             # - Transformer Encoder Layer
-            x1 = encoder_scale_1(x1_fused)
-            x2 = encoder_scale_2(x2_fused)
+            x1, weights_x1 = encoder_scale_1(x1_fused, **kwargs)
+            x2, weights_x2 = encoder_scale_2(x2_fused, **kwargs)
+            # - Append the weights
+            if return_attention_weights:
+                weights['x1'].append(weights_x1)
+                weights['x2'].append(weights_x2)
 
-        return {'x1': x1, 'x2': x2}
+        return {'x1': x1, 'x2': x2}, weights
