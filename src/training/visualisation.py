@@ -5,7 +5,7 @@ import torch as _torch
 from PIL import Image as _Image
 
 
-def display_tensor_mask(mask: _torch.Tensor) -> None:
+def display_tensor_mask(mask: _torch.Tensor) -> _Image:
     """
     Display the mask tensor as an image.
 
@@ -14,10 +14,10 @@ def display_tensor_mask(mask: _torch.Tensor) -> None:
     mask = mask.detach().cpu().squeeze(0).numpy()
     mask = (mask * 255).astype(_np.uint8)
     mask = _Image.fromarray(mask, mode='L')
-    mask.show()
+    return mask
 
 
-def display_tensor_image(image: _torch.Tensor) -> None:
+def display_tensor_image(image: _torch.Tensor) -> _Image:
     """
     Display the image tensor as an image.
 
@@ -26,7 +26,7 @@ def display_tensor_image(image: _torch.Tensor) -> None:
     image = image.detach().cpu().permute(1, 2, 0).numpy()
     image = (image * 255).astype(_np.uint8)
     image = _Image.fromarray(image)
-    image.show()
+    return image
 
 
 def display_overlaid_avg_attention(

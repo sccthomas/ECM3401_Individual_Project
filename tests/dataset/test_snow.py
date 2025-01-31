@@ -18,7 +18,7 @@ class TestSnowDataset(unittest.TestCase):
         self.assertEqual(image_1.size(), (3, 512, 512))
         self.assertEqual(mask_1.size(), (1, 512, 512))
 
-        image_2, mask_2 = snow_dataset[0]
+        image_2, mask_2 = snow_dataset[1]
         self.assertTrue(type(image_2).__name__ == 'Tensor')
         self.assertTrue(type(mask_2).__name__ == 'Tensor')
         self.assertEqual(image_2.size(), (3, 512, 512))
@@ -38,7 +38,7 @@ class TestSnowDataset(unittest.TestCase):
         self.assertEqual(image_1.size(), (3, 256, 256))
         self.assertEqual(mask_1.size(), (1, 256, 256))
 
-        image_2, mask_2 = snow_dataset[0]
+        image_2, mask_2 = snow_dataset[1]
         self.assertTrue(type(image_2).__name__ == 'Tensor')
         self.assertTrue(type(mask_2).__name__ == 'Tensor')
         self.assertEqual(image_2.size(), (3, 256, 256))
