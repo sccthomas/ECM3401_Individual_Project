@@ -19,22 +19,22 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
         model = self.model
         device = self.device
 
-        x = torch.rand(16, 3, 256, 256).float().to(device)
+        x = torch.rand(10, 3, 256, 256).float().to(device)
 
-        y = model(x)
+        y, _ = model(x)
 
-        self.assertEqual(y.shape, (16, 1, 256, 256))
+        self.assertEqual(y.shape, (10, 1, 256, 256))
         self.assertFalse(torch.isnan(y).any())
 
     def test_forward_with_weights(self) -> None:
         model = self.model
         device = self.device
 
-        x = torch.rand(16, 3, 256, 256).float().to(device)
+        x = torch.rand(10, 3, 256, 256).float().to(device)
 
         y, weights = model(x, return_attention_weights=True)
 
-        self.assertEqual(y.shape, (16, 1, 256, 256))
+        self.assertEqual(y.shape, (10, 1, 256, 256))
         self.assertFalse(torch.isnan(y).any())
 
         self.assertEqual(len(weights), 2)
