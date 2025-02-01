@@ -29,52 +29,133 @@ def display_tensor_image(image: _torch.Tensor) -> _Image:
     return image
 
 
-def display_overlaid_avg_attention(
-        weights: _torch.Tensor, images: _torch.Tensor, image_idx: int = 0, alpha: float = 0.5
+def display_image_with_attention_heatmap(
+        image_tensor: _torch.Tensor,
+        attn_weights: _torch.Tensor,
+        alpha: float = 0.5,
+        cmap: str = 'jet',
 ) -> None:
     """
-    Overlay the averaged attention map on the image.
+    Display an image with an attention heatmap overlay.
 
-    :param weights: Attention weights of shape [num_heads, H, W] at a particular layer.
-    :param images: Image tensor of shape [B, C, H, W].
-    :param image_idx: Index of the image to overlay the attention map on.
-    :param alpha: Weight of the overlaid attention map.
+    :param image_tensor: The input image tensor.
+    :param attn_weights: The attention weights tensor.
+    :param alpha: The blending factor between the original image and the heatmap.
+    :param cmap: The colormap to use for the heatmap.
     """
-    # Select the image
-    img = images[image_idx].permute(1, 2, 0).detach().cpu().numpy()  # [C, H, W] -> [H, W, C]
-    H, W, _ = img.shape
+    # Convert the image tensor to a NumPy array.
+    # Assuming image_tensor is in shape [C, W, H] (channel, width, height), we convert it to [W, H, C].
+    image_np = image_tensor.cpu().numpy().transpose(1, 2, 0)
 
-    # Average the attention weights over all heads
-    avg_attn_map = weights.mean(dim=0).detach().cpu().numpy()
+    # Normalize image to [0, 1] if the pixel values are not already in that range.
+    if image_np.max() > 1:
+        image_np = image_np / 255.0
 
-    # Resize the averaged attention map to match image size (HxW)
-    avg_attn_map_resized = _cv2.resize(avg_attn_map, (H, W), interpolation=_cv2.INTER_LINEAR)
+    # Process the attention weights.
+    # Convert torch.Tensor to np.ndarray if needed.
+    if isinstance(attn_weights, _torch.Tensor):
+        attn_np = attn_weights.cpu().detach().numpy()
+    else:
+        attn_np = attn_weights
 
-    # Normalize the attention map for better visualization
-    avg_attn_map_resized = (avg_attn_map_resized - avg_attn_map_resized.min()) / (
-            avg_attn_map_resized.max() - avg_attn_map_resized.min())
+    # Normalize the attention weights to [0, 1].
+    attn_np = (attn_np - attn_np.min()) / (attn_np.max() - attn_np.min() + 1e-8)
 
-    # Convert the averaged attention map to a heatmap
-    heatmap = _cv2.applyColorMap(_np.uint8(255 * avg_attn_map_resized), _cv2.COLORMAP_JET)
+    # Determine the target image dimensions.
+    # image_np is in shape [W, H, C]. OpenCV resize expects (width, height) tuple.
+    image_width, image_height = image_np.shape[0], image_np.shape[1]
 
-    # Overlay the heatmap on the image
-    overlay = _cv2.addWeighted(heatmap, alpha, (img * 255).astype(_np.uint8), 1 - alpha, 0)
+    # Resize the attention map to match the image dimensions.
+    attn_resized = _cv2.resize(attn_np, (image_height, image_width))
 
-    # Display the result
-    _plt.figure(figsize=(10, 5))
-    _plt.subplot(1, 3, 1)
-    _plt.imshow(img)
+    # Apply a colormap to the resized attention map.
+    colormap = _plt.get_cmap(cmap)
+    # colormap returns an RGBA image; we take only the RGB channels.
+    heatmap = colormap(attn_resized)[..., :3]
+
+    # Overlay the heatmap on the original image.
+    overlay = (1 - alpha) * image_np + alpha * heatmap
+    overlay = _np.clip(overlay, 0, 1)
+
+    # Plot the original image and the overlay.
+    _plt.figure(figsize=(12, 6))
+
+    # Original image.
+    _plt.subplot(1, 2, 1)
+    _plt.imshow(image_np)
     _plt.title("Original Image")
-    _plt.axis("off")
+    _plt.axis('off')
 
-    _plt.subplot(1, 3, 2)
-    _plt.imshow(avg_attn_map_resized, cmap='jet')
-    _plt.title("Averaged Attention Map")
-    _plt.axis("off")
-
-    _plt.subplot(1, 3, 3)
+    # Overlay image.
+    _plt.subplot(1, 2, 2)
     _plt.imshow(overlay)
-    _plt.title("Overlaid Attention (Averaged)")
-    _plt.axis("off")
+    _plt.title("Image with Attention Overlay")
+    _plt.axis('off')
 
+    _plt.tight_layout()
+    _plt.show()
+
+
+def display_image_with_attention_focus(
+        image_tensor: _torch.Tensor,
+        attn_weights: _torch.Tensor,
+        min_factor: float = 0.5,
+        max_factor: float = 1.5,
+) -> None:
+    """
+    Display an image with attention-enhanced focus.
+
+    :param image_tensor: The input image tensor.
+    :param attn_weights: The attention weights tensor.
+    :param min_factor: Minimum brightness multiplier.
+    :param max_factor: Maximum brightness multiplier.
+    """
+    # Convert image tensor to NumPy array with shape [W, H, C]
+    image_np = image_tensor.cpu().numpy().transpose(1, 2, 0)
+
+    # Normalize image to [0, 1] if needed
+    if image_np.max() > 1:
+        image_np = image_np / 255.0
+
+    # Process the attention map: if it is a torch tensor, convert it
+    if isinstance(attn_weights, _torch.Tensor):
+        attn_np = attn_weights.cpu().detach().numpy()
+    else:
+        attn_np = attn_weights
+
+    # Normalize the attention weights to [0, 1]
+    attn_norm = (attn_np - attn_np.min()) / (attn_np.max() - attn_np.min() + 1e-8)
+
+    # Resize the attention map to match the spatial dimensions of the image.
+    # image_np shape is [W, H, C]. OpenCV expects size as (width, height).
+    image_width, image_height = image_np.shape[0], image_np.shape[1]
+    attn_resized = _cv2.resize(attn_norm, (image_height, image_width))
+
+    # Create a brightness multiplier map.
+    # For each pixel, the multiplier is min_factor (for attn=0) to max_factor (for attn=1).
+    brightness_map = min_factor + (max_factor - min_factor) * attn_resized
+
+    # Apply the brightness map on the image.
+    # Make sure to apply the multiplier per channel.
+    highlighted = image_np * brightness_map[..., _np.newaxis]
+
+    # Clip the results to the [0,1] range
+    highlighted = _np.clip(highlighted, 0, 1)
+
+    # Plot the original and highlighted images side by side.
+    _plt.figure(figsize=(12, 6))
+
+    # Plot original image.
+    _plt.subplot(1, 2, 1)
+    _plt.imshow(image_np)
+    _plt.title("Original Image")
+    _plt.axis('off')
+
+    # Plot highlighted image.
+    _plt.subplot(1, 2, 2)
+    _plt.imshow(highlighted)
+    _plt.title("Attention-Enhanced Image")
+    _plt.axis('off')
+
+    _plt.tight_layout()
     _plt.show()
