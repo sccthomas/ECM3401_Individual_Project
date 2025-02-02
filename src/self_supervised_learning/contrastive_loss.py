@@ -132,14 +132,17 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Compute similarity matrix
         z1_flat = z1.view(B * P, -1)
         z2_flat = z2.view(B * P, -1)
-        similarity_matrix = _F.cosine_similarity(z1_flat.unsqueeze(1), z2_flat.unsqueeze(0), dim=-1) / temperature
+        similarity_matrix = _torch.mm(z1_flat, z2_flat.t()) / temperature
 
         # Labels for contrastive loss
         labels = _torch.arange(B * P).to(z1.device)
 
-        # Loss computation
-        loss = criterion(similarity_matrix, labels)
+        # Loss for z1 -> z2 and z2 -> z1
+        loss_1 = criterion(similarity_matrix, labels)
+        loss_2 = criterion(similarity_matrix.t(), labels)
 
+        # Average the losses
+        loss = (loss_1 + loss_2) / 2
         return loss
 
     def __initialize_weights(self) -> None:
