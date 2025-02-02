@@ -329,7 +329,7 @@ class TransformerEncoderLayer(Module):
             attn_mask=attn_mask,
             key_padding_mask=key_padding_mask,
             need_weights=return_attention_weights,
-            average_attn_weights=False if return_attention_weights else True,
+            average_attn_weights=False if return_attention_weights else None,
             is_causal=is_causal,
         )
 
