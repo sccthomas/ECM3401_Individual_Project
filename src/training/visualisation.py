@@ -4,6 +4,8 @@ import torch as _torch
 import torch.nn as _nn
 from PIL import Image as _Image
 
+import src.vision_transformer.model.base as _base
+
 
 def display_tensor_mask(mask: _torch.Tensor) -> _Image:
     """
@@ -29,7 +31,50 @@ def display_tensor_image(image: _torch.Tensor) -> _Image:
     return image
 
 
-def visualize_attention(model, img, patch_size, scale_key, layer):
+def visualize_predict(
+        model: _base.SemanticSegmentationVisionTransformerBase,
+        img_original: _torch.Tensor,
+        img_pre: _torch.Tensor,
+        patch_size: int,
+        scale_key: str,
+        layer: int
+) -> None:
+    """
+    Function to visualize the attention of the model.
+
+    :param model: The model to visualize.
+    :param img_original: The original image.
+    :param img_pre: The preprocessed image.
+    :param patch_size: The patch size.
+    :param scale_key: The scale key.
+    :param layer: The layer to visualize.
+    """
+    attention = _visualize_attention(model, img_pre, patch_size, scale_key, layer)
+    _plot_attention(img_original, attention)
+
+
+########################################################################################################################
+# Private Helpers
+########################################################################################################################
+
+
+def _visualize_attention(
+        model: _base.SemanticSegmentationVisionTransformerBase,
+        img: _torch.Tensor,
+        patch_size: int,
+        scale_key: str,
+        layer: int,
+) -> _np.ndarray:
+    """
+    Function to visualize the attention of the model.
+
+    :param model: The model to visualize.
+    :param img: The image tensor.
+    :param patch_size: The patch size.
+    :param scale_key: The scale key.
+    :param layer: The layer to visualize.
+    :return: Attention map.
+    """
     # make the image divisible by the patch size
     w, h = (
         img.shape[1] - img.shape[1] % patch_size,
@@ -54,6 +99,7 @@ def visualize_attention(model, img, patch_size, scale_key, layer):
         _nn.functional.interpolate(
             attentions.unsqueeze(0), scale_factor=patch_size, mode="nearest"
         )[0]
+        .detach()
         .cpu()
         .numpy()
     )
@@ -61,7 +107,13 @@ def visualize_attention(model, img, patch_size, scale_key, layer):
     return attentions
 
 
-def plot_attention(img, attention):
+def _plot_attention(img: _torch.Tensor, attention: _np.ndarray) -> None:
+    """
+    Function to plot the attention map.
+
+    :param img: The image tensor.
+    :param attention: The attention map.
+    """
     img = img.detach().cpu().permute(1, 2, 0).numpy()
     img = (img * 255).astype(_np.uint8)
     img = _Image.fromarray(img)
@@ -83,8 +135,3 @@ def plot_attention(img, attention):
         _plt.title(f"Head n: {i + 1}")
     _plt.tight_layout()
     _plt.show()
-
-
-def visualize_predict(model, img: _torch.Tensor, patch_size: int, scale_key: str, layer: int):
-    attention = visualize_attention(model, img, patch_size, scale_key, layer)
-    plot_attention(img, attention)

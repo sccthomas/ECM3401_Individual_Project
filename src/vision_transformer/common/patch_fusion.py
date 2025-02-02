@@ -36,8 +36,8 @@ class PatchFusion(_nn.Module):
         self.__patch_embedding_projector = _nn.Sequential(
             operation,
             _nn.BatchNorm2d(out_embed),
-            _nn.GELU(),
         )
+        self.__activation = _nn.GELU()
         self.__in_resolution = in_resolution
         self.__out_patches = out_patches
         self.__out_embed = out_embed
@@ -52,6 +52,7 @@ class PatchFusion(_nn.Module):
         :param target_tensor: Target tensor to be fused with. Shape (batch_size, out_patches, out_embed).
         :return: Fused tensor. Shape (batch_size, out_patches, out_embed).
         """
+        activation = self.__activation
         patch_embedding_projector = self.__patch_embedding_projector
         in_resolution = self.__in_resolution
         out_patches = self.__out_patches
@@ -62,7 +63,7 @@ class PatchFusion(_nn.Module):
         tensor = patch_embedding_projector(tensor)
         tensor = tensor.reshape(B, out_patches, out_embed)
 
-        target_tensor = (tensor + target_tensor).float()
+        target_tensor = activation((tensor + target_tensor).float())
 
         return target_tensor
 
