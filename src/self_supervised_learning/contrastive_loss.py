@@ -37,9 +37,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         super(ContrastivePreTraining, self).__init__(model=model)
         self.__projection_heads = _nn.ModuleList(
             [
-                _ProjectionHead(encoder_dim, hidden_dim, projection_dim)
+                _ProjectionHead(encoder_dim, encoder_dim // 2, projection_dim)
                 for encoder_dim in encoder_dims
-                if (hidden_dim := encoder_dim // 2) > projection_dim
             ]
         )
         self.__transformations = [
@@ -133,17 +132,14 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Compute similarity matrix
         z1_flat = z1.view(B * P, -1)
         z2_flat = z2.view(B * P, -1)
-        similarity_matrix = _torch.mm(z1_flat, z2_flat.t()) / temperature
+        similarity_matrix = _F.cosine_similarity(z1_flat.unsqueeze(1), z2_flat.unsqueeze(0), dim=-1) / temperature
 
         # Labels for contrastive loss
         labels = _torch.arange(B * P).to(z1.device)
 
-        # Loss for z1 -> z2 and z2 -> z1
-        loss_1 = criterion(similarity_matrix, labels)
-        loss_2 = criterion(similarity_matrix.t(), labels)
+        # Loss computation
+        loss = criterion(similarity_matrix, labels)
 
-        # Average the losses
-        loss = (loss_1 + loss_2) / 2
         return loss
 
     def __initialize_weights(self) -> None:
