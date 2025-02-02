@@ -2,7 +2,6 @@ import typing as _t
 
 import torch as _torch
 import torch.nn as _nn
-import torch.nn.functional as _F
 
 
 class Decoder(_nn.Module):
@@ -12,7 +11,7 @@ class Decoder(_nn.Module):
 
     def __init__(
             self,
-            up_sample_to_common_scale_convs: _t.Dict[str, _nn.Module],
+            up_sample_to_common_scale_convs: _nn.ModuleDict,
             final_embedding_up_sample_convs: _nn.Sequential,
             prediction_head: _nn.Module,
     ) -> None:
@@ -40,9 +39,10 @@ class Decoder(_nn.Module):
         """
         Create a decoder that will upsample the final embeddings to the output dimensions.
 
-        :param patch_embedding_scales:
-        :param output_dims:
-        :return:
+        :param patch_embedding_scales: List of tuples containing the patch size and embedding dimension.
+        :param input_dims: Input dimensions of the image.
+        :param output_dims: Output dimensions of the image.
+        :return: Decoder module.
         """
         final_patch_size = patch_embedding_scales[-1][0]
         final_embed_dim = patch_embedding_scales[-1][1]
@@ -52,8 +52,13 @@ class Decoder(_nn.Module):
             patch_size = patch_embedding_dim[0]
             embed_dim = patch_embedding_dim[1]
             scale_factor = patch_size // final_patch_size
-            up_sample_to_common_scale_convs[f"x{i}"] = (
-                _nn.ConvTranspose2d(embed_dim, final_embed_dim, kernel_size=scale_factor, stride=scale_factor)
+            up_sample_to_common_scale_convs[f"x{i}"] = _nn.ModuleList(
+                [
+                    _nn.ConvTranspose2d(embed_dim, final_embed_dim, kernel_size=scale_factor, stride=scale_factor),
+                    _nn.BatchNorm2d(final_embed_dim),
+                    _nn.ReLU(),
+                    _nn.Dropout2d(0.25),
+                ]
             )
 
         # Compute the number of operations required to reach the final resolution
@@ -85,10 +90,14 @@ class Decoder(_nn.Module):
         for i in range(len(transposed_dims) - 1):
             dim_1 = transposed_dims[i]
             dim_2 = transposed_dims[i + 1]
-            final_embedding_up_sample_convs.append(
-                _nn.ConvTranspose2d(dim_1, dim_2, kernel_size=2, stride=2)
+            final_embedding_up_sample_convs.extend(
+                _nn.Sequential(
+                    _nn.ConvTranspose2d(dim_1, dim_2, kernel_size=2, stride=2),
+                    _nn.BatchNorm2d(dim_2),
+                    _nn.ReLU(),
+                    _nn.Dropout2d(0.25),
+                )
             )
-            final_embedding_up_sample_convs.append(_nn.ReLU())
 
         # Add the final transposed convolution to predict the number of classes and a ReLU activation
         prediction_head = _nn.Conv2d(transposed_dims[-1], num_classes, kernel_size=1, stride=1)
@@ -142,14 +151,21 @@ class Decoder(_nn.Module):
         final_embedding = final_embedding.reshape(B, C, H, W)
 
         # Fuse the patch embeddings to a common scale
-        for key, conv in up_sample_to_common_scale_convs.items():
+        for key, (conv, norm, relu, dropout) in up_sample_to_common_scale_convs.items():
             patch_embedding = patch_embeddings[key]
             # - Reshape into a 2D tensor
             B, N, C = patch_embedding.shape
             H = W = int(N ** 0.5)
             patch_embedding = patch_embedding.reshape(B, C, H, W)
             # - Upsample to a common scale
-            final_embedding = _F.relu(final_embedding + conv(patch_embedding))
+            #   - Convolution
+            patch_embedding = conv(patch_embedding)
+            #   - Batch normalization
+            patch_embedding = norm(patch_embedding)
+            #   - ReLU activation
+            final_embedding = relu(final_embedding + patch_embedding)
+            #   - Dropout
+            final_embedding = dropout(final_embedding)
 
         # Upsample to the final resolution
         final_embedding = final_embedding_up_sample_convs(final_embedding)
@@ -164,14 +180,22 @@ class Decoder(_nn.Module):
         up_sample_to_common_scale_convs = self.__up_sample_to_common_scale_convs
         prediction_head = self.__prediction_head
 
-        for layer in final_embedding_up_sample_convs:
-            if isinstance(layer, _nn.ConvTranspose2d):
-                _nn.init.xavier_uniform_(layer.weight)
-                _nn.init.constant_(layer.bias, 0)
+        for module in final_embedding_up_sample_convs:
+            if isinstance(module, _nn.ConvTranspose2d):
+                _nn.init.kaiming_normal_(module.weight)
+                _nn.init.constant_(module.bias, 0)
+            elif isinstance(module, _nn.BatchNorm2d):
+                _nn.init.constant_(module.weight, 1)
+                _nn.init.constant_(module.bias, 0)
 
-        for layer in up_sample_to_common_scale_convs.values():
-            _nn.init.xavier_uniform_(layer.weight)
-            _nn.init.constant_(layer.bias, 0)
+        for module in up_sample_to_common_scale_convs.values():
+            for m in module:
+                if isinstance(m, _nn.ConvTranspose2d):
+                    _nn.init.kaiming_normal_(m.weight)
+                    _nn.init.constant_(m.bias, 0)
+                elif isinstance(m, _nn.BatchNorm2d):
+                    _nn.init.constant_(m.weight, 1)
+                    _nn.init.constant_(m.bias, 0)
 
-        _nn.init.xavier_uniform_(prediction_head.weight)
+        _nn.init.kaiming_normal_(prediction_head.weight)
         _nn.init.constant_(prediction_head.bias, 0)
