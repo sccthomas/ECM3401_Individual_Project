@@ -31,7 +31,7 @@ def display_tensor_image(image: _torch.Tensor) -> _Image:
     return image
 
 
-def visualize_predict(
+def display_attention_weights(
         model: _base.SemanticSegmentationVisionTransformerBase,
         img_original: _torch.Tensor,
         img_pre: _torch.Tensor,
@@ -49,7 +49,7 @@ def visualize_predict(
     :param scale_key: The scale key.
     :param layer: The layer to visualize.
     """
-    attention = _visualize_attention(model, img_pre, patch_size, scale_key, layer)
+    attention = _get_attention_weights(model, img_pre, patch_size, scale_key, layer)
     _plot_attention(img_original, attention)
 
 
@@ -58,7 +58,7 @@ def visualize_predict(
 ########################################################################################################################
 
 
-def _visualize_attention(
+def _get_attention_weights(
         model: _base.SemanticSegmentationVisionTransformerBase,
         img: _torch.Tensor,
         patch_size: int,
