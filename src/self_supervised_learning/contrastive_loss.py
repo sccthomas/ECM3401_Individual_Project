@@ -37,7 +37,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         super(ContrastivePreTraining, self).__init__(model=model)
         self.__projection_heads = _nn.ModuleList(
             [
-                _ProjectionHead(encoder_dim, encoder_dim // 2, projection_dim)
+                _ProjectionHead(encoder_dim, projection_dim)
                 for encoder_dim in encoder_dims
             ]
         )
@@ -107,8 +107,9 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         # Compute the contrastive loss
         loss = [
-            self.__loss_fn(x1_, x2_)
-            for x1_, x2_ in zip(x1.values(), x2.values())
+            self.__loss_fn(z1, z2)
+            for (key1, z1), (key2, z2) in zip(x1.items(), x2.items())
+            if key1 == key2
         ]
         loss = _torch.stack(loss).mean()
 
@@ -237,14 +238,14 @@ class _ProjectionHead(_nn.Module):
 
     """
 
-    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int) -> None:
+    def __init__(self, input_dim: int, output_dim: int) -> None:
         """
 
         :param input_dim: The input dimension.
-        :param hidden_dim: The hidden dimension.
         :param output_dim: The output dimension.
         """
         super(_ProjectionHead, self).__init__()
+        hidden_dim = input_dim // 2
         self.__fc1 = _nn.Linear(input_dim, hidden_dim)
         self.__bn1 = _nn.BatchNorm1d(hidden_dim)
         self.__fc2 = _nn.Linear(hidden_dim, output_dim)

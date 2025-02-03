@@ -91,10 +91,8 @@ def _get_attention_weights(
 
     # keep only the output patch attention
     attentions = attentions[0, :, 0, :].reshape(nh, -1)
-    print(attentions.shape)
 
     attentions = attentions.reshape(nh, w_featmap, h_featmap)
-    print(attentions.shape)
     attentions = (
         _nn.functional.interpolate(
             attentions.unsqueeze(0), scale_factor=patch_size, mode="nearest"

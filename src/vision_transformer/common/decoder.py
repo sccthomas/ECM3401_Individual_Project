@@ -34,7 +34,8 @@ class Decoder(_nn.Module):
             cls,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
             input_dims: _t.Tuple[int, int, int],
-            output_dims: _t.Tuple[int, int, int]
+            output_dims: _t.Tuple[int, int, int],
+            dropout_rate: float,
     ) -> 'Decoder':
         """
         Create a decoder that will upsample the final embeddings to the output dimensions.
@@ -42,6 +43,7 @@ class Decoder(_nn.Module):
         :param patch_embedding_scales: List of tuples containing the patch size and embedding dimension.
         :param input_dims: Input dimensions of the image.
         :param output_dims: Output dimensions of the image.
+        :param dropout_rate: Dropout rate.
         :return: Decoder module.
         """
         final_patch_size = patch_embedding_scales[-1][0]
@@ -57,7 +59,7 @@ class Decoder(_nn.Module):
                     _nn.ConvTranspose2d(embed_dim, final_embed_dim, kernel_size=scale_factor, stride=scale_factor),
                     _nn.BatchNorm2d(final_embed_dim),
                     _nn.ReLU(),
-                    _nn.Dropout2d(0.25),
+                    _nn.Dropout2d(dropout_rate),
                 ]
             )
 
@@ -95,7 +97,7 @@ class Decoder(_nn.Module):
                     _nn.ConvTranspose2d(dim_1, dim_2, kernel_size=2, stride=2),
                     _nn.BatchNorm2d(dim_2),
                     _nn.ReLU(),
-                    _nn.Dropout2d(0.25),
+                    _nn.Dropout2d(dropout_rate),
                 )
             )
 

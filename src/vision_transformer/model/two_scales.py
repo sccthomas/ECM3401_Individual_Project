@@ -13,8 +13,14 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
     def __init__(
             self,
+            *,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
+            encoder_dropout_rate: float,
+            patch_fusion_dropout_rate: float,
+            decoder_dropout_rate: float,
+            num_encoder_heads: int,
+            num_classes: int,
             patch_embedding_scale_1: _t.Tuple[int, int],
             patch_embedding_scale_2: _t.Tuple[int, int],
     ) -> None:
@@ -23,6 +29,11 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
+        :param encoder_dropout_rate: The dropout rate in the encoder stage.
+        :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
+        :param decoder_dropout_rate: The dropout rate in the decoder stage.
+        :param num_encoder_heads: The number of encoder heads.
+        :param num_classes: The number of classes.
         :param patch_embedding_scale_1: The patch embedding configuration for scale 1.
         :param patch_embedding_scale_2: The patch embedding configuration for scale 2.
         """
@@ -33,6 +44,11 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             image_dims=image_dims,
             num_encoder_layers=num_encoder_layers,
             patch_embedding_scales=[patch_embedding_scale_1, patch_embedding_scale_2],
+            encoder_dropout_rate=encoder_dropout_rate,
+            patch_fusion_dropout_rate=patch_fusion_dropout_rate,
+            decoder_dropout_rate=decoder_dropout_rate,
+            num_encoder_heads=num_encoder_heads,
+            num_classes=num_classes,
         )
 
         kwargs = {'in_channels': in_channels, 'image_size': height}

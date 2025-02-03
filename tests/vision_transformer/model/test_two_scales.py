@@ -9,8 +9,13 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
     def setUp(self) -> None:
         self.device = torch.device("mps" if torch.cuda.is_available() else "cpu")
         self.model = SemanticSegmentationVisionTransformer(
-            image_dims=(3, 256, 256),
-            num_encoder_layers=12,
+            image_dims=(3, 128, 128),
+            num_encoder_layers=4,
+            encoder_dropout_rate=0.25,
+            patch_fusion_dropout_rate=0.25,
+            decoder_dropout_rate=0.25,
+            num_encoder_heads=4,
+            num_classes=1,
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
         ).to(self.device)
@@ -19,27 +24,27 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
         model = self.model
         device = self.device
 
-        x = torch.rand(10, 3, 256, 256).float().to(device)
+        x = torch.rand(2, 3, 128, 128).float().to(device)
 
         y, _ = model(x)
 
-        self.assertEqual(y.shape, (10, 1, 256, 256))
+        self.assertEqual(y.shape, (2, 1, 128, 128))
         self.assertFalse(torch.isnan(y).any())
 
     def test_forward_with_weights(self) -> None:
         model = self.model
         device = self.device
 
-        x = torch.rand(10, 3, 256, 256).float().to(device)
+        x = torch.rand(2, 3, 128, 128).float().to(device)
 
         y, weights = model(x, return_attention_weights=True)
 
-        self.assertEqual(y.shape, (10, 1, 256, 256))
+        self.assertEqual(y.shape, (2, 1, 128, 128))
         self.assertFalse(torch.isnan(y).any())
 
         self.assertEqual(len(weights), 2)
-        self.assertEqual(len(weights["x1"]), 12)
-        self.assertEqual(len(weights["x2"]), 12)
+        self.assertEqual(len(weights["x1"]), 4)
+        self.assertEqual(len(weights["x2"]), 4)
         self.assertIsNotNone(weights["x1"][0])
 
 

@@ -7,13 +7,16 @@ class PatchFusion(_nn.Module):
     Patch fusion layer that will fuse the embeddings of the patches to a common scale.
     """
 
-    def __init__(self, *, in_patches: int, in_embed: int, out_patches: int, out_embed: int):
+    def __init__(
+            self, *, in_patches: int, in_embed: int, out_patches: int, out_embed: int, dropout_rate: float
+    ) -> None:
         """
 
         :param in_patches: The number of input patches.
         :param in_embed: The length of the input patch embeddings.
         :param out_patches: The number of output patches.
         :param out_embed: The length of the output patch embeddings.
+        :param dropout_rate: Dropout rate.
         """
         super(PatchFusion, self).__init__()
 
@@ -36,9 +39,9 @@ class PatchFusion(_nn.Module):
         self.__patch_embedding_projector = _nn.Sequential(
             operation,
             _nn.BatchNorm2d(out_embed),
+            _nn.ReLU(),
+            _nn.Dropout(dropout_rate)
         )
-        self.__activation = _nn.GELU()
-        self.__dropout = _nn.Dropout(0.25)
         self.__in_resolution = in_resolution
         self.__out_patches = out_patches
         self.__out_embed = out_embed
@@ -53,8 +56,6 @@ class PatchFusion(_nn.Module):
         :param target_tensor: Target tensor to be fused with. Shape (batch_size, out_patches, out_embed).
         :return: Fused tensor. Shape (batch_size, out_patches, out_embed).
         """
-        activation = self.__activation
-        dropout = self.__dropout
         patch_embedding_projector = self.__patch_embedding_projector
         in_resolution = self.__in_resolution
         out_patches = self.__out_patches
@@ -64,10 +65,8 @@ class PatchFusion(_nn.Module):
         tensor = tensor.reshape(B, E, in_resolution, in_resolution)
         tensor = patch_embedding_projector(tensor)
         tensor = tensor.reshape(B, out_patches, out_embed)
-        tensor = activation(tensor.float())
-        tensor = dropout(tensor)
 
-        target_tensor = target_tensor + tensor
+        target_tensor = (target_tensor + tensor).float()
 
         return target_tensor
 

@@ -12,6 +12,7 @@ class TestPatchFusion(unittest.TestCase):
             in_embed=768,
             out_patches=1024,
             out_embed=512,
+            dropout_rate=0.25,
         )
 
         x1 = torch.randn(10, 256, 768)
@@ -26,6 +27,7 @@ class TestPatchFusion(unittest.TestCase):
             in_embed=512,
             out_patches=256,
             out_embed=768,
+            dropout_rate=0.25,
         )
 
         x1 = torch.randn(10, 1024, 512)

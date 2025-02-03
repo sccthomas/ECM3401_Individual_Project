@@ -13,22 +13,26 @@ class TestDisplayFunctions(unittest.TestCase):
     def test_display_tensor_mask(self) -> None:
         mask = torch.rand(1, 256, 256)
         mask = (mask > 0.5).float()
-        with unittest.mock.patch.object(Image.Image, 'show') as mock_show:
-            display_tensor_mask(mask)
-            mock_show.assert_called_once()
+        pil = display_tensor_mask(mask)
+        self.assertIsInstance(pil, Image.Image)
 
     def test_display_tensor_image(self) -> None:
         image = torch.rand(3, 256, 256)
-        with unittest.mock.patch.object(Image.Image, 'show') as mock_show:
-            img = display_tensor_image(image)
-            mock_show.assert_called_once()
+        pil = display_tensor_image(image)
+        self.assertIsInstance(pil, Image.Image)
 
     def test_display_attention_weights(self) -> None:
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 256, 256),
-            num_encoder_layers=12,
+            num_encoder_layers=4,
+            encoder_dropout_rate=0.25,
+            patch_fusion_dropout_rate=0.25,
+            decoder_dropout_rate=0.25,
+            num_encoder_heads=4,
+            num_classes=1,
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
+
         )
         images = torch.rand(2, 3, 256, 256)
         for patch_size, scale_key in [(16, 'x1'), (8, 'x2')]:

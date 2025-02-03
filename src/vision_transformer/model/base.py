@@ -20,9 +20,15 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
     def __init__(
             self,
+            *,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
+            encoder_dropout_rate: float,
+            patch_fusion_dropout_rate: float,
+            decoder_dropout_rate: float,
+            num_encoder_heads: int,
+            num_classes: int,
     ) -> None:
         """
         Initialize the vision_transformer.
@@ -30,6 +36,11 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
         :param patch_embedding_scales: The patch embedding configurations for each scale.
+        :param encoder_dropout_rate: The dropout rate in the encoder stage.
+        :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
+        :param decoder_dropout_rate: The dropout rate in the decoder stage.
+        :param num_encoder_heads: The number of encoder heads.
+        :param num_classes: The number of classes.
         """
         super(SemanticSegmentationVisionTransformerBase, self).__init__()
 
@@ -43,8 +54,12 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__decoder = _decoder.Decoder.create(
             patch_embedding_scales=patch_embedding_scales,
             input_dims=image_dims,
-            output_dims=(1, height, width),
+            output_dims=(num_classes, height, width),
+            dropout_rate=decoder_dropout_rate,
         )
+        self.__encoder_dropout_rate = encoder_dropout_rate
+        self.__patch_fusion_dropout_rate = patch_fusion_dropout_rate
+        self.__num_encoder_heads = num_encoder_heads
 
     @property
     def image_dims(self) -> _t.Tuple[int, int]:
@@ -137,8 +152,15 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :return: Module list of Transformer encoder layers.
         """
         num_encoder_layers = self.__num_encoder_layers
+        encoder_dropout_rate = self.__encoder_dropout_rate
+        num_encoder_heads = self.__num_encoder_heads
 
-        kwargs = {'nhead': 16, 'dropout': 0.25, 'activation': _f.gelu, 'batch_first': True}
+        kwargs = {
+            'nhead': num_encoder_heads,
+            'dropout': encoder_dropout_rate,
+            'activation': _f.gelu,
+            'batch_first': True
+        }
         encoders_scale_X = _nn.ModuleList(
             [
                 _transformer_encoder_layer.TransformerEncoderLayer(
@@ -201,12 +223,14 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :return: Module list of patch fusion layers.
         """
         num_patch_fusion_layers = self.__num_patch_fusion_layers
+        patch_fusion_dropout_rate = self.__patch_fusion_dropout_rate
 
         kwargs = {
             'in_patches': in_patches,
             'in_embed': in_embed,
             'out_patches': out_patches,
             'out_embed': out_embed,
+            'dropout_rate': patch_fusion_dropout_rate,
         }
         patch_fusion_layers_scale_X_to_Y = _nn.ModuleList(
             [
