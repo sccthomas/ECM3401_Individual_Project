@@ -25,8 +25,11 @@ class PatchFusion(_nn.Module):
 
         if in_patches < out_patches:
             scale = out_resolution // in_resolution
-            operation = _nn.ConvTranspose2d(
-                in_channels=in_embed, out_channels=out_embed, kernel_size=scale, stride=scale
+            operation = _nn.Sequential(
+                _nn.Conv2d(
+                    in_channels=in_embed, out_channels=out_embed, kernel_size=1, stride=1
+                ),
+                _nn.Upsample(scale_factor=scale, mode="nearest")
             )
         elif in_patches > out_patches:
             scale = in_resolution // out_resolution

@@ -23,7 +23,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             model: _base.SemanticSegmentationVisionTransformerBase,
             encoder_dims: _t.List[int],
             projection_dim: int,
-            temperature: float = 0.1
+            temperature: float = 0.5
     ) -> None:
         """
 
@@ -44,6 +44,12 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         self.__transformations = [
             _T.RandomRotation(degrees=90),
             _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+            _T.RandomHorizontalFlip(),
+            _T.RandomVerticalFlip(),
+            _T.RandomAdjustSharpness(0),
+            _T.RandomAdjustSharpness(2),
+            _T.RandomErasing(),
+            _T.RandomInvert(),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
@@ -247,9 +253,9 @@ class _ProjectionHead(_nn.Module):
         super(_ProjectionHead, self).__init__()
         hidden_dim = input_dim // 2
         self.__fc1 = _nn.Linear(input_dim, hidden_dim)
-        self.__bn1 = _nn.BatchNorm1d(hidden_dim)
+        self.__n1 = _nn.LayerNorm(hidden_dim)
         self.__fc2 = _nn.Linear(hidden_dim, output_dim)
-        self.__bn2 = _nn.BatchNorm1d(output_dim)
+        self.__n2 = _nn.LayerNorm(output_dim)
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -258,17 +264,17 @@ class _ProjectionHead(_nn.Module):
         :return: The output tensor.
         """
         fc1 = self.__fc1
-        bn1 = self.__bn1
+        n1 = self.__n1
         fc2 = self.__fc2
-        bn2 = self.__bn2
+        n2 = self.__n2
 
         # x shape: [B, P, C]
         B, P, C = x.shape
         x = x.view(-1, C)  # Flatten patches into batch dimension
         x = fc1(x)
-        x = _F.relu(bn1(x))
+        x = _F.relu(n1(x))
         x = fc2(x)
-        x = bn2(x)
+        x = n2(x)
         x = x.view(B, P, -1)  # Reshape back to [B, P, output_dim]
 
         return x
