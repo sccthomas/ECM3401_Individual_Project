@@ -64,9 +64,10 @@ class PatchFusion(_nn.Module):
         tensor = tensor.reshape(B, E, in_resolution, in_resolution)
         tensor = patch_embedding_projector(tensor)
         tensor = tensor.reshape(B, out_patches, out_embed)
+        tensor = activation(tensor.float())
+        tensor = dropout(tensor)
 
-        target_tensor = activation((tensor + target_tensor).float())
-        target_tensor = dropout(target_tensor)
+        target_tensor = target_tensor + tensor
 
         return target_tensor
 
