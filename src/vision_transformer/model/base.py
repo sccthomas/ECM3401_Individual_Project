@@ -122,7 +122,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         """
         num_encoder_layers = self.__num_encoder_layers
 
-        kwargs = {'nhead': 16, 'dropout': 0.25, 'activation': _f.gelu}
+        kwargs = {'nhead': 16, 'dropout': 0.25, 'activation': _f.gelu, 'batch_first': True}
         encoders_scale_X = _nn.ModuleList(
             [
                 _nn.TransformerEncoderLayer(
