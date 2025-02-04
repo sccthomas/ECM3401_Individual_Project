@@ -23,7 +23,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             model: _base.SemanticSegmentationVisionTransformerBase,
             encoder_dims: _t.List[int],
             projection_dim: int,
-            temperature: float = 0.5
+            temperature: float = 0.2
     ) -> None:
         """
 
@@ -137,9 +137,9 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         z2 = _F.normalize(z2, dim=-1)
 
         # Compute similarity matrix
-        z1_flat = z1.view(B * P, -1)
-        z2_flat = z2.view(B * P, -1)
-        similarity_matrix = _torch.mm(z1_flat, z2_flat.t()) / temperature
+        z1 = z1.view(B * P, -1)
+        z2 = z2.view(B * P, -1)
+        similarity_matrix = _torch.mm(z1, z2.t()) / temperature
 
         # Labels for contrastive loss
         labels = _torch.arange(B * P).to(z1.device)
@@ -253,9 +253,9 @@ class _ProjectionHead(_nn.Module):
         super(_ProjectionHead, self).__init__()
         hidden_dim = input_dim // 2
         self.__fc1 = _nn.Linear(input_dim, hidden_dim)
-        self.__n1 = _nn.LayerNorm(hidden_dim)
+        self.__n1 = _nn.BatchNorm1d(hidden_dim)
         self.__fc2 = _nn.Linear(hidden_dim, output_dim)
-        self.__n2 = _nn.LayerNorm(output_dim)
+        self.__n2 = _nn.BatchNorm1d(output_dim)
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """

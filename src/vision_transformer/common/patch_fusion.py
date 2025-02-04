@@ -45,6 +45,7 @@ class PatchFusion(_nn.Module):
             _nn.ReLU(),
             _nn.Dropout(dropout_rate)
         )
+        self.__out_resolution = out_resolution
         self.__in_resolution = in_resolution
         self.__out_patches = out_patches
         self.__out_embed = out_embed
@@ -61,15 +62,18 @@ class PatchFusion(_nn.Module):
         """
         patch_embedding_projector = self.__patch_embedding_projector
         in_resolution = self.__in_resolution
+        out_resolution = self.__out_resolution
         out_patches = self.__out_patches
         out_embed = self.__out_embed
 
         B, P, E = tensor.shape
-        tensor = tensor.reshape(B, E, in_resolution, in_resolution)
+        tensor = tensor.reshape(B, in_resolution, in_resolution, E).permute(0, 3, 1, 2).contiguous()
         tensor = patch_embedding_projector(tensor)
-        tensor = tensor.reshape(B, out_patches, out_embed)
 
+        B, P, E = target_tensor.shape
+        target_tensor = target_tensor.reshape(B, out_resolution, out_resolution, E).permute(0, 3, 1, 2).contiguous()
         target_tensor = (target_tensor + tensor).float()
+        target_tensor = target_tensor.permute(0, 3, 1, 2).reshape(B, out_patches, out_embed)
 
         return target_tensor
 

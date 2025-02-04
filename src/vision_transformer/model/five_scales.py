@@ -15,6 +15,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             self,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
+            decoder_type: str,
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
             decoder_dropout_rate: float,
@@ -31,6 +32,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers.
+        :param decoder_type: The type of decoder to use.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
         :param decoder_dropout_rate: The dropout rate in the decoder stage.
@@ -48,6 +50,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         super(SemanticSegmentationVisionTransformer, self).__init__(
             image_dims=image_dims,
             num_encoder_layers=num_encoder_layers,
+            decoder_type=decoder_type,
             patch_embedding_scales=[
                 patch_embedding_scale_1,
                 patch_embedding_scale_2,

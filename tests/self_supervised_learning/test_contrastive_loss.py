@@ -11,6 +11,7 @@ class TestContrastivePreTraining(unittest.TestCase):
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 128, 128),
             num_encoder_layers=4,
+            decoder_type='lightweight',
             encoder_dropout_rate=0.25,
             patch_fusion_dropout_rate=0.25,
             decoder_dropout_rate=0.25,

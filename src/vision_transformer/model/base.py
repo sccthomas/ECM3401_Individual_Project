@@ -23,6 +23,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             *,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
+            decoder_type: str,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
@@ -35,6 +36,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
+        :param decoder_type: The type of decoder to use.
         :param patch_embedding_scales: The patch embedding configurations for each scale.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
@@ -48,10 +50,17 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         assert height == width, "Input image must be square."
 
+        if decoder_type == 'lightweight':
+            decoder = _decoder.LightWeightDecoder
+        elif decoder_type == 'heavyweight':
+            decoder = _decoder.HeavyWeightDecoder
+        else:
+            raise ValueError(f"Invalid decoder type: {decoder_type}")
+
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers
         self.__num_patch_fusion_layers = num_encoder_layers - 1
-        self.__decoder = _decoder.Decoder.create(
+        self.__decoder = decoder.create(
             patch_embedding_scales=patch_embedding_scales,
             input_dims=image_dims,
             output_dims=(num_classes, height, width),
@@ -62,7 +71,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__num_encoder_heads = num_encoder_heads
 
     @property
-    def image_dims(self) -> _t.Tuple[int, int]:
+    def image_dims(self) -> _t.Tuple[int]:
         """
         Get the image dimensions.
 
@@ -80,7 +89,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         return self.__num_encoder_layers
 
     @property
-    def decoder(self) -> _decoder.Decoder:
+    def decoder(self) -> _decoder.BaseDecoder:
         """
         Get the decoder module.
 
@@ -159,7 +168,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             'nhead': num_encoder_heads,
             'dropout': encoder_dropout_rate,
             'activation': _f.gelu,
-            'batch_first': True
+            'batch_first': True,
         }
         encoders_scale_X = _nn.ModuleList(
             [

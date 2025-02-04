@@ -60,7 +60,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         # - Encoder Stage
         patch_embeddings, _ = model.apply_encoder_stage(patch_embeddings=patch_embeddings)
         # - Decoder Stage
-        reconstructed = model.decoder.forward_(patch_embeddings)
+        reconstructed = model.decoder.forward(patch_embeddings, apply_prediction_head=False)
         # - Apply temporary projection head to RGB
         reconstructed = projection_head(reconstructed)
 

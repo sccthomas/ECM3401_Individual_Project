@@ -48,9 +48,13 @@ class SegmentationMetrics:
         :param target: The target for each prediction.
         :param binary_cross_entropy_loss: Current Binary Cross Entropy Loss.
         """
+        device = self.__device
         # Metric Calculators
         dice_score = self.__dice_score
         mean_intersection_over_union = self.__mean_intersection_over_union
+
+        pred = preds.detach().to(device)
+        target = target.detach().to(device)
 
         preds = (_torch.sigmoid(preds) > 0.5).int()
         target = target.int()
