@@ -79,18 +79,16 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         # - Patch Fusion Layers
         #   - Scale 1
-        self.__patch_fusions_scale_1_to_2 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            in_patches=self.__patch_embedding_scale_1.num_patches,
-            in_embed=patch_embedding_scale_1[1],
-            out_patches=self.__patch_embedding_scale_2.num_patches,
-            out_embed=patch_embedding_scale_2[1],
-        )
-        #   - Scale 2
-        self.__patch_fusions_scale_2_to_1 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            in_patches=self.__patch_embedding_scale_2.num_patches,
-            in_embed=patch_embedding_scale_2[1],
+        self.__patch_fusions_scale_1 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[[self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]], ],
             out_patches=self.__patch_embedding_scale_1.num_patches,
             out_embed=patch_embedding_scale_1[1],
+        )
+        #   - Scale 2
+        self.__patch_fusions_scale_2 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[[self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]], ],
+            out_patches=self.__patch_embedding_scale_2.num_patches,
+            out_embed=patch_embedding_scale_2[1],
         )
 
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
@@ -122,8 +120,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         """
         encoder_scale_1 = self.__encoders_scale_1
         encoder_scale_2 = self.__encoders_scale_2
-        patch_fusions_scale_1_to_2 = self.__patch_fusions_scale_1_to_2
-        patch_fusions_scale_2_to_1 = self.__patch_fusions_scale_2_to_1
+        patch_fusions_scale_1 = self.__patch_fusions_scale_1
+        patch_fusions_scale_2 = self.__patch_fusions_scale_2
 
         kwargs = {'return_attention_weights': return_attention_weights}
         weights = {
@@ -141,19 +139,19 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             weights['x1'].append(weights_x1)
             weights['x2'].append(weights_x2)
 
-        for encoder_scale_1, encoder_scale_2, patch_fusion_scale_1_to_2, patch_fusion_scale_2_to_1 in zip(
+        for encoder_scale_1, encoder_scale_2, patch_fusion_scale_1, patch_fusion_scale_2 in zip(
                 encoder_scale_1[1:],
                 encoder_scale_2[1:],
-                patch_fusions_scale_1_to_2,
-                patch_fusions_scale_2_to_1,
+                patch_fusions_scale_1,
+                patch_fusions_scale_2,
         ):
             # - Patch Fusion Layer
-            x1_fused = patch_fusion_scale_2_to_1(x2, x1)
-            x2_fused = patch_fusion_scale_1_to_2(x1, x2)
+            x1 = patch_fusion_scale_1(target_tensor=x1, tensors=[x2])
+            x2 = patch_fusion_scale_2(target_tensor=x2, tensors=[x1])
 
             # - Transformer Encoder Layer
-            x1, weights_x1 = encoder_scale_1(x1_fused, **kwargs)
-            x2, weights_x2 = encoder_scale_2(x2_fused, **kwargs)
+            x1, weights_x1 = encoder_scale_1(x1, **kwargs)
+            x2, weights_x2 = encoder_scale_2(x2, **kwargs)
             # - Append the weights
             if return_attention_weights:
                 weights['x1'].append(weights_x1)

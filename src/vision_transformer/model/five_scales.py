@@ -117,114 +117,59 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         # - Patch Fusion Layers
         #   - Scale 1
-        kwargs = {'in_patches': self.__patch_embedding_scale_1.num_patches, 'in_embed': patch_embedding_scale_1[1]}
-        self.__patch_fusions_scale_1_to_2 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_2.num_patches,
-            out_embed=patch_embedding_scale_2[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_1_to_3 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_3.num_patches,
-            out_embed=patch_embedding_scale_3[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_1_to_4 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_4.num_patches,
-            out_embed=patch_embedding_scale_4[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_1_to_5 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_5.num_patches,
-            out_embed=patch_embedding_scale_5[1],
-            **kwargs
+        self.__patch_fusions_scale_1 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[
+                [self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]],
+                [self.__patch_embedding_scale_3.num_patches, patch_embedding_scale_3[1]],
+                [self.__patch_embedding_scale_4.num_patches, patch_embedding_scale_4[1]],
+                [self.__patch_embedding_scale_5.num_patches, patch_embedding_scale_5[1]],
+            ],
+            out_patches=self.__patch_embedding_scale_1.num_patches,
+            out_embed=patch_embedding_scale_1[1],
         )
         #   - Scale 2
-        kwargs = {'in_patches': self.__patch_embedding_scale_2.num_patches, 'in_embed': patch_embedding_scale_2[1]}
-        self.__patch_fusions_scale_2_to_1 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_1.num_patches,
-            out_embed=patch_embedding_scale_1[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_2_to_3 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_3.num_patches,
-            out_embed=patch_embedding_scale_3[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_2_to_4 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_4.num_patches,
-            out_embed=patch_embedding_scale_4[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_2_to_5 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_5.num_patches,
-            out_embed=patch_embedding_scale_5[1],
-            **kwargs
+        self.__patch_fusions_scale_2 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[
+                [self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]],
+                [self.__patch_embedding_scale_3.num_patches, patch_embedding_scale_3[1]],
+                [self.__patch_embedding_scale_4.num_patches, patch_embedding_scale_4[1]],
+                [self.__patch_embedding_scale_5.num_patches, patch_embedding_scale_5[1]],
+            ],
+            out_patches=self.__patch_embedding_scale_2.num_patches,
+            out_embed=patch_embedding_scale_2[1],
         )
         #   - Scale 3
-        kwargs = {'in_patches': self.__patch_embedding_scale_3.num_patches, 'in_embed': patch_embedding_scale_3[1]}
-        self.__patch_fusions_scale_3_to_1 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_1.num_patches,
-            out_embed=patch_embedding_scale_1[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_3_to_2 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_2.num_patches,
-            out_embed=patch_embedding_scale_2[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_3_to_4 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_4.num_patches,
-            out_embed=patch_embedding_scale_4[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_3_to_5 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_5.num_patches,
-            out_embed=patch_embedding_scale_5[1],
-            **kwargs
+        self.__patch_fusions_scale_3 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[
+                [self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]],
+                [self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]],
+                [self.__patch_embedding_scale_4.num_patches, patch_embedding_scale_4[1]],
+                [self.__patch_embedding_scale_5.num_patches, patch_embedding_scale_5[1]],
+            ],
+            out_patches=self.__patch_embedding_scale_3.num_patches,
+            out_embed=patch_embedding_scale_3[1],
         )
         #   - Scale 4
-        kwargs = {'in_patches': self.__patch_embedding_scale_4.num_patches, 'in_embed': patch_embedding_scale_4[1]}
-        self.__patch_fusions_scale_4_to_1 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_1.num_patches,
-            out_embed=patch_embedding_scale_1[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_4_to_2 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_2.num_patches,
-            out_embed=patch_embedding_scale_2[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_4_to_3 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_3.num_patches,
-            out_embed=patch_embedding_scale_3[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_4_to_5 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_5.num_patches,
-            out_embed=patch_embedding_scale_5[1],
-            **kwargs
-        )
-        #   - Scale 5
-        kwargs = {'in_patches': self.__patch_embedding_scale_5.num_patches, 'in_embed': patch_embedding_scale_5[1]}
-        self.__patch_fusions_scale_5_to_1 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_1.num_patches,
-            out_embed=patch_embedding_scale_1[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_5_to_2 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_2.num_patches,
-            out_embed=patch_embedding_scale_2[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_5_to_3 = self._create_patch_fusion_layers_for_scale_X_to_Y(
-            out_patches=self.__patch_embedding_scale_3.num_patches,
-            out_embed=patch_embedding_scale_3[1],
-            **kwargs
-        )
-        self.__patch_fusions_scale_5_to_4 = self._create_patch_fusion_layers_for_scale_X_to_Y(
+        self.__patch_fusions_scale_4 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[
+                [self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]],
+                [self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]],
+                [self.__patch_embedding_scale_3.num_patches, patch_embedding_scale_3[1]],
+                [self.__patch_embedding_scale_5.num_patches, patch_embedding_scale_5[1]],
+            ],
             out_patches=self.__patch_embedding_scale_4.num_patches,
             out_embed=patch_embedding_scale_4[1],
-            **kwargs
+        )
+        #   - Scale 5
+        self.__patch_fusions_scale_5 = self._create_patch_fusion_layers_for_scale_X(
+            in_dims=[
+                [self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]],
+                [self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]],
+                [self.__patch_embedding_scale_3.num_patches, patch_embedding_scale_3[1]],
+                [self.__patch_embedding_scale_4.num_patches, patch_embedding_scale_4[1]],
+            ],
+            out_patches=self.__patch_embedding_scale_5.num_patches,
+            out_embed=patch_embedding_scale_5[1],
         )
 
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
@@ -265,26 +210,11 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         encoders_scale_3 = self.__encoders_scale_3
         encoders_scale_4 = self.__encoders_scale_4
         encoders_scale_5 = self.__encoders_scale_5
-        patch_fusions_scale_1_to_2 = self.__patch_fusions_scale_1_to_2
-        patch_fusions_scale_1_to_3 = self.__patch_fusions_scale_1_to_3
-        patch_fusions_scale_1_to_4 = self.__patch_fusions_scale_1_to_4
-        patch_fusions_scale_1_to_5 = self.__patch_fusions_scale_1_to_5
-        patch_fusions_scale_2_to_1 = self.__patch_fusions_scale_2_to_1
-        patch_fusions_scale_2_to_3 = self.__patch_fusions_scale_2_to_3
-        patch_fusions_scale_2_to_4 = self.__patch_fusions_scale_2_to_4
-        patch_fusions_scale_2_to_5 = self.__patch_fusions_scale_2_to_5
-        patch_fusions_scale_3_to_1 = self.__patch_fusions_scale_3_to_1
-        patch_fusions_scale_3_to_2 = self.__patch_fusions_scale_3_to_2
-        patch_fusions_scale_3_to_4 = self.__patch_fusions_scale_3_to_4
-        patch_fusions_scale_3_to_5 = self.__patch_fusions_scale_3_to_5
-        patch_fusions_scale_4_to_1 = self.__patch_fusions_scale_4_to_1
-        patch_fusions_scale_4_to_2 = self.__patch_fusions_scale_4_to_2
-        patch_fusions_scale_4_to_3 = self.__patch_fusions_scale_4_to_3
-        patch_fusions_scale_4_to_5 = self.__patch_fusions_scale_4_to_5
-        patch_fusions_scale_5_to_1 = self.__patch_fusions_scale_5_to_1
-        patch_fusions_scale_5_to_2 = self.__patch_fusions_scale_5_to_2
-        patch_fusions_scale_5_to_3 = self.__patch_fusions_scale_5_to_3
-        patch_fusions_scale_5_to_4 = self.__patch_fusions_scale_5_to_4
+        patch_fusions_scale_1 = self.__patch_fusions_scale_1
+        patch_fusions_scale_2 = self.__patch_fusions_scale_2
+        patch_fusions_scale_3 = self.__patch_fusions_scale_3
+        patch_fusions_scale_4 = self.__patch_fusions_scale_4
+        patch_fusions_scale_5 = self.__patch_fusions_scale_5
 
         kwargs = {'return_attention_weights': return_attention_weights}
         weights = {
@@ -318,74 +248,30 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         for (
                 # Encoder Scales
                 encoder_scale_1, encoder_scale_2, encoder_scale_3, encoder_scale_4, encoder_scale_5,
-                # Patch Fusion Scale 1
-                patch_fusion_scale_1_to_2, patch_fusion_scale_1_to_3, patch_fusion_scale_1_to_4,
-                patch_fusion_scale_1_to_5,
-                # Patch Fusion Scale 2
-                patch_fusion_scale_2_to_1, patch_fusion_scale_2_to_3, patch_fusion_scale_2_to_4,
-                patch_fusion_scale_2_to_5,
-                # Patch Fusion Scale 3
-                patch_fusion_scale_3_to_1, patch_fusion_scale_3_to_2, patch_fusion_scale_3_to_4,
-                patch_fusion_scale_3_to_5,
-                # Patch Fusion Scale 4
-                patch_fusion_scale_4_to_1, patch_fusion_scale_4_to_2, patch_fusion_scale_4_to_3,
-                patch_fusion_scale_4_to_5,
-                # Patch Fusion Scale 5
-                patch_fusion_scale_5_to_1, patch_fusion_scale_5_to_2, patch_fusion_scale_5_to_3,
-                patch_fusion_scale_5_to_4,
+                # Patch Fusion Scales
+                patch_fusion_scale_1, patch_fusion_scale_2, patch_fusion_scale_3, patch_fusion_scale_4,
+                patch_fusion_scale_5
         ) in zip(
             # Encoder Scales
             encoders_scale_1[1:], encoders_scale_2[1:], encoders_scale_3[1:], encoders_scale_4[1:],
             encoders_scale_5[1:],
-            # Patch Fusion Scale 1
-            patch_fusions_scale_1_to_2, patch_fusions_scale_1_to_3, patch_fusions_scale_1_to_4,
-            patch_fusions_scale_1_to_5,
-            # Patch Fusion Scale 2
-            patch_fusions_scale_2_to_1, patch_fusions_scale_2_to_3, patch_fusions_scale_2_to_4,
-            patch_fusions_scale_2_to_5,
-            # Patch Fusion Scale 3
-            patch_fusions_scale_3_to_1, patch_fusions_scale_3_to_2, patch_fusions_scale_3_to_4,
-            patch_fusions_scale_3_to_5,
-            # Patch Fusion Scale 4
-            patch_fusions_scale_4_to_1, patch_fusions_scale_4_to_2, patch_fusions_scale_4_to_3,
-            patch_fusions_scale_4_to_5,
-            # Patch Fusion Scale 5
-            patch_fusions_scale_5_to_1, patch_fusions_scale_5_to_2, patch_fusions_scale_5_to_3,
-            patch_fusions_scale_5_to_4,
+            # Patch Fusion Scales
+            patch_fusions_scale_1, patch_fusions_scale_2, patch_fusions_scale_3, patch_fusions_scale_4,
+            patch_fusions_scale_5,
         ):
             # - Patch Fusion Layer
-            #   - Scale 1
-            x1_fused = patch_fusion_scale_2_to_1(x2, x1)
-            x1_fused = patch_fusion_scale_3_to_1(x3, x1_fused)
-            x1_fused = patch_fusion_scale_4_to_1(x4, x1_fused)
-            x1_fused = patch_fusion_scale_5_to_1(x5, x1_fused)
-            #   - Scale 2
-            x2_fused = patch_fusion_scale_1_to_2(x1, x2)
-            x2_fused = patch_fusion_scale_3_to_2(x3, x2_fused)
-            x2_fused = patch_fusion_scale_4_to_2(x4, x2_fused)
-            x2_fused = patch_fusion_scale_5_to_2(x5, x2_fused)
-            #   - Scale 3
-            x3_fused = patch_fusion_scale_1_to_3(x1, x3)
-            x3_fused = patch_fusion_scale_2_to_3(x2, x3_fused)
-            x3_fused = patch_fusion_scale_4_to_3(x4, x3_fused)
-            x3_fused = patch_fusion_scale_5_to_3(x5, x3_fused)
-            #   - Scale 4
-            x4_fused = patch_fusion_scale_1_to_4(x1, x4)
-            x4_fused = patch_fusion_scale_2_to_4(x2, x4_fused)
-            x4_fused = patch_fusion_scale_3_to_4(x3, x4_fused)
-            x4_fused = patch_fusion_scale_5_to_4(x5, x4_fused)
-            #   - Scale 5
-            x5_fused = patch_fusion_scale_1_to_5(x1, x5)
-            x5_fused = patch_fusion_scale_2_to_5(x2, x5_fused)
-            x5_fused = patch_fusion_scale_3_to_5(x3, x5_fused)
-            x5_fused = patch_fusion_scale_4_to_5(x4, x5_fused)
+            x1 = patch_fusion_scale_1(target_tensor=x1, tensors=[x2, x3, x4, x5])
+            x2 = patch_fusion_scale_2(target_tensor=x2, tensors=[x1, x3, x4, x5])
+            x3 = patch_fusion_scale_3(target_tensor=x3, tensors=[x1, x2, x4, x5])
+            x4 = patch_fusion_scale_4(target_tensor=x4, tensors=[x1, x2, x3, x5])
+            x5 = patch_fusion_scale_5(target_tensor=x5, tensors=[x1, x2, x3, x4])
 
             # - Transformer Encoder Layer
-            x1, weights_x1 = encoder_scale_1(x1_fused, **kwargs)
-            x2, weights_x2 = encoder_scale_2(x2_fused, **kwargs)
-            x3, weights_x3 = encoder_scale_3(x3_fused, **kwargs)
-            x4, weights_x4 = encoder_scale_4(x4_fused, **kwargs)
-            x5, weights_x5 = encoder_scale_5(x5_fused, **kwargs)
+            x1, weights_x1 = encoder_scale_1(x1, **kwargs)
+            x2, weights_x2 = encoder_scale_2(x2, **kwargs)
+            x3, weights_x3 = encoder_scale_3(x3, **kwargs)
+            x4, weights_x4 = encoder_scale_4(x4, **kwargs)
+            x5, weights_x5 = encoder_scale_5(x5, **kwargs)
 
             # - Append the weights
             if return_attention_weights:
