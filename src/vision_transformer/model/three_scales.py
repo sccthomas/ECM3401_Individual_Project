@@ -186,9 +186,9 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             patch_fusions_scale_1, patch_fusions_scale_2, patch_fusions_scale_3,
         ):
             # - Patch Fusion Layer
-            x1 = patch_fusion_scale_1(target_tensor=x1, tensors=[x2, x3])
-            x2 = patch_fusion_scale_2(target_tensor=x2, tensors=[x1, x3])
-            x3 = patch_fusion_scale_3(target_tensor=x3, tensors=[x1, x2])
+            # x1 = patch_fusion_scale_1(target_tensor=x1, tensors=[x2, x3])
+            # x2 = patch_fusion_scale_2(target_tensor=x2, tensors=[x1, x3])
+            # x3 = patch_fusion_scale_3(target_tensor=x3, tensors=[x1, x2])
 
             # - Transformer Encoder Layer
             x1, weights_x1 = encoder_scale_1(x1, **kwargs)
