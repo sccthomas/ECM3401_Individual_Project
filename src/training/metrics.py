@@ -53,7 +53,7 @@ class SegmentationMetrics:
         dice_score = self.__dice_score
         mean_intersection_over_union = self.__mean_intersection_over_union
 
-        pred = preds.detach().to(device)
+        preds = preds.detach().to(device)
         target = target.detach().to(device)
 
         preds = (_torch.sigmoid(preds) > 0.5).int()
