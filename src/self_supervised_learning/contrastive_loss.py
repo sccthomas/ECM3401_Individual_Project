@@ -144,7 +144,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         del z1, z2
 
         # Labels for contrastive loss
-        labels = _torch.arange(B * P).to(z1.device)
+        labels = _torch.arange(B * P).to(similarity_matrix.device)
 
         # Loss for z1 -> z2 and z2 -> z1
         loss_1 = criterion(similarity_matrix, labels)
