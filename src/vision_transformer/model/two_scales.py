@@ -149,8 +149,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         ):
             # - Patch Fusion Layer
             if layer % skip_layer_ratio == 0:
-                x1 = patch_fusions_scale_1(target_tensor=x1, tensors=[x2])
-                x2 = patch_fusions_scale_2(target_tensor=x2, tensors=[x1])
+                x1 = patch_fusions_scale_1[skip_layer](target_tensor=x1, tensors=[x2])
+                x2 = patch_fusions_scale_2[skip_layer](target_tensor=x2, tensors=[x1])
                 # - Increment the skip layer
                 skip_layer += 1
 

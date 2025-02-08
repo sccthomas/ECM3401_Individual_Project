@@ -61,7 +61,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers
-        self.__num_patch_fusion_layers = (num_encoder_layers // skip_layer_ratio)
+        self.__num_patch_fusion_layers = (num_encoder_layers // skip_layer_ratio) - 1
         self._skip_layer_ratio = skip_layer_ratio
         self.__decoder = decoder.create(
             patch_embedding_scales=patch_embedding_scales,
