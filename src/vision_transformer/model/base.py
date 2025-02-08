@@ -114,7 +114,13 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
+    ) -> _t.Union[
+        _t.Dict[str, _torch.Tensor],
+        _t.Tuple[
+            _t.Dict[str, _torch.Tensor],
+            _t.Dict[str, _t.List[_torch.Tensor]]
+        ]
+    ]:
         """
         Apply the encoder stage to the input tensors.
 
@@ -125,7 +131,13 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
     def forward(
             self, x: _torch.Tensor, return_attention_weights: bool = False
-    ) -> _t.Tuple[_torch.Tensor, _t.Optional[_t.Dict[str, _t.List[_torch.Tensor]]]]:
+    ) -> _t.Union[
+        _torch.Tensor,
+        _t.Tuple[
+            _torch.Tensor,
+            _t.Dict[str, _t.List[_torch.Tensor]],
+        ]
+    ]:
         """
         Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
         stages to the input tensor. Each stage returns a dictionary of tensors that are passed to the next stage. These
@@ -141,10 +153,16 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         # Patch Embedding
         patch_embeddings = self.apply_patch_embedding_stage(x)
         # Encoder Stage
-        patch_embeddings, attention_weights = self.apply_encoder_stage(
-            patch_embeddings=patch_embeddings,
-            return_attention_weights=return_attention_weights
-        )
+        if return_attention_weights:
+            patch_embeddings, attention_weights = self.apply_encoder_stage(
+                patch_embeddings=patch_embeddings,
+                return_attention_weights=return_attention_weights
+            )
+        else:
+            patch_embeddings = self.apply_encoder_stage(
+                patch_embeddings=patch_embeddings,
+                return_attention_weights=return_attention_weights
+            )
         # Decoder Stage
         x1 = decoder(patch_embeddings)
         assert x1.shape[2:] == image_dims
@@ -152,7 +170,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         if return_attention_weights:
             return x1, attention_weights
 
-        return x1, None
+        return x1
 
     def _create_encoder_layers_for_scale_X(
             self, embed_dim: int,

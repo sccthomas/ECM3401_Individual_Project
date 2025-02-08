@@ -31,7 +31,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
 
         x = torch.rand(2, 3, 128, 128).float().to(device)
 
-        y, _ = model(x)
+        y = model(x)
 
         self.assertEqual(y.shape, (2, 1, 128, 128))
         self.assertFalse(torch.isnan(y).any())

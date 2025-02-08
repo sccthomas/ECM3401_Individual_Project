@@ -90,8 +90,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         x1 = model.apply_patch_embedding_stage(x1)  # Output -> dict[str, _torch.Tensor]
         x2 = model.apply_patch_embedding_stage(x2)  # Output -> dict[str, _torch.Tensor]
         # - Encode patch embeddings
-        x1, _ = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
-        x2, _ = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
+        x1 = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
+        x2 = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
 
         # Apply projection head to each patch embedding scale in the encoder output
         keys = x1.keys()
@@ -274,7 +274,7 @@ class _ProjectionHead(_nn.Module):
         B, P, C = x.shape
         x = x.view(-1, C)  # Flatten patches into batch dimension
         x = fc1(x)
-        x = _F.relu(n1(x))
+        x = _F.relu(n1(x), inplace=True)
         x = fc2(x)
         x = n2(x)
         x = x.view(B, P, -1)  # Reshape back to [B, P, output_dim]

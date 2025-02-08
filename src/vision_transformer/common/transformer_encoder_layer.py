@@ -125,8 +125,8 @@ class TransformerEncoderLayer(Module):
         self.norm_first = norm_first
         self.norm1 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, **factory_kwargs)
         self.norm2 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, **factory_kwargs)
-        self.dropout1 = Dropout(dropout)
-        self.dropout2 = Dropout(dropout)
+        self.dropout1 = Dropout(dropout, inplace=True)
+        self.dropout2 = Dropout(dropout, inplace=True)
 
         # Legacy string support for activation function.
         if isinstance(activation, str):
@@ -310,8 +310,11 @@ class TransformerEncoderLayer(Module):
                 + attn
             )
             x = self.norm2(x + self._ff_block(x))
+            
+        if return_attention_weights:
+            return x, weights
 
-        return x, weights
+        return x
 
     # self-attention block
     def _sa_block(

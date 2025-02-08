@@ -45,8 +45,8 @@ class PatchFusion(_nn.Module):
             patch_embedding_projectors.append(_nn.Sequential(
                 operation,
                 _nn.BatchNorm2d(out_embed),
-                _nn.ReLU(),
-                _nn.Dropout(dropout_rate)
+                _nn.ReLU(inplace=True),
+                _nn.Dropout(dropout_rate, inplace=True)
             ))
             in_resolutions.append(in_resolution)
 

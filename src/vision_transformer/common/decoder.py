@@ -157,8 +157,8 @@ class HeavyWeightDecoder(BaseDecoder):
                 [
                     _nn.ConvTranspose2d(embed_dim, final_embed_dim, kernel_size=scale_factor, stride=scale_factor),
                     _nn.BatchNorm2d(final_embed_dim),
-                    _nn.ReLU(),
-                    _nn.Dropout2d(dropout_rate),
+                    _nn.ReLU(inplace=True),
+                    _nn.Dropout2d(dropout_rate, inplace=True),
                 ]
             )
 
@@ -195,8 +195,8 @@ class HeavyWeightDecoder(BaseDecoder):
                 _nn.Sequential(
                     _nn.ConvTranspose2d(dim_1, dim_2, kernel_size=2, stride=2),
                     _nn.BatchNorm2d(dim_2),
-                    _nn.ReLU(),
-                    _nn.Dropout2d(dropout_rate),
+                    _nn.ReLU(inplace=True),
+                    _nn.Dropout2d(dropout_rate, inplace=True),
                 )
             )
 
@@ -316,8 +316,8 @@ class LightWeightDecoder(BaseDecoder):
                 f'x{i}': _nn.Sequential(
                     _nn.Conv2d(in_channels=embed_dim, out_channels=out_channels, kernel_size=1, stride=1),
                     _nn.BatchNorm2d(out_channels),
-                    _nn.ReLU(),
-                    _nn.Dropout(p=dropout_rate),
+                    _nn.ReLU(inplace=True),
+                    _nn.Dropout(p=dropout_rate, inplace=True),
                     _nn.Upsample(scale_factor=patch_size / out_patch_size, mode='nearest'),
                 )
                 for i, (patch_size, embed_dim) in enumerate(patch_embedding_scales, start=1)
@@ -327,8 +327,8 @@ class LightWeightDecoder(BaseDecoder):
         fused_embedding_operations = _nn.Sequential(
             _nn.Conv2d(in_channels=out_channels * num_scales, out_channels=out_channels, kernel_size=1, stride=1),
             _nn.BatchNorm2d(out_channels),
-            _nn.ReLU(),
-            _nn.Dropout(p=dropout_rate),
+            _nn.ReLU(inplace=True),
+            _nn.Dropout(p=dropout_rate, inplace=True),
             _nn.ConvTranspose2d(
                 in_channels=out_channels, out_channels=hidden_dim, kernel_size=out_patch_size, stride=out_patch_size
             ),

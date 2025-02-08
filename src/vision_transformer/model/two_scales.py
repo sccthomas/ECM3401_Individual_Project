@@ -1,6 +1,7 @@
 import typing as _t
 
 import torch as _torch
+import torch.utils.checkpoint as _checkpoint
 
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.model.base as _base
@@ -113,7 +114,13 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
+    ) -> _t.Union[
+        _t.Dict[str, _torch.Tensor],
+        _t.Tuple[
+            _t.Dict[str, _torch.Tensor],
+            _t.Dict[str, _t.List[_torch.Tensor]]
+        ]
+    ]:
         """
         Apply the encoder stage to the input tensors.
 
@@ -121,31 +128,33 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         :param return_attention_weights: Whether to return the attention weights.
         :return: Encoded tensors for scale 1 and scale 2 and attention weights.
         """
-        encoder_scale_1 = self.__encoders_scale_1
-        encoder_scale_2 = self.__encoders_scale_2
+        encoders_scale_1 = self.__encoders_scale_1
+        encoders_scale_2 = self.__encoders_scale_2
         patch_fusions_scale_1 = self.__patch_fusions_scale_1
         patch_fusions_scale_2 = self.__patch_fusions_scale_2
         skip_layer_ratio = self._skip_layer_ratio
 
-        kwargs = {'return_attention_weights': return_attention_weights}
-        weights = {
-            'x1': [],
-            'x2': [],
-        }
-
         # Encoder Stage
         x1 = patch_embeddings['x1']
         x2 = patch_embeddings['x2']
-        x1, weights_x1 = encoder_scale_1[0](x1, **kwargs)
-        x2, weights_x2 = encoder_scale_2[0](x2, **kwargs)
-        # Append the weights
+
         if return_attention_weights:
+            kwargs = {'return_attention_weights': return_attention_weights}
+            weights = {
+                'x1': [],
+                'x2': [],
+            }
+            x1, weights_x1 = encoders_scale_1[0](x1, **kwargs)
+            x2, weights_x2 = encoders_scale_2[0](x2, **kwargs)
             weights['x1'].append(weights_x1)
             weights['x2'].append(weights_x2)
+        else:
+            x1 = _checkpoint.checkpoint(encoders_scale_1[0], x1)
+            x2 = _checkpoint.checkpoint(encoders_scale_2[0], x2)
 
         skip_layer = 0
         for layer, (encoder_scale_1, encoder_scale_2) in enumerate(
-                zip(encoder_scale_1[1:], encoder_scale_2[1:]), start=1
+                zip(encoders_scale_1[1:], encoders_scale_2[1:]), start=1
         ):
             # - Patch Fusion Layer
             if layer % skip_layer_ratio == 0:
@@ -155,11 +164,16 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 skip_layer += 1
 
             # - Transformer Encoder Layer
-            x1, weights_x1 = encoder_scale_1(x1, **kwargs)
-            x2, weights_x2 = encoder_scale_2(x2, **kwargs)
-            # - Append the weights
             if return_attention_weights:
+                x1, weights_x1 = encoder_scale_1(x1, **kwargs)
+                x2, weights_x2 = encoder_scale_2(x2, **kwargs)
                 weights['x1'].append(weights_x1)
                 weights['x2'].append(weights_x2)
+            else:
+                x1 = _checkpoint.checkpoint(encoder_scale_1, x1)
+                x2 = _checkpoint.checkpoint(encoder_scale_2, x2)
 
-        return {'x1': x1, 'x2': x2}, weights
+        if return_attention_weights:
+            return {'x1': x1, 'x2': x2}, weights
+
+        return {'x1': x1, 'x2': x2}

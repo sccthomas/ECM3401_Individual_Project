@@ -1,6 +1,7 @@
 import typing as _t
 
 import torch as _torch
+import torch.utils.checkpoint as _checkpoint
 
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.model.base as _base
@@ -200,7 +201,13 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
+    ) -> _t.Union[
+        _t.Dict[str, _torch.Tensor],
+        _t.Tuple[
+            _t.Dict[str, _torch.Tensor],
+            _t.Dict[str, _t.List[_torch.Tensor]]
+        ]
+    ]:
         """
         Apply the encoder stage to the input tensors.
 
@@ -220,34 +227,38 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         patch_fusions_scale_5 = self.__patch_fusions_scale_5
         skip_layer_ratio = self._skip_layer_ratio
 
-        kwargs = {'return_attention_weights': return_attention_weights}
-        weights = {
-            'x1': [],
-            'x2': [],
-            'x3': [],
-            'x4': [],
-            'x5': [],
-        }
-
         # Encoder Stage
         x1 = patch_embeddings['x1']
         x2 = patch_embeddings['x2']
         x3 = patch_embeddings['x3']
         x4 = patch_embeddings['x4']
         x5 = patch_embeddings['x5']
-        x1, weights_x1 = encoders_scale_1[0](x1, **kwargs)
-        x2, weights_x2 = encoders_scale_2[0](x2, **kwargs)
-        x3, weights_x3 = encoders_scale_3[0](x3, **kwargs)
-        x4, weights_x4 = encoders_scale_4[0](x4, **kwargs)
-        x5, weights_x5 = encoders_scale_5[0](x5, **kwargs)
 
-        # Append the weights
         if return_attention_weights:
+            kwargs = {'return_attention_weights': return_attention_weights}
+            weights = {
+                'x1': [],
+                'x2': [],
+                'x3': [],
+                'x4': [],
+                'x5': [],
+            }
+            x1, weights_x1 = encoders_scale_1[0](x1, **kwargs)
+            x2, weights_x2 = encoders_scale_2[0](x2, **kwargs)
+            x3, weights_x3 = encoders_scale_3[0](x3, **kwargs)
+            x4, weights_x4 = encoders_scale_4[0](x4, **kwargs)
+            x5, weights_x5 = encoders_scale_5[0](x5, **kwargs)
             weights['x1'].append(weights_x1)
             weights['x2'].append(weights_x2)
             weights['x3'].append(weights_x3)
             weights['x4'].append(weights_x4)
             weights['x5'].append(weights_x5)
+        else:
+            x1 = _checkpoint.checkpoint(encoders_scale_1[0], x1)
+            x2 = _checkpoint.checkpoint(encoders_scale_2[0], x2)
+            x3 = _checkpoint.checkpoint(encoders_scale_3[0], x3)
+            x4 = _checkpoint.checkpoint(encoders_scale_4[0], x4)
+            x5 = _checkpoint.checkpoint(encoders_scale_5[0], x5)
 
         skip_layer = 0
         for layer, (encoder_scale_1, encoder_scale_2, encoder_scale_3, encoder_scale_4, encoder_scale_5) in enumerate(
@@ -266,18 +277,25 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 skip_layer += 1
 
             # - Transformer Encoder Layer
-            x1, weights_x1 = encoder_scale_1(x1, **kwargs)
-            x2, weights_x2 = encoder_scale_2(x2, **kwargs)
-            x3, weights_x3 = encoder_scale_3(x3, **kwargs)
-            x4, weights_x4 = encoder_scale_4(x4, **kwargs)
-            x5, weights_x5 = encoder_scale_5(x5, **kwargs)
-
-            # - Append the weights
             if return_attention_weights:
+                x1, weights_x1 = encoder_scale_1(x1, **kwargs)
+                x2, weights_x2 = encoder_scale_2(x2, **kwargs)
+                x3, weights_x3 = encoder_scale_3(x3, **kwargs)
+                x4, weights_x4 = encoder_scale_4(x4, **kwargs)
+                x5, weights_x5 = encoder_scale_5(x5, **kwargs)
                 weights['x1'].append(weights_x1)
                 weights['x2'].append(weights_x2)
                 weights['x3'].append(weights_x3)
                 weights['x4'].append(weights_x4)
                 weights['x5'].append(weights_x5)
+            else:
+                x1 = _checkpoint.checkpoint(encoder_scale_1, x1)
+                x2 = _checkpoint.checkpoint(encoder_scale_2, x2)
+                x3 = _checkpoint.checkpoint(encoder_scale_3, x3)
+                x4 = _checkpoint.checkpoint(encoder_scale_4, x4)
+                x5 = _checkpoint.checkpoint(encoder_scale_5, x5)
 
-        return {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}, weights
+        if return_attention_weights:
+            return {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}, weights
+
+        return {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
