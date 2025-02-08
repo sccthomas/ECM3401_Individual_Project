@@ -323,17 +323,17 @@ class LightWeightDecoder(BaseDecoder):
                 for i, (patch_size, embed_dim) in enumerate(patch_embedding_scales, start=1)
             }
         )
+        hidden_dim = out_channels // 2
         fused_embedding_operations = _nn.Sequential(
             _nn.Conv2d(in_channels=out_channels * num_scales, out_channels=out_channels, kernel_size=1, stride=1),
             _nn.BatchNorm2d(out_channels),
             _nn.ReLU(),
             _nn.Dropout(p=dropout_rate),
-            _nn.Upsample(
-                scale_factor=out_patch_size,
-                mode='nearest',
+            _nn.ConvTranspose2d(
+                in_channels=out_channels, out_channels=hidden_dim, kernel_size=out_patch_size, stride=out_patch_size
             ),
         )
-        prediction_head = _nn.Conv2d(in_channels=out_channels, out_channels=num_classes, kernel_size=1, stride=1)
+        prediction_head = _nn.Conv2d(in_channels=hidden_dim, out_channels=num_classes, kernel_size=1, stride=1)
 
         return cls(
             patch_embedding_operations=patch_embedding_operations,

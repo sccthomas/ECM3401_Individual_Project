@@ -24,6 +24,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
             decoder_type: str,
+            skip_layer_ratio: int,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
@@ -37,6 +38,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
         :param decoder_type: The type of decoder to use.
+        :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
         :param patch_embedding_scales: The patch embedding configurations for each scale.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
@@ -59,7 +61,8 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers
-        self.__num_patch_fusion_layers = num_encoder_layers - 1
+        self.__num_patch_fusion_layers = (num_encoder_layers // skip_layer_ratio)
+        self._skip_layer_ratio = skip_layer_ratio
         self.__decoder = decoder.create(
             patch_embedding_scales=patch_embedding_scales,
             input_dims=image_dims,
