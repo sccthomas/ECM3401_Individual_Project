@@ -33,55 +33,67 @@ def train_model(
     patience_counter = 0
     len_train_loader = len(train_loader)
     len_val_loader = len(val_loader)
+
     for epoch in range(num_epochs):
-        # - Training loop
-        print(f"\n Epoch {epoch + 1}/{num_epochs}")
+        print(f"\nEpoch {epoch + 1}/{num_epochs}")
+
+        # --- Training Loop ---
         ssl_model.train()
-        train_loss = 0
-        for images, _ in _tqdm.tqdm(train_loader, desc=f"Training"):
-            images = images.to(device)
-            # - Mixed Precision Forward Pass
+        train_loss = 0.0
+        for images, _ in _tqdm.tqdm(train_loader, desc="Training"):
+            # Move data to the GPU using non_blocking transfer
+            images = images.to(device, non_blocking=True)
+
+            # Use mixed precision for forward pass
             with torch.amp.autocast(device.type):
                 loss = ssl_model.forward_loss(images)
-            # - Update Metrics
+
+            # Accumulate the scalar loss value (loss.item() returns a Python float)
             train_loss += loss.item()
 
-            # - Scaler for Backward Pass
-            optimizer.zero_grad()
+            # Zero gradients using set_to_none=True to reduce memory overhead
+            optimizer.zero_grad(set_to_none=True)
+
+            # Scale loss and backpropagate
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-        # - Print Training Metrics
-        train_loss /= len_train_loader
-        print(f"Training Loss: {train_loss}")
 
-        # - Validation Loop
+            del loss
+
+        train_loss /= len_train_loader
+        print(f"Training Loss: {train_loss:.4f}")
+
+        # --- Validation Loop ---
         ssl_model.eval()
-        val_loss = 0
+        val_loss = 0.0
         with torch.no_grad():
-            for images, _ in _tqdm.tqdm(val_loader, desc=f"Validation"):
-                images = images.to(device)
-                # - Mixed Precision Forward Pass
+            for images, _ in _tqdm.tqdm(val_loader, desc="Validation"):
+                images = images.to(device, non_blocking=True)
                 with torch.amp.autocast(device.type):
                     loss = ssl_model.forward_loss(images)
-                # - Update Metrics
                 val_loss += loss.item()
-        # - Print Validation Metrics
+                del loss  # free temporary tensors
+
         val_loss /= len_val_loader
-        print(f"Validation Loss: {val_loss}")
-        # - Learning rate scheduler
+        print(f"Validation Loss: {val_loss:.4f}")
+
+        # Update learning rate scheduler
         scheduler.step()
-        # - Early Stopping and Model Checkpoint
+
+        # --- Early Stopping and Checkpointing ---
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            torch.save(ssl_model.state_dict(), f"best_model_ssl.pth")
-            torch.save(ssl_model.model.state_dict(), f"best_model.pth")
+            torch.save(ssl_model.state_dict(), "best_model_ssl.pth")
+            torch.save(ssl_model.model.state_dict(), "best_model.pth")
         else:
             patience_counter += 1
             if patience_counter >= patience:
                 print("Early stopping triggered")
                 break
-        # - Save model checkpoint every epoch
+
         torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
         torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
+
+        torch.cuda.empty_cache()

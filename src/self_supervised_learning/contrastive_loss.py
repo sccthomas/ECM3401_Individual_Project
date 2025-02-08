@@ -83,6 +83,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # - Apply transformations
         x1 = t1(x)
         x2 = t2(x)
+        del x
 
         # Forward pass
         # - Convert images to patch embeddings
@@ -140,6 +141,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         z1 = z1.view(B * P, -1)
         z2 = z2.view(B * P, -1)
         similarity_matrix = _torch.mm(z1, z2.t()) / temperature
+        del z1, z2
 
         # Labels for contrastive loss
         labels = _torch.arange(B * P).to(z1.device)
