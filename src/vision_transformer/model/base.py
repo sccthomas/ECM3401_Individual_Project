@@ -190,7 +190,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             'dropout': encoder_dropout_rate,
             'activation': _f.gelu,
             'batch_first': True,
-        }
+        } 
         encoders_scale_X = _nn.ModuleList(
             [
                 _transformer_encoder_layer.TransformerEncoderLayer(
