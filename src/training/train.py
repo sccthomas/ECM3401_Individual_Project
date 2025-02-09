@@ -18,6 +18,7 @@ def train_model(
         val_loader: _data.DataLoader,
         patience: int,
         device: torch.device,
+        metric_device: torch.device,
 ) -> None:
     """
     Function to train the model.
@@ -32,11 +33,12 @@ def train_model(
     :param val_loader: The validation data loader.
     :param patience: The number of epochs to wait before early stopping.
     :param device: The device to train the model on.
+    :param metric_device: The device to calculate metrics on.
     """
     best_val_loss = float('inf')
     patience_counter = 0
-    train_metrics = _metrics.SegmentationMetrics(len_dataset=len(train_loader), device=device)
-    val_metrics = _metrics.SegmentationMetrics(len_dataset=len(val_loader), device=device)
+    train_metrics = _metrics.SegmentationMetrics(len_dataset=len(train_loader), device=metric_device)
+    val_metrics = _metrics.SegmentationMetrics(len_dataset=len(val_loader), device=metric_device)
     for epoch in range(num_epochs):
         # - Training loop
         print(f"\n Epoch {epoch + 1}/{num_epochs}")
@@ -45,7 +47,7 @@ def train_model(
             images, masks = images.to(device), masks.to(device)
             # - Mixed Precision Forward Pass
             with torch.amp.autocast(device.type):
-                outputs = model(images)
+                outputs, _ = model.forward(images)
                 loss = criterion(outputs, masks)
             # - Update Metrics
             train_metrics.update_metrics(outputs, masks, loss.item())
@@ -66,7 +68,7 @@ def train_model(
                 images, masks = images.to(device), masks.to(device)
                 # - Mixed Precision Forward Pass
                 with torch.amp.autocast(device.type):
-                    outputs = model(images)
+                    outputs, _ = model.forward(images)
                     loss = criterion(outputs, masks)
                 # - Update Metrics
                 val_metrics.update_metrics(outputs, masks, loss.item())

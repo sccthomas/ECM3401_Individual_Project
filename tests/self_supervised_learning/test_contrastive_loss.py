@@ -9,12 +9,19 @@ from src.vision_transformer.model.two_scales import SemanticSegmentationVisionTr
 class TestContrastivePreTraining(unittest.TestCase):
     def test_forward(self) -> None:
         model = SemanticSegmentationVisionTransformer(
-            image_dims=(3, 256, 256),
-            num_encoder_layers=12,
+            image_dims=(3, 128, 128),
+            num_encoder_layers=4,
+            decoder_type='lightweight',
+            skip_layer_ratio=4,
+            encoder_dropout_rate=0.25,
+            patch_fusion_dropout_rate=0.25,
+            decoder_dropout_rate=0.25,
+            num_encoder_heads=4,
+            num_classes=1,
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
         )
-        x = torch.rand(2, 3, 256, 256).float()
+        x = torch.rand(2, 3, 128, 128).float()
 
         contrastive_model = ContrastivePreTraining(
             model=model,

@@ -38,7 +38,7 @@ class SnowDataset(_Dataset):
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
         image_target_paths = tuple(
             tuple([_os.path.join(images_dir_path, file_name), _os.path.join(targets_dir_path, file_name)])
-            for file_name in set(_os.listdir(targets_dir_path)).intersection(set(_os.listdir(images_dir_path)))
+            for file_name in sorted(set(_os.listdir(targets_dir_path)).intersection(set(_os.listdir(images_dir_path))))
         )
         len_image_target_paths = len(image_target_paths)
         if len_override is not None and len_override < len_image_target_paths:
