@@ -1,17 +1,8 @@
-from contextlib import nullcontext
-
 import torch
 import torch.utils.data as _data
 import tqdm as _tqdm
 
 import src.self_supervised_learning.base as _base
-
-# Try to import torch_xla for TPU support. If not available (e.g. when training on GPU),
-# xm will be set to None.
-try:
-    import torch_xla.core.xla_model as xm
-except ImportError:
-    xm = None
 
 
 def train_model(
@@ -26,29 +17,22 @@ def train_model(
         device: torch.device,
 ) -> None:
     """
-    Train a self-supervised model on GPU or TPU.
+    Function to train the model using self-supervised learning.
 
-    :param ssl_model: The self-supervised learning model (must implement forward_loss).
-    :param num_epochs: Number of training epochs.
-    :param optimizer: The optimizer to update model parameters.
-    :param scheduler: Learning rate scheduler.
-    :param scaler: Gradient scaler (for GPU mixed-precision). This is ignored for TPU.
-    :param train_loader: DataLoader for training data.
-    :param val_loader: DataLoader for validation data.
-    :param patience: Number of epochs with no improvement before early stopping.
-    :param device: The device to use (e.g., torch.device('cuda') or xm.xla_device() for TPU).
+    :param ssl_model: SSL API to train the model.
+    :param num_epochs: The number of epochs to train the model.
+    :param optimizer: The optimizer to use.
+    :param scheduler: The learning rate scheduler to use.
+    :param scaler: The gradient scaler to use.
+    :param train_loader: The training data loader.
+    :param val_loader: The validation data loader.
+    :param patience: The number of epochs to wait before early stopping.
+    :param device: The device to train the model on.
     """
     best_val_loss = float('inf')
     patience_counter = 0
     len_train_loader = len(train_loader)
     len_val_loader = len(val_loader)
-
-    # Use mixed precision only for CUDA devices.
-    if device.type == 'cuda':
-        autocast_context = torch.amp.autocast(device_type=device.type)
-    else:
-        # On TPU (or CPU), simply use a no-op context.
-        autocast_context = nullcontext()
 
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch + 1}/{num_epochs}")
@@ -57,34 +41,24 @@ def train_model(
         ssl_model.train()
         train_loss = 0.0
         for images, _ in _tqdm.tqdm(train_loader, desc="Training"):
-            # Move data to the target device (GPU or TPU)
+            # Move data to the GPU using non_blocking transfer
             images = images.to(device, non_blocking=True)
 
-            # Zero the gradients (set_to_none is only available for CUDA)
-            if device.type == 'cuda':
-                optimizer.zero_grad(set_to_none=True)
-            else:
-                optimizer.zero_grad()
-
-            # Forward pass under autocast context (if applicable)
-            with autocast_context:
+            # Use mixed precision for forward pass
+            with torch.amp.autocast(device.type):
                 loss = ssl_model.forward_loss(images)
 
-            # Accumulate loss for logging
+            # Accumulate the scalar loss value (loss.item() returns a Python float)
             train_loss += loss.item()
 
-            if device.type == 'cuda':
-                # GPU: use the gradient scaler for mixed precision.
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                # TPU (or CPU): perform a regular backward pass and use XLA's optimizer step.
-                loss.backward()
-                xm.optimizer_step(optimizer)
-                xm.mark_step()
+            # Zero gradients using set_to_none=True to reduce memory overhead
+            optimizer.zero_grad(set_to_none=True)
 
-            # Free temporary tensors
+            # Scale loss and backpropagate
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
             del loss
 
         train_loss /= len_train_loader
@@ -96,10 +70,10 @@ def train_model(
         with torch.no_grad():
             for images, _ in _tqdm.tqdm(val_loader, desc="Validation"):
                 images = images.to(device, non_blocking=True)
-                with autocast_context:
+                with torch.amp.autocast(device.type):
                     loss = ssl_model.forward_loss(images)
                 val_loss += loss.item()
-                del loss
+                del loss  # free temporary tensors
 
         val_loss /= len_val_loader
         print(f"Validation Loss: {val_loss:.4f}")
@@ -111,29 +85,15 @@ def train_model(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            # Save best model checkpoints (only on TPU master if using TPU)
-            if device.type == 'xla' and xm is not None:
-                if xm.is_master_ordinal():
-                    torch.save(ssl_model.state_dict(), "best_model_ssl.pth")
-                    torch.save(ssl_model.model.state_dict(), "best_model.pth")
-            else:
-                torch.save(ssl_model.state_dict(), "best_model_ssl.pth")
-                torch.save(ssl_model.model.state_dict(), "best_model.pth")
+            torch.save(ssl_model.state_dict(), "best_model_ssl.pth")
+            torch.save(ssl_model.model.state_dict(), "best_model.pth")
         else:
             patience_counter += 1
             if patience_counter >= patience:
                 print("Early stopping triggered")
                 break
 
-        # Save an epoch checkpoint (again, only on TPU master if using TPU)
-        if device.type == 'xla' and xm is not None:
-            if xm.is_master_ordinal():
-                torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
-                torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
-        else:
-            torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
-            torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
+        torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
+        torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
 
-        # On GPU, clear the CUDA cache.
-        if device.type == 'cuda':
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
