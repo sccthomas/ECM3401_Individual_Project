@@ -133,18 +133,16 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         temperature = self.__temperature
         criterion = self.__criterion
 
-        B, P, _ = z1.shape
-        z1 = _F.normalize(z1, dim=-1)  # Normalize along the embedding dimension
-        z2 = _F.normalize(z2, dim=-1)
+        assert z1.shape == z2.shape, "Embeddings must have the same shape."
+
+        B = z1.size(0)
 
         # Compute similarity matrix
-        z1 = z1.view(B * P, -1)
-        z2 = z2.view(B * P, -1)
         similarity_matrix = _torch.mm(z1, z2.t()) / temperature
         del z1, z2
 
         # Labels for contrastive loss
-        labels = _torch.arange(B * P).to(similarity_matrix.device)
+        labels = _torch.arange(B).to(similarity_matrix.device)
 
         # Loss for z1 -> z2 and z2 -> z1
         loss_1 = criterion(similarity_matrix, labels)
@@ -262,8 +260,8 @@ class _ProjectionHead(_nn.Module):
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
         Forward pass of the projection head.
-        :param x: The input tensor.
-        :return: The output tensor.
+        :param x: The input tensor. Shape -> [B, P, C]
+        :return: The output tensor. Shape -> [B, output_dim]
         """
         fc1 = self.__fc1
         n1 = self.__n1
@@ -272,11 +270,19 @@ class _ProjectionHead(_nn.Module):
 
         # x shape: [B, P, C]
         B, P, C = x.shape
-        x = x.view(-1, C)  # Flatten patches into batch dimension
+        # Flatten patches into batch dimension
+        x = x.view(-1, C)
         x = fc1(x)
         x = _F.relu(n1(x))
         x = fc2(x)
         x = n2(x)
-        x = x.view(B, P, -1)  # Reshape back to [B, P, output_dim]
+        # Reshape back to [B, P, output_dim]
+        x = x.view(B, P, -1)
+        # Normalize the output
+        x = _F.normalize(x, dim=-1)
+        # Average the patch embeddings
+        x = x.mean(dim=1)
+        # Normalize the output
+        x = _F.normalize(x, dim=-1)
 
         return x
