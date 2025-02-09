@@ -274,7 +274,7 @@ class _ProjectionHead(_nn.Module):
         B, P, C = x.shape
         x = x.view(-1, C)  # Flatten patches into batch dimension
         x = fc1(x)
-        x = _F.relu(n1(x), inplace=True)
+        x = _F.relu(n1(x))
         x = fc2(x)
         x = n2(x)
         x = x.view(B, P, -1)  # Reshape back to [B, P, output_dim]
