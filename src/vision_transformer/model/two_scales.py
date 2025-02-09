@@ -1,7 +1,6 @@
 import typing as _t
 
 import torch as _torch
-import torch.utils.checkpoint as _checkpoint
 
 import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.model.base as _base
@@ -149,8 +148,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             weights['x1'].append(weights_x1)
             weights['x2'].append(weights_x2)
         else:
-            x1 = _checkpoint.checkpoint(encoders_scale_1[0], x1)
-            x2 = _checkpoint.checkpoint(encoders_scale_2[0], x2)
+            x1 = encoders_scale_1[0](x1)
+            x2 = encoders_scale_2[0](x2)
 
         skip_layer = 0
         for layer, (encoder_scale_1, encoder_scale_2) in enumerate(
@@ -170,8 +169,8 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 weights['x1'].append(weights_x1)
                 weights['x2'].append(weights_x2)
             else:
-                x1 = _checkpoint.checkpoint(encoder_scale_1, x1)
-                x2 = _checkpoint.checkpoint(encoder_scale_2, x2)
+                x1 = encoder_scale_1(x1)
+                x2 = encoder_scale_2(x2)
 
         if return_attention_weights:
             return {'x1': x1, 'x2': x2}, weights
