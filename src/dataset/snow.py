@@ -24,7 +24,6 @@ class SnowDataset(_Dataset):
             len_override: int = None,
             resize: bool = False,
             normalize: bool = False,
-            cache: dict = None,
     ) -> None:
         """
 
@@ -33,7 +32,6 @@ class SnowDataset(_Dataset):
         :param resize: Optional. Resize the images and targets to 256x256.
         :param normalize: Optional. Normalize the images.
         :param rotate: Optional. Rotate the images and targets by a random multiple of 90 degrees.
-        :param cache: Optional. A shared dictionary to cache the images and targets.
         """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
@@ -58,8 +56,6 @@ class SnowDataset(_Dataset):
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
 
-        self.__cache = {} if cache is None else cache
-
     def __len__(self) -> int:
         """
         Returns the length of the dataset.
@@ -76,23 +72,16 @@ class SnowDataset(_Dataset):
         :return: A tuple containing the image and target.
         """
         image_target_paths = self.__image_target_paths
-        cache = self.__cache
         normalize = self.__normalize
         to_tensor = self.__to_tensor
         resize = self.__resize
 
-        # If the image and target are already loaded, return them
-        cached_data = cache.get(idx)
-        if cached_data is not None:
-            image, target = cached_data
-        else:
-            # Else, load, resize and convert the image and target to tensors
-            image_path, target_path = image_target_paths[idx]
-            image, target = _Image.open(image_path), _Image.open(target_path)
-            image, target = resize(image), resize(target)
-            image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
-            image = normalize(image)
-            cache[idx] = (image, target)
+        # Load, resize and convert the image and target to tensors
+        image_path, target_path = image_target_paths[idx]
+        image, target = _Image.open(image_path), _Image.open(target_path)
+        image, target = resize(image), resize(target)
+        image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
+        image = normalize(image)
 
         return image, target
 
