@@ -79,16 +79,19 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         # Encoder Stage
         # - Transformers Encoder Layers
         #  - Scale 1
-        self.__encoders_scale_1 = self._create_encoder_layers_for_scale_X(
+        self.__encoders_scale_1 = self._create_swin_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_1[1],
+            input_resolution=self.__patch_embedding_scale_1.resolution
         )
         #  - Scale 2
-        self.__encoders_scale_2 = self._create_encoder_layers_for_scale_X(
+        self.__encoders_scale_2 = self._create_swin_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_2[1],
+            input_resolution=self.__patch_embedding_scale_2.resolution
         )
         # - Scale 3
-        self.__encoders_scale_3 = self._create_encoder_layers_for_scale_X(
+        self.__encoders_scale_3 = self._create_swin_encoder_layers_for_scale_X(
             embed_dim=patch_embedding_scale_3[1],
+            input_resolution=self.__patch_embedding_scale_3.resolution
         )
 
         # - Patch Fusion Layers

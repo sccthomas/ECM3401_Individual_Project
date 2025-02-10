@@ -7,7 +7,7 @@ import torch.nn.functional as _f
 
 import src.vision_transformer.common.decoder as _decoder
 import src.vision_transformer.common.patch_fusion as _patch_fusion
-import src.vision_transformer.common.swin_transformer_encoder as _swin_transformer_encoder
+import src.vision_transformer.common.swin_transformer_encoder_layer as _swin_transformer_encoder
 import src.vision_transformer.common.transformer_encoder_layer as _transformer_encoder_layer
 
 
@@ -190,7 +190,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             'dropout': encoder_dropout_rate,
             'activation': _f.gelu,
             'batch_first': True,
-        } 
+        }
         encoders_scale_X = _nn.ModuleList(
             [
                 _transformer_encoder_layer.TransformerEncoderLayer(
@@ -223,17 +223,16 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         shift_size = window_size // 2
         kwargs = {
             'num_heads': num_encoder_heads,
-            'drop': encoder_dropout_rate,
-            'attn_drop': encoder_dropout_rate,
-            'drop_path': encoder_dropout_rate,
+            'dropout': encoder_dropout_rate,
+            'attention_dropout': encoder_dropout_rate,
+            'mlp_ratio': 2.0,
+            'window_size': window_size,
+            'shift_size': shift_size,
         }
         encoders_scale_X = _nn.ModuleList(
             [
-                _swin_transformer_encoder.SwinTransformerBlock(
+                _swin_transformer_encoder.SwinTransformerLayer(
                     dim=embed_dim,
-                    input_resolution=input_resolution,
-                    window_size=window_size,
-                    shift_size=0 if (i % 2 == 0) else shift_size,
                     **kwargs,
                 )
                 for i in range(num_encoder_layers)
