@@ -41,25 +41,22 @@ def train_model(
         ssl_model.train()
         train_loss = 0.0
         for images, _ in _tqdm.tqdm(train_loader, desc="Training"):
-            # Move data to the GPU using non_blocking transfer
+            # - Move data to the GPU using non_blocking transfer
             images = images.to(device, non_blocking=True)
-
-            # Use mixed precision for forward pass
+            # - Use mixed precision for forward pass
             with torch.amp.autocast(device.type):
                 loss = ssl_model.forward_loss(images)
-
-            # Accumulate the scalar loss value (loss.item() returns a Python float)
+            # - Accumulate the scalar loss value (loss.item() returns a Python float)
             train_loss += loss.item()
-
-            # Zero gradients using set_to_none=True to reduce memory overhead
+            # - Zero gradients using set_to_none=True to reduce memory overhead
             optimizer.zero_grad(set_to_none=True)
-
             # Scale loss and backpropagate
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-
-            del loss
+            # - Free temporary tensors
+            del loss, images
+            torch.cuda.empty_cache()
 
         train_loss /= len_train_loader
         print(f"Training Loss: {train_loss:.4f}")
@@ -69,11 +66,16 @@ def train_model(
         val_loss = 0.0
         with torch.no_grad():
             for images, _ in _tqdm.tqdm(val_loader, desc="Validation"):
+                # - Move data to the GPU using non_blocking transfer
                 images = images.to(device, non_blocking=True)
+                # - Use mixed precision for forward pass
                 with torch.amp.autocast(device.type):
                     loss = ssl_model.forward_loss(images)
+                # - Accumulate the scalar loss value (loss.item() returns a Python float)
                 val_loss += loss.item()
-                del loss  # free temporary tensors
+                # - Free temporary tensors
+                del loss, images
+                torch.cuda.empty_cache()
 
         val_loss /= len_val_loader
         print(f"Validation Loss: {val_loss:.4f}")

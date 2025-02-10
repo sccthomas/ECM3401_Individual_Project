@@ -44,7 +44,7 @@ def train_model(
         print(f"\n Epoch {epoch + 1}/{num_epochs}")
         model.train()
         for images, masks in _tqdm.tqdm(train_loader, desc=f"Training"):
-            images, masks = images.to(device), masks.to(device)
+            images, masks = images.to(device, non_blocking=True), masks.to(device, non_blocking=True)
             # - Mixed Precision Forward Pass
             with torch.amp.autocast(device.type):
                 outputs, _ = model.forward(images)
@@ -52,10 +52,13 @@ def train_model(
             # - Update Metrics
             train_metrics.update_metrics(outputs, masks, loss.item())
             # - Scaler for Backward Pass
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
+            # - Free temporary tensors
+            del loss, outputs, images, masks
+            torch.cuda.empty_cache()
         # - Print Training Metrics
         train_metrics.end_of_epoch()
         print("------- Training Metrics -------")
@@ -65,13 +68,16 @@ def train_model(
         model.eval()
         with torch.no_grad():
             for images, masks in _tqdm.tqdm(val_loader, desc=f"Validation"):
-                images, masks = images.to(device), masks.to(device)
+                images, masks = images.to(device, non_blocking=True), masks.to(device, non_blocking=True)
                 # - Mixed Precision Forward Pass
                 with torch.amp.autocast(device.type):
                     outputs, _ = model.forward(images)
                     loss = criterion(outputs, masks)
                 # - Update Metrics
                 val_metrics.update_metrics(outputs, masks, loss.item())
+                del loss, outputs, images, masks
+                torch.cuda.empty_cache()
+
         # - Print Validation Metrics
         val_metrics.end_of_epoch()
         print("------- Validation Metrics -------")
