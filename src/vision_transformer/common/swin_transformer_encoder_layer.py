@@ -14,7 +14,7 @@ def _get_relative_position_bias(
 ) -> torch.Tensor:
     N = window_size[0] * window_size[1]
     relative_position_bias = relative_position_bias_table[relative_position_index]  # type: ignore[index]
-    relative_position_bias = relative_position_bias.view(N, N, -1)
+    relative_position_bias = relative_position_bias.reshape(N, N, -1)
     relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
     return relative_position_bias
 
@@ -79,7 +79,7 @@ def shifted_window_attention(
 
     # partition windows
     num_windows = (pad_H // window_size[0]) * (pad_W // window_size[1])
-    x = x.view(B, pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1], C)
+    x = x.reshape(B, pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1], C)
     x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)  # B*nW, Ws*Ws, C
 
     # multi-head attention
@@ -111,13 +111,13 @@ def shifted_window_attention(
             for w in w_slices:
                 attn_mask[h[0]: h[1], w[0]: w[1]] = count
                 count += 1
-        attn_mask = attn_mask.view(pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1])
+        attn_mask = attn_mask.reshape(pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1])
         attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size[0] * window_size[1])
         attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
         attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
-        attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1))
+        attn = attn.reshape(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1))
         attn = attn + attn_mask.unsqueeze(1).unsqueeze(0)
-        attn = attn.view(-1, num_heads, x.size(1), x.size(1))
+        attn = attn.reshape(-1, num_heads, x.size(1), x.size(1))
 
     attn = F.softmax(attn, dim=-1)
     attn = F.dropout(attn, p=attention_dropout, training=training)
@@ -127,7 +127,7 @@ def shifted_window_attention(
     x = F.dropout(x, p=dropout, training=training)
 
     # reverse windows
-    x = x.view(B, pad_H // window_size[0], pad_W // window_size[1], window_size[0], window_size[1], C)
+    x = x.reshape(B, pad_H // window_size[0], pad_W // window_size[1], window_size[0], window_size[1], C)
     x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, pad_H, pad_W, C)
 
     # reverse cyclic shift
