@@ -43,11 +43,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         )
         self.__transformations = [
             _T.RandomRotation(degrees=90),
-            _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
             _T.RandomHorizontalFlip(),
             _T.RandomVerticalFlip(),
-            _T.RandomAdjustSharpness(0),
-            _T.RandomAdjustSharpness(2),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
