@@ -1,3 +1,9 @@
+# --------------------------------------------------------
+# Pytorch implementation of SwinTransformerBlock from
+# torchvision.models.swin_transformer with some modifications
+# --------------------------------------------------------
+
+
 import math
 from typing import Callable, List, Optional, Tuple
 
@@ -281,91 +287,19 @@ class SwinTransformerBlock(nn.Module):
                     nn.init.normal_(m.bias, std=1e-6)
 
     def forward(self, x: Tensor, return_attention_weights: bool = False):
+        # Reshape x
+        B, N, C = x.shape
+        H = int(math.sqrt(N))
+        x = x.reshape(B, H, H, C)
+
         x, weights = self.attn(self.norm1(x), return_attention_weights)
         x = x + self.stochastic_depth(x)
         x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
 
-        return x, weights
-
-
-class SwinTransformerLayer(nn.Module):
-    """
-    Swin Transformer Layer.
-    Args:
-        dim (int): Number of input channels.
-        num_heads (int): Number of attention heads.
-        window_size (int): Window size.
-        shift_size (int): Shift size for shifted window attention.
-        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
-        dropout (float): Dropout rate. Default: 0.0.
-        attention_dropout (float): Attention dropout rate. Default: 0.0.
-        stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
-        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
-        attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttention
-    """
-
-    def __init__(
-            self,
-            dim: int,
-            num_heads: int,
-            window_size: int,
-            shift_size: int,
-            mlp_ratio: float = 4.0,
-            dropout: float = 0.0,
-            attention_dropout: float = 0.0,
-            stochastic_depth_prob: float = 0.0,
-            norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-            attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
-    ):
-        super().__init__()
-        window_size = [window_size, window_size]
-        self.non_shifted_block = SwinTransformerBlock(
-            dim,
-            num_heads,
-            window_size,
-            [0, 0],
-            mlp_ratio,
-            dropout,
-            attention_dropout,
-            stochastic_depth_prob,
-            norm_layer,
-            attn_layer,
-        )
-        self.shifted_block = SwinTransformerBlock(
-            dim,
-            num_heads,
-            window_size,
-            [shift_size, shift_size],
-            mlp_ratio,
-            dropout,
-            attention_dropout,
-            stochastic_depth_prob,
-            norm_layer,
-            attn_layer,
-        )
-
-    def forward(self, x: Tensor, return_attention_weights: bool = False):
-        """
-
-        :param x: Tensor with layout of [B, H*W, C]
-        :param return_attention_weights: Return attention weights or not.
-        :return: Tensor with same layout as input, i.e. [B, H*W, C]
-        """
-        # Reshape the input tensor
-        B, N, C = x.shape
-        H = int(math.sqrt(N))
-        W = H
-        x = x.reshape(B, H, W, C)
-
-        # Apply the non-shifted and shifted blocks
-        x, weights_non_shifted = self.non_shifted_block(x, return_attention_weights)
-        x, weights_shifted = self.shifted_block(x, return_attention_weights)
-
-        # Reshape the output tensor
-        x = x.reshape(B, N, C)
-        assert x.shape == (B, N, C)
+        # Reshape x
+        x = x.reshape(B, H * H, C)
 
         if return_attention_weights:
-            return x, weights_non_shifted + weights_shifted
+            return x, weights
 
         return x

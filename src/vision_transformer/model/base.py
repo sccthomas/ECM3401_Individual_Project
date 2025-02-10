@@ -221,18 +221,19 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         H = input_resolution[0]
         window_size = max(H // 4, 4)  # 4 is the minimum window size, with 4 patches in each window
         shift_size = window_size // 2
+        shift_size = [shift_size, shift_size]
         kwargs = {
             'num_heads': num_encoder_heads,
             'dropout': encoder_dropout_rate,
             'attention_dropout': encoder_dropout_rate,
             'mlp_ratio': 2.0,
-            'window_size': window_size,
-            'shift_size': shift_size,
+            'window_size': [window_size, window_size],
         }
         encoders_scale_X = _nn.ModuleList(
             [
-                _swin_transformer_encoder.SwinTransformerLayer(
+                _swin_transformer_encoder.SwinTransformerBlock(
                     dim=embed_dim,
+                    shift_size=[0, 0] if (i % 2 == 0) else shift_size,
                     **kwargs,
                 )
                 for i in range(num_encoder_layers)
