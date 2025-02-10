@@ -297,7 +297,7 @@ class SwinTransformerBlock(nn.Module):
         x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
 
         # Reshape x
-        x = x.reshape(B, H * H, C)
+        x = x.reshape(B, N, C)
 
         if return_attention_weights:
             return x, weights
