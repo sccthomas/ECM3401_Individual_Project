@@ -269,7 +269,7 @@ class _ProjectionHead(_nn.Module):
         x = x.view(B, P, -1)
         # Normalize the output
         x = _F.normalize(x, dim=-1)
-        # Average the patch embeddings
+        # Apply Max Pooling on the patch embeddings
         x = x.max(dim=1).values
         # Normalize the output
         x = _F.normalize(x, dim=-1)
