@@ -64,7 +64,7 @@ def _get_attention_weights(
         patch_size: int,
         scale_key: str,
         layer: int,
-        use_max_pooling: bool = True,
+        use_max_pooling: bool = False,
 ) -> _np.ndarray:
     """
     Function to visualize the attention of the model.
