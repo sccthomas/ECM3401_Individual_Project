@@ -182,23 +182,17 @@ def visualize_tsne(
 
     with _torch.no_grad():
         for scale in scales:
-            x1 = z1[scale]
-            x2 = z2[scale]
+            x1 = z1[scale].cpu().numpy()
+            x2 = z2[scale].cpu().numpy()
 
-            B, P, E = x1.shape  # Batch, Patches, Embedding Dim
-
-            # Compute mean patch embedding per image [B, E]
-            x1_avg = x1.mean(dim=1).cpu().numpy()  # Averaging over patches
-            x2_avg = x2.mean(dim=1).cpu().numpy()
+            B, E = x1.shape  # Batch, Patches, Embedding Dim
+            print(x1.shape)
 
             # Combine embeddings for t-SNE visualization [2B, E]
-            embeddings = _np.concatenate([x1_avg, x2_avg], axis=0)
-
-            # Create labels: Each image gets a unique label
-            labels = _np.concatenate([_np.arange(B), _np.arange(B)])  # Shape: [2B]
+            embeddings = _np.concatenate([x1, x2], axis=0)
 
             # Apply t-SNE
-            tsne = _manifold.TSNE(n_components=2, perplexity=10, random_state=42)
+            tsne = _manifold.TSNE(n_components=2, perplexity=3, random_state=42)
             embeddings_2d = tsne.fit_transform(embeddings)
 
             # Define a distinct color for each image
