@@ -25,7 +25,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
             use_swin_transformer: bool,
-            decoder_type: str,
+            use_heavyweight_decoder: bool,
             skip_layer_ratio: int,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
             encoder_dropout_rate: float,
@@ -40,7 +40,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers.
         :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
-        :param decoder_type: The type of decoder to use.
+        :param use_heavyweight_decoder: Whether to use the heavyweight decoder.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
         :param patch_embedding_scales: The patch embedding configurations for each scale.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
@@ -55,12 +55,10 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
         assert height == width, "Input image must be square."
 
-        if decoder_type == 'lightweight':
+        if use_heavyweight_decoder:
             decoder = _decoder.LightWeightDecoder
-        elif decoder_type == 'heavyweight':
-            decoder = _decoder.HeavyWeightDecoder
         else:
-            raise ValueError(f"Invalid decoder type: {decoder_type}")
+            decoder = _decoder.HeavyWeightDecoder
 
         self.__image_dims = image_dims[1:]
         self.__num_encoder_layers = num_encoder_layers

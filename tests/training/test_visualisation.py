@@ -26,7 +26,7 @@ class TestDisplayFunctions(unittest.TestCase):
             image_dims=(3, 256, 256),
             num_encoder_layers=4,
             use_swin_transformer=False,
-            decoder_type='lightweight',
+            use_heavyweight_decoder=False,
             skip_layer_ratio=4,
             encoder_dropout_rate=0.25,
             patch_fusion_dropout_rate=0.25,

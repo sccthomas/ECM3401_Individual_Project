@@ -17,7 +17,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
             use_swin_transformer: bool,
-            decoder_type: str,
+            use_heavyweight_decoder: bool,
             skip_layer_ratio: int,
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
@@ -33,7 +33,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
         :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
-        :param decoder_type: The type of decoder to use.
+        :param use_heavyweight_decoder: Whether to use the heavyweight decoder.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
@@ -50,7 +50,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             image_dims=image_dims,
             num_encoder_layers=num_encoder_layers,
             use_swin_transformer=use_swin_transformer,
-            decoder_type=decoder_type,
+            use_heavyweight_decoder=use_heavyweight_decoder,
             skip_layer_ratio=skip_layer_ratio,
             patch_embedding_scales=[patch_embedding_scale_1, patch_embedding_scale_2],
             encoder_dropout_rate=encoder_dropout_rate,
