@@ -64,6 +64,7 @@ def _get_attention_weights(
         patch_size: int,
         scale_key: str,
         layer: int,
+        use_max_pooling: bool = True,
 ) -> _np.ndarray:
     """
     Function to visualize the attention of the model.
@@ -73,6 +74,7 @@ def _get_attention_weights(
     :param patch_size: The patch size.
     :param scale_key: The scale key.
     :param layer: The layer to visualize.
+    :param use_max_pooling: Whether to use max pooling.
     :return: Attention map.
     """
     # make the image divisible by the patch size
@@ -87,12 +89,24 @@ def _get_attention_weights(
 
     _, attentions = model(img, return_attention_weights=True)
     attentions = attentions[scale_key][layer]
-    nh = attentions.shape[1]  # number of head
 
-    # keep only the output patch attention
-    attentions = attentions[0, :, 0, :].reshape(nh, -1)
+    if attentions.dim() == 4:
+        H = attentions.shape[1]  # number of head
+        # keep only the output patch attention
+        if use_max_pooling:
+            attentions = attentions[0].max(dim=1).values
+        else:
+            attentions = attentions[0, :, 0, :].reshape(H, -1)
 
-    attentions = attentions.reshape(nh, w_featmap, h_featmap)
+    elif attentions.dim() == 5:
+        W, H, _, E = attentions.shape
+        if use_max_pooling:
+            attentions = attentions.max(dim=2).values
+        else:
+            attentions = attentions[:, :, 0, :]
+        attentions = attentions.permute(1, 0, 2).reshape(H, W * E)
+
+    attentions = attentions.reshape(H, w_featmap, h_featmap)
     attentions = (
         _nn.functional.interpolate(
             attentions.unsqueeze(0), scale_factor=patch_size, mode="nearest"
