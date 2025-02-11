@@ -270,7 +270,7 @@ class _ProjectionHead(_nn.Module):
         # Normalize the output
         x = _F.normalize(x, dim=-1)
         # Average the patch embeddings
-        x = x.mean(dim=1)
+        x = x.max(dim=1).values
         # Normalize the output
         x = _F.normalize(x, dim=-1)
 
