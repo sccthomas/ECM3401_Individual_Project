@@ -16,6 +16,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             *,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
+            use_swin_transformer: bool,
             decoder_type: str,
             skip_layer_ratio: int,
             encoder_dropout_rate: float,
@@ -31,6 +32,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
 
         :param image_dims: The dimensions of the input image.
         :param num_encoder_layers: The number of encoder layers
+        :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
         :param decoder_type: The type of decoder to use.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
@@ -47,6 +49,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         super(SemanticSegmentationVisionTransformer, self).__init__(
             image_dims=image_dims,
             num_encoder_layers=num_encoder_layers,
+            use_swin_transformer=use_swin_transformer,
             decoder_type=decoder_type,
             skip_layer_ratio=skip_layer_ratio,
             patch_embedding_scales=[patch_embedding_scale_1, patch_embedding_scale_2],
@@ -72,12 +75,12 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         # Encoder Stage
         # - Transformers Encoder Layers
         #  - Scale 1
-        self.__encoders_scale_1 = self._create_encoder_layers_for_scale_X(
-            embed_dim=patch_embedding_scale_1[1],
+        self.__encoders_scale_1 = self._create_encoder_layer(
+            patch_embedding=self.__patch_embedding_scale_1
         )
         #  - Scale 2
-        self.__encoders_scale_2 = self._create_encoder_layers_for_scale_X(
-            embed_dim=patch_embedding_scale_2[1],
+        self.__encoders_scale_2 = self._create_encoder_layer(
+            patch_embedding=self.__patch_embedding_scale_2
         )
 
         # - Patch Fusion Layers

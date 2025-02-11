@@ -6,6 +6,7 @@ import torch.nn as _nn
 import torch.nn.functional as _f
 
 import src.vision_transformer.common.decoder as _decoder
+import src.vision_transformer.common.patch_embedding as _patch_embedding
 import src.vision_transformer.common.patch_fusion as _patch_fusion
 import src.vision_transformer.common.swin_transformer_encoder_layer as _swin_transformer_encoder
 import src.vision_transformer.common.transformer_encoder_layer as _transformer_encoder_layer
@@ -23,6 +24,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             *,
             image_dims: _t.Tuple[int, int, int],
             num_encoder_layers: int,
+            use_swin_transformer: bool,
             decoder_type: str,
             skip_layer_ratio: int,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
@@ -36,7 +38,8 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         Initialize the vision_transformer.
 
         :param image_dims: The dimensions of the input image.
-        :param num_encoder_layers: The number of encoder layers
+        :param num_encoder_layers: The number of encoder layers.
+        :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
         :param decoder_type: The type of decoder to use.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
         :param patch_embedding_scales: The patch embedding configurations for each scale.
@@ -72,6 +75,11 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__encoder_dropout_rate = encoder_dropout_rate
         self.__patch_fusion_dropout_rate = patch_fusion_dropout_rate
         self.__num_encoder_heads = num_encoder_heads
+        self._create_encoder_layer = (
+            self._create_swin_encoder_layers_for_scale_X
+            if use_swin_transformer else
+            self._create_encoder_layers_for_scale_X
+        )
 
     @property
     def image_dims(self) -> _t.Tuple[int]:
@@ -157,18 +165,19 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         return x1, attention_weights
 
     def _create_encoder_layers_for_scale_X(
-            self, embed_dim: int,
+            self, patch_embedding: _patch_embedding.PatchEmbedding
     ) -> '_nn.ModuleList[_nn.TransformerEncoderLayer]':
         """
         Create Classic Transformer encoder layers for scale X.
 
-        :param embed_dim: Patch embedding dimension.
+        :param patch_embedding: The patch embedding layer for scale X.
         :return: Module list of Transformer encoder layers.
         """
         num_encoder_layers = self.__num_encoder_layers
         encoder_dropout_rate = self.__encoder_dropout_rate
         num_encoder_heads = self.__num_encoder_heads
 
+        embed_dim = patch_embedding.embed_dim
         kwargs = {
             'nhead': num_encoder_heads,
             'dropout': encoder_dropout_rate,
@@ -189,20 +198,21 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         return encoders_scale_X
 
     def _create_swin_encoder_layers_for_scale_X(
-            self, *, embed_dim: int, input_resolution: _t.Tuple[int, int]
+            self, patch_embedding: _patch_embedding.PatchEmbedding
     ) -> '_nn.ModuleList[_swin_transformer_encoder.SwinTransformerBlock]':
         """
         Create Swin Transformer encoder layers for scale X.
 
-        :param embed_dim: Patch embedding dimension.
-        :param input_resolution: The resolution of the input tensor.
+        :param patch_embedding: The patch embedding layer for scale X.
         :return: Module list of Swin Transformer encoder layers.
         """
         num_encoder_layers = self.__num_encoder_layers
         encoder_dropout_rate = self.__encoder_dropout_rate
         num_encoder_heads = self.__num_encoder_heads
 
-        H = input_resolution[0]
+        embed_dim = patch_embedding.embed_dim
+        H = patch_embedding.H
+
         window_size = max(H // 4, 4)  # 4 is the minimum window size, with 4 patches in each window
         shift_size = window_size // 2
         shift_size = [shift_size, shift_size]
