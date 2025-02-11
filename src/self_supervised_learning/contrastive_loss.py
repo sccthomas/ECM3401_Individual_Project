@@ -43,11 +43,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         )
         self.__transformations = [
             _T.RandomRotation(degrees=90),
-            _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
             _T.RandomHorizontalFlip(),
             _T.RandomVerticalFlip(),
-            _T.RandomAdjustSharpness(0),
-            _T.RandomAdjustSharpness(2),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
@@ -88,8 +85,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         x1 = model.apply_patch_embedding_stage(x1)  # Output -> dict[str, _torch.Tensor]
         x2 = model.apply_patch_embedding_stage(x2)  # Output -> dict[str, _torch.Tensor]
         # - Encode patch embeddings
-        x1 = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
-        x2 = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
+        x1, _ = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
+        x2, _ = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
 
         # Apply projection head to each patch embedding scale in the encoder output
         keys = x1.keys()
@@ -185,23 +182,17 @@ def visualize_tsne(
 
     with _torch.no_grad():
         for scale in scales:
-            x1 = z1[scale]
-            x2 = z2[scale]
+            x1 = z1[scale].cpu().numpy()
+            x2 = z2[scale].cpu().numpy()
 
-            B, P, E = x1.shape  # Batch, Patches, Embedding Dim
-
-            # Compute mean patch embedding per image [B, E]
-            x1_avg = x1.mean(dim=1).cpu().numpy()  # Averaging over patches
-            x2_avg = x2.mean(dim=1).cpu().numpy()
+            B, E = x1.shape  # Batch, Patches, Embedding Dim
+            print(x1.shape)
 
             # Combine embeddings for t-SNE visualization [2B, E]
-            embeddings = _np.concatenate([x1_avg, x2_avg], axis=0)
-
-            # Create labels: Each image gets a unique label
-            labels = _np.concatenate([_np.arange(B), _np.arange(B)])  # Shape: [2B]
+            embeddings = _np.concatenate([x1, x2], axis=0)
 
             # Apply t-SNE
-            tsne = _manifold.TSNE(n_components=2, perplexity=10, random_state=42)
+            tsne = _manifold.TSNE(n_components=2, perplexity=3, random_state=42)
             embeddings_2d = tsne.fit_transform(embeddings)
 
             # Define a distinct color for each image

@@ -299,7 +299,4 @@ class SwinTransformerBlock(nn.Module):
         # Reshape x
         x = x.reshape(B, N, C)
 
-        if return_attention_weights:
-            return x, weights
-
-        return x
+        return x, weights

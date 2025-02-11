@@ -311,10 +311,7 @@ class TransformerEncoderLayer(Module):
             )
             x = self.norm2(x + self._ff_block(x))
 
-        if return_attention_weights:
-            return x, weights
-
-        return x
+        return x, weights
 
     # self-attention block
     def _sa_block(

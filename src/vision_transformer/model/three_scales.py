@@ -144,19 +144,13 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Union[
-        _t.Dict[str, _torch.Tensor],
-        _t.Tuple[
-            _t.Dict[str, _torch.Tensor],
-            _t.Dict[str, _t.List[_torch.Tensor]]
-        ]
-    ]:
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_torch.Tensor]]]:
         """
         Apply the encoder stage to the input tensors.
 
         :param patch_embeddings: The patch embeddings for the 3 scales.
         :param return_attention_weights: Whether to return the attention weights.
-        :return: The output tensors for the 3 scales encoded.
+        :return: The output tensors for the 3 scales encoded and optional attention weights.
         """
         encoders_scale_1 = self.__encoders_scale_1
         encoders_scale_2 = self.__encoders_scale_2
@@ -171,23 +165,19 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         x2 = patch_embeddings['x2']
         x3 = patch_embeddings['x3']
 
+        kwargs = {'return_attention_weights': return_attention_weights}
+        weights = {
+            'x1': [],
+            'x2': [],
+            'x3': [],
+        }
+        x1, weights_x1 = encoders_scale_1[0](x1, **kwargs)
+        x2, weights_x2 = encoders_scale_2[0](x2, **kwargs)
+        x3, weights_x3 = encoders_scale_3[0](x3, **kwargs)
         if return_attention_weights:
-            kwargs = {'return_attention_weights': return_attention_weights}
-            weights = {
-                'x1': [],
-                'x2': [],
-                'x3': [],
-            }
-            x1, weights_x1 = encoders_scale_1[0](x1, **kwargs)
-            x2, weights_x2 = encoders_scale_2[0](x2, **kwargs)
-            x3, weights_x3 = encoders_scale_3[0](x3, **kwargs)
             weights['x1'].append(weights_x1)
             weights['x2'].append(weights_x2)
             weights['x3'].append(weights_x3)
-        else:
-            x1 = encoders_scale_1[0](x1)
-            x2 = encoders_scale_2[0](x2)
-            x3 = encoders_scale_3[0](x3)
 
         skip_layer = 0
         for layer, (encoder_scale_1, encoder_scale_2, encoder_scale_3) in enumerate(
@@ -202,19 +192,13 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
                 skip_layer += 1
 
             # - Transformer Encoder Layer
+            x1, weights_x1 = encoder_scale_1(x1, **kwargs)
+            x2, weights_x2 = encoder_scale_2(x2, **kwargs)
+            x3, weights_x3 = encoder_scale_3(x3, **kwargs)
+
             if return_attention_weights:
-                x1, weights_x1 = encoder_scale_1(x1, **kwargs)
-                x2, weights_x2 = encoder_scale_2(x2, **kwargs)
-                x3, weights_x3 = encoder_scale_3(x3, **kwargs)
                 weights['x1'].append(weights_x1)
                 weights['x2'].append(weights_x2)
                 weights['x3'].append(weights_x3)
-            else:
-                x1 = encoder_scale_1(x1)
-                x2 = encoder_scale_2(x2)
-                x3 = encoder_scale_3(x3)
 
-        if return_attention_weights:
-            return {'x1': x1, 'x2': x2, 'x3': x3}, weights
-
-        return {'x1': x1, 'x2': x2, 'x3': x3}
+        return {'x1': x1, 'x2': x2, 'x3': x3}, weights
