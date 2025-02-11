@@ -27,6 +27,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             use_swin_transformer: bool,
             use_heavyweight_decoder: bool,
             skip_layer_ratio: int,
+            use_skip_layer_gated_attention: bool,
             patch_embedding_scales: _t.List[_t.Tuple[int, int]],
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
@@ -42,6 +43,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
         :param use_heavyweight_decoder: Whether to use the heavyweight decoder.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
+        :param use_skip_layer_gated_attention: Whether to use skip layer gated attention.
         :param patch_embedding_scales: The patch embedding configurations for each scale.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
@@ -73,6 +75,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         self.__encoder_dropout_rate = encoder_dropout_rate
         self.__patch_fusion_dropout_rate = patch_fusion_dropout_rate
         self.__num_encoder_heads = num_encoder_heads
+        self.__use_skip_layer_gated_attention = use_skip_layer_gated_attention
         self._create_encoder_layer = (
             self._create_swin_encoder_layers_for_scale_X
             if use_swin_transformer else
@@ -120,7 +123,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_torch.Tensor]]]:
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
         """
         Apply the encoder stage to the input tensors.
 
@@ -131,10 +134,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
 
     def forward(
             self, x: _torch.Tensor, return_attention_weights: bool = False
-    ) -> _t.Tuple[
-        _torch.Tensor,
-        _t.Optional[_t.Dict[str, _t.List[_torch.Tensor]]],
-    ]:
+    ) -> _t.Tuple[_torch.Tensor, _t.Optional[_t.Dict[str, _t.List[_torch.Tensor]]]]:
         """
         Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
         stages to the input tensor. Each stage returns a dictionary of tensors that are passed to the next stage. These
@@ -247,12 +247,15 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
         """
         num_patch_fusion_layers = self.__num_patch_fusion_layers
         patch_fusion_dropout_rate = self.__patch_fusion_dropout_rate
+        use_skip_layer_gated_attention = self.__use_skip_layer_gated_attention
 
         kwargs = {
             'in_dims': in_dims,
             'out_patches': out_patches,
             'out_embed': out_embed,
             'dropout_rate': patch_fusion_dropout_rate,
+            'use_gated_attention': use_skip_layer_gated_attention,
+            'num_heads': 2 if use_skip_layer_gated_attention else None,
         }
         patch_fusion_layers_scale_X = _nn.ModuleList(
             [

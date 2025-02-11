@@ -19,6 +19,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             use_swin_transformer: bool,
             use_heavyweight_decoder: bool,
             skip_layer_ratio: int,
+            use_skip_layer_gated_attention: bool,
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
             decoder_dropout_rate: float,
@@ -35,6 +36,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
         :param use_heavyweight_decoder: Whether to use the heavyweight decoder.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
+        :param use_skip_layer_gated_attention: Whether to use the skip layer gated attention.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
         :param decoder_dropout_rate: The dropout rate in the decoder stage.
@@ -52,6 +54,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             use_swin_transformer=use_swin_transformer,
             use_heavyweight_decoder=use_heavyweight_decoder,
             skip_layer_ratio=skip_layer_ratio,
+            use_skip_layer_gated_attention=use_skip_layer_gated_attention,
             patch_embedding_scales=[patch_embedding_scale_1, patch_embedding_scale_2],
             encoder_dropout_rate=encoder_dropout_rate,
             patch_fusion_dropout_rate=patch_fusion_dropout_rate,
@@ -116,7 +119,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_torch.Tensor]]]:
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
         """
         Apply the encoder stage to the input tensors.
 
