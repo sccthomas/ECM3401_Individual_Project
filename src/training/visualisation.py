@@ -37,7 +37,8 @@ def display_attention_weights(
         img_pre: _torch.Tensor,
         patch_size: int,
         scale_key: str,
-        layer: int
+        layer: int,
+        use_max_pooling: bool = False,
 ) -> None:
     """
     Function to visualize the attention of the model.
@@ -48,8 +49,9 @@ def display_attention_weights(
     :param patch_size: The patch size.
     :param scale_key: The scale key.
     :param layer: The layer to visualize.
+    :param use_max_pooling: Whether to use max pooling.
     """
-    attention = _get_attention_weights(model, img_pre, patch_size, scale_key, layer)
+    attention = _get_attention_weights(model, img_pre, patch_size, scale_key, layer, use_max_pooling)
     _plot_attention(img_original, attention)
 
 
