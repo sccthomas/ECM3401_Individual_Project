@@ -147,7 +147,7 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Optional[_t.Dict[str, _t.List[_torch.Tensor]]]]:
         """
         Apply the encoder stage to the input tensors.
 
@@ -169,18 +169,20 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         x3 = patch_embeddings['x3']
 
         kwargs = {'return_attention_weights': return_attention_weights}
-        weights = {
-            'x1': [],
-            'x2': [],
-            'x3': [],
-        }
         x1, weights_x1 = encoders_scale_1[0](x1, **kwargs)
         x2, weights_x2 = encoders_scale_2[0](x2, **kwargs)
         x3, weights_x3 = encoders_scale_3[0](x3, **kwargs)
         if return_attention_weights:
+            weights = {
+                'x1': [],
+                'x2': [],
+                'x3': [],
+            }
             weights['x1'].append(weights_x1)
             weights['x2'].append(weights_x2)
             weights['x3'].append(weights_x3)
+        else:
+            weights = None
 
         skip_layer = 0
         for layer, (encoder_scale_1, encoder_scale_2, encoder_scale_3) in enumerate(

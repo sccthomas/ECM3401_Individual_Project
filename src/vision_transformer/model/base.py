@@ -123,7 +123,7 @@ class SemanticSegmentationVisionTransformerBase(_nn.Module):
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
             return_attention_weights: bool = False,
-    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _t.List[_t.Optional[_torch.Tensor]]]]:
+    ) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Optional[_t.Dict[str, _t.List[_torch.Tensor]]]]:
         """
         Apply the encoder stage to the input tensors.
 
