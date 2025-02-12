@@ -96,8 +96,6 @@ def train_model(
             if patience_counter >= patience:
                 print("Early stopping triggered")
                 break
-        # - Save model checkpoint every epoch
-        torch.save(model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
 
         # - Reset Metrics
         train_metrics.reset_metrics()

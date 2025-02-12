@@ -95,7 +95,4 @@ def train_model(
                 print("Early stopping triggered")
                 break
 
-        torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
-        torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
-
         torch.cuda.empty_cache()
