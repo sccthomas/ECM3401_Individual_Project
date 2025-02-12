@@ -100,30 +100,18 @@ class SemanticSegmentationVisionTransformer(_base.SemanticSegmentationVisionTran
         # - Patch Fusion Layers
         #   - Scale 1
         self.__patch_fusions_scale_1 = self._create_patch_fusion_layers_for_scale_X(
-            in_dims=[
-                [self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]],
-                [self.__patch_embedding_scale_3.num_patches, patch_embedding_scale_3[1]],
-            ],
-            out_patches=self.__patch_embedding_scale_1.num_patches,
-            out_embed=patch_embedding_scale_1[1],
+            in_patch_embeddings=[self.__patch_embedding_scale_2, self.__patch_embedding_scale_3],
+            out_patch_embedding=self.__patch_embedding_scale_1,
         )
         #   - Scale 2
         self.__patch_fusions_scale_2 = self._create_patch_fusion_layers_for_scale_X(
-            in_dims=[
-                [self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]],
-                [self.__patch_embedding_scale_3.num_patches, patch_embedding_scale_3[1]],
-            ],
-            out_patches=self.__patch_embedding_scale_2.num_patches,
-            out_embed=patch_embedding_scale_2[1],
+            in_patch_embeddings=[self.__patch_embedding_scale_1, self.__patch_embedding_scale_3],
+            out_patch_embedding=self.__patch_embedding_scale_2,
         )
         #   - Scale 3
         self.__patch_fusions_scale_3 = self._create_patch_fusion_layers_for_scale_X(
-            in_dims=[
-                [self.__patch_embedding_scale_1.num_patches, patch_embedding_scale_1[1]],
-                [self.__patch_embedding_scale_2.num_patches, patch_embedding_scale_2[1]],
-            ],
-            out_patches=self.__patch_embedding_scale_3.num_patches,
-            out_embed=patch_embedding_scale_3[1],
+            in_patch_embeddings=[self.__patch_embedding_scale_1, self.__patch_embedding_scale_2],
+            out_patch_embedding=self.__patch_embedding_scale_3,
         )
 
     def apply_patch_embedding_stage(self, x: _torch.Tensor) -> _t.Dict[str, _torch.Tensor]:
