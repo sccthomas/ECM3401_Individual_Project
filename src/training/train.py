@@ -4,11 +4,11 @@ import torch.utils.data as _data
 import tqdm as _tqdm
 
 import src.training.metrics as _metrics
-import src.vision_transformer.model.base as _base
+import src.vision_transformer.model as _model
 
 
 def train_model(
-        model: _base.SemanticSegmentationVisionTransformerBase,
+        model: _model.SemanticSegmentationVisionTransformer,
         num_epochs: int,
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
