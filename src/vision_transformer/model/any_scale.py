@@ -211,34 +211,26 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
 
         # Encoder Stage
         # - Apply the first encoder layer manually
-        patch_embeddings = {
-            key: encoders[key][0](patch_embedding)[0]
-            for key, patch_embedding in patch_embeddings.items()
-        }
+        for key in patch_embeddings:
+            patch_embeddings[key] = encoders[key][0](patch_embeddings[key])[0]
 
         # - Apply the remaining encoder layers and patch fusions when applicable
-        skip_layer = 0
         for layer in range(1, num_encoders):
             # - Patch Fusion Layer
             if layer % skip_layer_ratio == 0:
-                patch_embeddings = {
-                    key: patch_fusions[key][skip_layer](
+                skip_layer = layer // skip_layer_ratio - 1
+                for key, patch_embedding in patch_embeddings.items():
+                    patch_embeddings[key] = patch_fusions[key][skip_layer](
                         target_tensor=patch_embedding,
                         tensors=[
-                            other_patch_embedding
-                            for other_key, other_patch_embedding in patch_embeddings.items()
+                            other_embedding for other_key, other_embedding in patch_embeddings.items()
                             if key != other_key
                         ],
                     )
-                    for key, patch_embedding in patch_embeddings.items()
-                }
-                skip_layer += 1
 
             # - Encoder Layer
-            patch_embeddings = {
-                key: encoders[key][layer](patch_embedding)[0]
-                for key, patch_embedding in patch_embeddings.items()
-            }
+            for key in patch_embeddings:
+                patch_embeddings[key] = encoders[key][layer](patch_embeddings[key])[0]
 
         return patch_embeddings
 
