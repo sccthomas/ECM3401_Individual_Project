@@ -8,7 +8,8 @@ class TestSnowDataset(unittest.TestCase):
         snow_dataset = SnowDataset(
             dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
-                             '/snow_dataset'
+                             '/snow_dataset',
+            cache={},
 
         )
 
@@ -28,6 +29,7 @@ class TestSnowDataset(unittest.TestCase):
             dataset_dir_path='/Users/samuelthomas/Documents/University/4thYr_Final'
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
                              '/snow_dataset',
+            cache={},
             len_override=10000,
             resize=True,
         )

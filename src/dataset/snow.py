@@ -21,6 +21,7 @@ class SnowDataset(_Dataset):
     def __init__(
             self,
             dataset_dir_path: str,
+            cache: dict,
             len_override: int = None,
             resize: bool = False,
             normalize: bool = False,
@@ -55,6 +56,7 @@ class SnowDataset(_Dataset):
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
+        self.__cache = cache
 
     def __len__(self) -> int:
         """
@@ -75,13 +77,20 @@ class SnowDataset(_Dataset):
         normalize = self.__normalize
         to_tensor = self.__to_tensor
         resize = self.__resize
+        cache = self.__cache
 
-        # Load, resize and convert the image and target to tensors
         image_path, target_path = image_target_paths[idx]
-        image, target = _Image.open(image_path), _Image.open(target_path)
-        image, target = resize(image), resize(target)
-        image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
-        image = normalize(image)
+        key = (image_path, target_path)
+
+        if key in cache:
+            image, target = cache[key]
+        else:
+            # Load, resize and convert the image and target to tensors
+            image, target = _Image.open(image_path), _Image.open(target_path)
+            image, target = resize(image), resize(target)
+            image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
+            image = normalize(image)
+            cache[key] = (image, target)
 
         return image, target
 
