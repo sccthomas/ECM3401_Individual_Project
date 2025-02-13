@@ -6,7 +6,7 @@ import torch
 from PIL import Image
 
 from src.training.visualisation import display_tensor_mask, display_tensor_image, display_attention_weights
-from src.vision_transformer.model.two_scales import SemanticSegmentationVisionTransformer
+from src.vision_transformer.model import SemanticSegmentationVisionTransformer
 
 
 class TestDisplayFunctions(unittest.TestCase):

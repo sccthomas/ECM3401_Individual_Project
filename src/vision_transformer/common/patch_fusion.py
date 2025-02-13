@@ -54,17 +54,15 @@ class PatchFusion(_nn.Module):
             else:
                 operation = _nn.Identity()
 
-            patch_embedding_projectors.append(_nn.Sequential(
-                operation,
-                _nn.BatchNorm2d(out_embed),
-                _nn.ReLU(),
-                _nn.Dropout(dropout_rate),
-                _GatedSelfAttention(
-                    embed_dim=out_embed, num_heads=num_heads, dropout_rate=dropout_rate
+            patch_embedding_projectors.append(
+                _nn.ModuleList(
+                    [
+                        _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate)),
+                        _GatedSelfAttention(embed_dim=out_embed, num_heads=num_heads, dropout_rate=dropout_rate)
+                        if use_gated_attention else None,
+                    ]
                 )
-                if use_gated_attention else
-                _nn.Identity(),
-            ))
+            )
             in_resolutions.append(in_resolution)
 
         self.__patch_embedding_projectors = patch_embedding_projectors
@@ -74,13 +72,33 @@ class PatchFusion(_nn.Module):
         self.__out_embed = out_embed
         self.__initialize_weights()
 
-    def forward(self, target_tensor: _torch.Tensor, tensors: _t.List[_torch.Tensor]) -> _torch.Tensor:
+    @property
+    def attention_scores(self) -> _t.Optional[_t.List[_torch.Tensor]]:
+        """
+        Get the attention scores of the gated self-attention mechanisms.
+
+        :return: The attention scores.
+        """
+        patch_embedding_projectors = self.__patch_embedding_projectors
+
+        attention_scores = [
+            gated_attention.attention_scores
+            for _, gated_attention in patch_embedding_projectors.children()
+            if gated_attention is not None
+        ]
+
+        return attention_scores if attention_scores else None
+
+    def forward(
+            self, target_tensor: _torch.Tensor, tensors: _t.List[_torch.Tensor], keep_attention_scores: bool = False
+    ) -> _torch.Tensor:
         """
         Forward pass of the patch fusion layer to merge together a given tensor with a target tensor by modifying
         spatial dimension using learnable operations.
 
         :param target_tensor: Target tensor to be fused with. Shape (batch_size, out_patches, out_embed).
         :param tensors: List of tensors to be fused. Shape (batch_size, in_patches, in_embed).
+        :param keep_attention_scores: Whether to store the attention scores.
         :return: Fused tensor. Shape (batch_size, out_patches, out_embed).
         """
         patch_embedding_projectors = self.__patch_embedding_projectors
@@ -94,10 +112,14 @@ class PatchFusion(_nn.Module):
         target_tensor = target_tensor.reshape(B, out_resolution, out_resolution, E).permute(0, 3, 1, 2).contiguous()
 
         # Apply the patch embedding projectors
-        for tensor, projector, in_resolution in zip(tensors, patch_embedding_projectors, in_resolutions):
+        for tensor, (projector, gated_attention), in_resolution in zip(
+                tensors, patch_embedding_projectors, in_resolutions
+        ):
             B, _, E = tensor.shape
             tensor = tensor.reshape(B, in_resolution, in_resolution, E).permute(0, 3, 1, 2).contiguous()
             tensor = projector(tensor)
+            if gated_attention is not None:
+                tensor = gated_attention(tensor, keep_attention_scores=keep_attention_scores)
             target_tensor = target_tensor + tensor
 
         target_tensor = target_tensor.permute(0, 3, 1, 2).reshape(B, out_patches, out_embed).float()
@@ -145,14 +167,25 @@ class _GatedSelfAttention(_nn.Module):
             _nn.Linear(embed_dim, embed_dim),
             _nn.Sigmoid(),
         )
+        self.__attention_scores = None
 
         self.__initialize_weights()
 
-    def forward(self, x: _torch.Tensor) -> _torch.Tensor:
+    @property
+    def attention_scores(self) -> _t.Optional[_torch.Tensor]:
+        """
+        Get the attention scores.
+
+        :return: The attention scores.
+        """
+        return self.__attention_scores
+
+    def forward(self, x: _torch.Tensor, keep_attention_scores: bool = False) -> _torch.Tensor:
         """
         Forward pass of the gated self-attention mechanism.
 
         :param x: Input tensor. Shape (B, E, H, W).
+        :param keep_attention_scores: Whether to store the attention scores.
         :return: Output tensor. Shape (B, E, H, W).
         """
         attn = self.__attn
@@ -162,7 +195,10 @@ class _GatedSelfAttention(_nn.Module):
         B, E, H, W = x.shape
         x = x.permute(0, 3, 1, 2).reshape(B, H * W, E)
 
-        attn_output, _ = attn(x, x, x)
+        if keep_attention_scores:
+            attn_output, self.__attention_scores = attn(x, x, x, need_weights=True, average_attn_weights=False)
+        else:
+            attn_output, _ = attn(x, x, x, need_weights=False)
         gate_output = gate(x)
         output = gate_output * attn_output + (1 - gate_output) * x
 

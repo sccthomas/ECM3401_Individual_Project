@@ -4,7 +4,7 @@
 # --------------------------------------------------------
 
 
-from typing import Callable, Optional, Union, Tuple
+from typing import Callable, Optional, Union
 
 import torch
 import torch.nn.functional as F
@@ -117,6 +117,7 @@ class TransformerEncoderLayer(Module):
             batch_first=batch_first,
             **factory_kwargs,
         )
+        self.attention_scores = None
         # Implementation of Feedforward model
         self.linear1 = Linear(d_model, dim_feedforward, bias=bias, **factory_kwargs)
         self.dropout = Dropout(dropout)
@@ -153,8 +154,8 @@ class TransformerEncoderLayer(Module):
             src_mask: Optional[Tensor] = None,
             src_key_padding_mask: Optional[Tensor] = None,
             is_causal: bool = False,
-            return_attention_weights: bool = False,
-    ) -> Tuple[Tensor, Optional[Tensor]]:
+            keep_attention_scores: bool = False,
+    ) -> Tensor:
         r"""Pass the input through the encoder layer.
 
         Args:
@@ -168,7 +169,7 @@ class TransformerEncoderLayer(Module):
                 causal mask. Providing incorrect hints can result in
                 incorrect execution, including forward and backward
                 compatibility.
-            return_attention_weights: Return attention weights.
+            keep_attention_scores: Keep attention scores. Default: ``False``.
 
         Shape:
             see the docs in :class:`~torch.nn.Transformer`.
@@ -296,22 +297,22 @@ class TransformerEncoderLayer(Module):
         # see Fig. 1 of https://arxiv.org/pdf/2002.04745v1.pdf
         x = src
         if self.norm_first:
-            attn, weights = self._sa_block(
+            attn = self._sa_block(
                 self.norm1(x), src_mask, src_key_padding_mask, is_causal=is_causal,
-                return_attention_weights=return_attention_weights
+                keep_attention_scores=keep_attention_scores
             )
             x = x + attn
             x = x + self._ff_block(self.norm2(x))
         else:
-            attn, weights = self._sa_block(x, src_mask, src_key_padding_mask, is_causal=is_causal,
-                                           return_attention_weights=return_attention_weights)
+            attn = self._sa_block(x, src_mask, src_key_padding_mask, is_causal=is_causal,
+                                  keep_attention_scores=keep_attention_scores)
             x = self.norm1(
                 x
                 + attn
             )
             x = self.norm2(x + self._ff_block(x))
 
-        return x, weights
+        return x
 
     # self-attention block
     def _sa_block(
@@ -320,20 +321,20 @@ class TransformerEncoderLayer(Module):
             attn_mask: Optional[Tensor],
             key_padding_mask: Optional[Tensor],
             is_causal: bool = False,
-            return_attention_weights: bool = False,
-    ) -> Tuple[Tensor, Optional[Tensor]]:
-        x, weights = self.self_attn(
+            keep_attention_scores: bool = False,
+    ) -> Tensor:
+        x, self.attention_scores = self.self_attn(
             x,
             x,
             x,
             attn_mask=attn_mask,
             key_padding_mask=key_padding_mask,
-            need_weights=return_attention_weights,
-            average_attn_weights=False if return_attention_weights else None,
+            need_weights=keep_attention_scores,
+            average_attn_weights=False if keep_attention_scores else None,
             is_causal=is_causal,
         )
 
-        return self.dropout1(x), weights
+        return self.dropout1(x)
 
     # feed forward block
     def _ff_block(self, x: Tensor) -> Tensor:

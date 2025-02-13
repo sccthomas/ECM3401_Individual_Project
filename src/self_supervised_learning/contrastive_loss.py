@@ -10,7 +10,7 @@ import torch.nn.functional as _F
 import torchvision.transforms as _T
 
 import src.self_supervised_learning.base as _ssl_base
-import src.vision_transformer.model.base as _base
+import src.vision_transformer.model as _model
 
 
 class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
@@ -20,7 +20,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
     def __init__(
             self,
-            model: _base.SemanticSegmentationVisionTransformerBase,
+            model: _model.SemanticSegmentationVisionTransformer,
             encoder_dims: _t.List[int],
             projection_dim: int,
             temperature: float = 0.2
@@ -85,8 +85,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         x1 = model.apply_patch_embedding_stage(x1)  # Output -> dict[str, _torch.Tensor]
         x2 = model.apply_patch_embedding_stage(x2)  # Output -> dict[str, _torch.Tensor]
         # - Encode patch embeddings
-        x1, _ = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
-        x2, _ = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
+        x1 = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
+        x2 = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
 
         # Apply projection head to each patch embedding scale in the encoder output
         keys = x1.keys()

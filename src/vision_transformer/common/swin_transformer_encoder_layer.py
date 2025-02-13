@@ -42,7 +42,7 @@ def shifted_window_attention(
         proj_bias: Optional[Tensor] = None,
         logit_scale: Optional[torch.Tensor] = None,
         training: bool = True,
-        return_attention_weights: bool = False,
+        keep_attention_scores: bool = False,
 ) -> Tuple[Tensor, Optional[Tensor]]:
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -61,7 +61,7 @@ def shifted_window_attention(
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
         logit_scale (Tensor[out_dim], optional): Logit scale of cosine attention for Swin Transformer V2. Default: None.
         training (bool, optional): Training flag used by the dropout parameters. Default: True.
-        return_attention_weights (bool, optional): Return attention scores or not. Default: False.
+        keep_attention_scores (bool, optional): Whether to return attention scores. Default: False.
     Returns:
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
@@ -142,9 +142,8 @@ def shifted_window_attention(
 
     # unpad features
     x = x[:, :H, :W, :].contiguous()
-    if return_attention_weights:
-        return x, attn
-    return x, None
+
+    return (x, attn) if keep_attention_scores else (x, None)
 
 
 torch.fx.wrap("shifted_window_attention")
@@ -207,11 +206,11 @@ class ShiftedWindowAttention(nn.Module):
             self.relative_position_bias_table, self.relative_position_index, self.window_size  # type: ignore[arg-type]
         )
 
-    def forward(self, x: Tensor, return_attention_weights: bool = False):
+    def forward(self, x: Tensor, keep_attention_scores: bool = False):
         """
         Args:
             x (Tensor): Tensor with layout of [B, H, W, C]
-            return_attention_weights (bool): Return attention weights or not.
+            keep_attention_scores (bool): Return attention weights or not.
         Returns:
             Tensor with same layout as input, i.e. [B, H, W, C]
         """
@@ -229,7 +228,7 @@ class ShiftedWindowAttention(nn.Module):
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
             training=self.training,
-            return_attention_weights=return_attention_weights,
+            keep_attention_scores=keep_attention_scores,
         )
 
         return x, weights
@@ -279,6 +278,7 @@ class SwinTransformerBlock(nn.Module):
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
         self.mlp = MLP(dim, [int(dim * mlp_ratio), dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
+        self.attention_scores = None
 
         for m in self.mlp.modules():
             if isinstance(m, nn.Linear):
@@ -286,17 +286,17 @@ class SwinTransformerBlock(nn.Module):
                 if m.bias is not None:
                     nn.init.normal_(m.bias, std=1e-6)
 
-    def forward(self, x: Tensor, return_attention_weights: bool = False):
+    def forward(self, x: Tensor, keep_attention_scores: bool = False):
         # Reshape x
         B, N, C = x.shape
         H = int(math.sqrt(N))
         x = x.reshape(B, H, H, C)
 
-        x, weights = self.attn(self.norm1(x), return_attention_weights)
+        x, self.attention_scores = self.attn(self.norm1(x), keep_attention_scores)
         x = x + self.stochastic_depth(x)
         x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
 
         # Reshape x
         x = x.reshape(B, N, C)
 
-        return x, weights
+        return x

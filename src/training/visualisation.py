@@ -4,7 +4,7 @@ import torch as _torch
 import torch.nn as _nn
 from PIL import Image as _Image
 
-import src.vision_transformer.model.base as _base
+import src.vision_transformer.model as _model
 
 
 def display_tensor_mask(mask: _torch.Tensor) -> _Image:
@@ -32,7 +32,7 @@ def display_tensor_image(image: _torch.Tensor) -> _Image:
 
 
 def display_attention_weights(
-        model: _base.SemanticSegmentationVisionTransformerBase,
+        model: _model.SemanticSegmentationVisionTransformer,
         img_original: _torch.Tensor,
         img_pre: _torch.Tensor,
         patch_size: int,
@@ -61,7 +61,7 @@ def display_attention_weights(
 
 
 def _get_attention_weights(
-        model: _base.SemanticSegmentationVisionTransformerBase,
+        model: _model.SemanticSegmentationVisionTransformer,
         img: _torch.Tensor,
         patch_size: int,
         scale_key: str,
@@ -89,8 +89,9 @@ def _get_attention_weights(
     w_featmap = img.shape[-2] // patch_size
     h_featmap = img.shape[-1] // patch_size
 
-    _, attentions = model(img, return_attention_weights=True)
-    attentions = attentions[scale_key][layer]
+    _ = model(img, keep_attention_scores=True)
+    attentions = model.get_attention_scores()
+    attentions = attentions[scale_key]['encoder'][layer]
 
     if attentions.dim() == 4:
         H = attentions.shape[1]  # number of head

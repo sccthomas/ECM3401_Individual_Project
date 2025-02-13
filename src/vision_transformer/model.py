@@ -151,7 +151,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         return self.__decoder
 
     def forward(
-            self, x: _torch.Tensor
+            self, x: _torch.Tensor, keep_attention_scores: bool = False,
     ) -> _torch.Tensor:
         """
         Forward pass of the vision transformer model. This method applies the patch embedding, encoder, and decoder
@@ -159,6 +159,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         represent the different patch embedding scales.
 
         :param x: The input tensor.
+        :param keep_attention_scores: Whether to store the attention scores.
         :return: The output tensor and optional attention weights.
         """
         image_dims = self.__image_dims
@@ -168,7 +169,9 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         patch_embeddings = self.apply_patch_embedding_stage(x)
 
         # Encoder Stage
-        patch_embeddings = self.apply_encoder_stage(patch_embeddings=patch_embeddings)
+        patch_embeddings = self.apply_encoder_stage(
+            patch_embeddings=patch_embeddings, keep_attention_scores=keep_attention_scores
+        )
 
         # Decoder Stage
         x1 = decoder(patch_embeddings)
@@ -197,11 +200,13 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
     def apply_encoder_stage(
             self,
             patch_embeddings: _t.Dict[str, _torch.Tensor],
+            keep_attention_scores: bool = False,
     ) -> _t.Dict[str, _torch.Tensor]:
         """
         Apply the encoder stage to the input tensors.
 
         :param patch_embeddings: The patch embeddings for all available scales.
+        :param keep_attention_scores: Whether to store the attention scores.
         :return: The encoded tensors for all available scales.
         """
         encoders = self.__encoders
@@ -212,7 +217,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         # Encoder Stage
         # - Apply the first encoder layer manually
         for key in patch_embeddings:
-            patch_embeddings[key] = encoders[key][0](patch_embeddings[key])[0]
+            patch_embeddings[key] = encoders[key][0](patch_embeddings[key], keep_attention_scores=keep_attention_scores)
 
         # - Apply the remaining encoder layers and patch fusions when applicable
         for layer in range(1, num_encoders):
@@ -226,13 +231,45 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
                             other_embedding for other_key, other_embedding in patch_embeddings.items()
                             if key != other_key
                         ],
+                        keep_attention_scores=keep_attention_scores,
                     )
 
             # - Encoder Layer
             for key in patch_embeddings:
-                patch_embeddings[key] = encoders[key][layer](patch_embeddings[key])[0]
+                patch_embeddings[key] = encoders[key][layer](
+                    patch_embeddings[key], keep_attention_scores=keep_attention_scores
+                )
 
         return patch_embeddings
+
+    def get_attention_scores(
+            self
+    ) -> _t.Dict[str, _t.Dict[str, _t.List[_t.Union[_torch.Tensor, _t.List[_torch.Tensor]]]]]:
+        """
+        Get the attention scores for all encoder layers for a given tensor x.
+
+        :return: The attention scores for all encoder layers.
+        """
+        encoders = self.__encoders
+        patch_fusions = self.__patch_fusions
+        patch_embedding_modules = self.__patch_embedding_modules
+
+        attention_scores = {
+            key: {}
+            for key in patch_embedding_modules.keys()
+        }
+        for key in encoders:
+            attention_scores[key]['encoder'] = [
+                encoder.attention_scores
+                for encoder in encoders[key].children()
+            ]
+        for key in patch_fusions:
+            attention_scores[key]['patch_fusion'] = [
+                patch_fusion.attention_scores
+                for patch_fusion in patch_fusions[key].children()
+            ]
+
+        return attention_scores
 
     def __create_encoder_layers_for_scale_X(
             self, patch_embedding: _patch_embedding.PatchEmbedding
@@ -347,24 +384,3 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         )
 
         return patch_fusion_layers_scale_X
-
-    # def get_attention_scores(self, x: _torch.Tensor) -> _t.Dict[str, _t.List[_torch.Tensor]]:
-    #     """
-    #     Get the attention scores for all encoder layers for a given tensor x.
-    #
-    #     :param x: The input tensor.
-    #     :return: The attention scores for all encoder layers.
-    #     """
-    #     encoders = self.__encoders
-    #
-    #     _ = self.forward(x, save_attention_scores=True)
-    #
-    #     attention_scores = {
-    #         key: [
-    #             encoder_layer.attention_scores
-    #             for encoder_layer in encoder_layers.modules()
-    #         ]
-    #         for key, encoder_layers in encoders.items()
-    #     }
-    #
-    #     return attention_scores

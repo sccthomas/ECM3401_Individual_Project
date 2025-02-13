@@ -3,7 +3,7 @@ import unittest
 import torch
 
 from src.self_supervised_learning.contrastive_loss import ContrastivePreTraining
-from src.vision_transformer.model.two_scales import SemanticSegmentationVisionTransformer
+from src.vision_transformer.model import SemanticSegmentationVisionTransformer
 
 
 class TestContrastivePreTraining(unittest.TestCase):
