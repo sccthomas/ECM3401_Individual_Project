@@ -13,7 +13,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
             num_encoder_layers=4,
             use_swin_transformer=False,
             use_heavyweight_decoder=False,
-            skip_layer_ratio=4,
+            skip_layer_ratio=2,
             use_skip_layer_gated_attention=True,
             encoder_dropout_rate=0.25,
             patch_fusion_dropout_rate=0.25,

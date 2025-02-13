@@ -222,13 +222,14 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             # - Patch Fusion Layer
             if layer % skip_layer_ratio == 0:
                 patch_embeddings = {
-                    key: patch_fusions[key][skip_layer](target_tensor=patch_embedding, tensors=[
-                        {
+                    key: patch_fusions[key][skip_layer](
+                        target_tensor=patch_embedding,
+                        tensors=[
                             other_patch_embedding
                             for other_key, other_patch_embedding in patch_embeddings.items()
                             if key != other_key
-                        }
-                    ])
+                        ],
+                    )
                     for key, patch_embedding in patch_embeddings.items()
                 }
                 skip_layer += 1
