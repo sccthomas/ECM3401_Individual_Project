@@ -72,10 +72,11 @@ def display_attention_weights(
             for i, attention in enumerate(attention_group, start=1):
                 label_prefix = f"Scale:{scale} - Stage:{stage} - "
                 # If attention is not a list, wrap it in a list for uniform iteration.
-                att_list = attention if isinstance(attention, list) else [attention]
-                label_suffix = "Patch Fusion" if isinstance(attention, list) else "Layer"
-                for att in att_list:
-                    _plot_attention(img_original, att, f"{label_prefix}{label_suffix}:{i}")
+                if isinstance(attention, list):
+                    for j, att in enumerate(attention, start=1):
+                        _plot_attention(img_original, att, f"{label_prefix}Patch Fusion:{j}")
+                else:
+                    _plot_attention(img_original, attention, f"{label_prefix}Layer:{i}")
 
 
 ########################################################################################################################
