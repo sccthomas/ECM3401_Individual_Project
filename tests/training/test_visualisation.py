@@ -27,8 +27,8 @@ class TestDisplayFunctions(unittest.TestCase):
             num_encoder_layers=4,
             use_swin_transformer=False,
             use_heavyweight_decoder=False,
-            skip_layer_ratio=4,
-            use_skip_layer_gated_attention=False,
+            skip_layer_ratio=2,
+            use_skip_layer_gated_attention=True,
             encoder_dropout_rate=0.25,
             patch_fusion_dropout_rate=0.25,
             decoder_dropout_rate=0.25,
@@ -39,17 +39,14 @@ class TestDisplayFunctions(unittest.TestCase):
 
         )
         images = torch.rand(2, 3, 256, 256)
-        for patch_size, scale_key in [(16, 'x1'), (8, 'x2')]:
-            with unittest.mock.patch.object(_plt, 'show') as mock_show:
-                display_attention_weights(
-                    model=model,
-                    img_original=images[0],
-                    img_pre=images[0],
-                    patch_size=patch_size,
-                    scale_key=scale_key,
-                    layer=0
-                )
-                mock_show.assert_called()
+        with unittest.mock.patch.object(_plt, 'show') as mock_show:
+            display_attention_weights(
+                model=model,
+                img_original=images[0],
+                img_pre=images[0],
+                patch_sizes=[16, 8],
+            )
+            mock_show.assert_called()
 
 
 if __name__ == '__main__':
