@@ -44,7 +44,7 @@ def train_model(
             # - Move data to the GPU using non_blocking transfer
             images = images.to(device, non_blocking=True)
             # - Use mixed precision for forward pass
-            with torch.amp.autocast(device.type):
+            with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16):
                 loss = ssl_model.forward_loss(images)
             # - Accumulate the scalar loss value (loss.item() returns a Python float)
             train_loss += loss.item()
@@ -69,7 +69,7 @@ def train_model(
                 # - Move data to the GPU using non_blocking transfer
                 images = images.to(device, non_blocking=True)
                 # - Use mixed precision for forward pass
-                with torch.amp.autocast(device.type):
+                with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16):
                     loss = ssl_model.forward_loss(images)
                 # - Accumulate the scalar loss value (loss.item() returns a Python float)
                 val_loss += loss.item()
