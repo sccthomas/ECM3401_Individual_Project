@@ -129,23 +129,34 @@ def _upsample_attention(
     :param use_max_pooling: Whether to use max pooling.
     :return: The upsampled attention map.
     """
+    # Normal attention scores of shape (B, Num_Heads, Num_Patches, Num_Patches)
     if attention.size(0) == 1:
-        H = attention.shape[1]  # number of head
-        # keep only the output patch attention
+        num_heads = attention.shape[1]
         if use_max_pooling:
             attention = attention[0].max(dim=1).values
         else:
-            attention = attention[0, :, 0, :].reshape(H, -1)
+            attention = attention[0, :, 0, :]
+        attention = attention.reshape(num_heads, w_featmap, h_featmap)
 
+    # Swin Transformer attention scores of shape (B * Num_Windows, Num_Heads, Num_Patches, Num_Patches)
     elif attention.size(0) > 1:
-        W, H, _, E = attention.shape
+        num_windows, num_heads, N, _ = attention.shape
+        window_size = int(_math.sqrt(N))
+
         if use_max_pooling:
             attention = attention.max(dim=2).values
         else:
             attention = attention[:, :, 0, :]
-        attention = attention.permute(1, 0, 2).reshape(H, W * E)
 
-    attention = attention.reshape(H, w_featmap, h_featmap)
+        attention = attention.reshape(num_windows, num_heads, window_size, window_size)
+        grid_w = w_featmap // window_size
+        grid_h = h_featmap // window_size
+        assert grid_w * grid_h == num_windows, "Mismatch between window grid and number of windows"
+
+        attention = attention.reshape(grid_h, grid_w, num_heads, window_size, window_size)
+        attention = attention.permute(2, 0, 3, 1, 4)
+        attention = attention.reshape(num_heads, grid_h * window_size, grid_w * window_size)
+
     attention = (
         _nn.functional.interpolate(
             attention.unsqueeze(0), scale_factor=patch_size, mode="nearest"
