@@ -260,13 +260,15 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         }
         for key in encoders:
             attention_scores[key]['encoder'] = [
-                encoder.attention_scores
+                attn_scores
                 for encoder in encoders[key].children()
+                if (attn_scores := encoder.attention_scores) is not None
             ]
         for key in patch_fusions:
             attention_scores[key]['patch_fusion'] = [
-                patch_fusion.attention_scores
+                attn_scores
                 for patch_fusion in patch_fusions[key].children()
+                if (attn_scores := patch_fusion.attention_scores) is not None
             ]
 
         return attention_scores

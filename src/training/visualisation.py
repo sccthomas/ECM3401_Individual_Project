@@ -111,7 +111,7 @@ def _process_attention_scores(
             if isinstance(attention, list):
                 for j, att in enumerate(attention):
                     attentions[key][i][j] = _upsample_attention(att, patch_size, **kwargs)
-            else:
+            elif isinstance(attention, _torch.Tensor):
                 attentions[key][i] = _upsample_attention(attention, patch_size, **kwargs)
 
     return attentions
@@ -129,7 +129,7 @@ def _upsample_attention(
     :param use_max_pooling: Whether to use max pooling.
     :return: The upsampled attention map.
     """
-    if attention.dim() == 4:
+    if attention.size(0) == 1:
         H = attention.shape[1]  # number of head
         # keep only the output patch attention
         if use_max_pooling:
@@ -137,7 +137,7 @@ def _upsample_attention(
         else:
             attention = attention[0, :, 0, :].reshape(H, -1)
 
-    elif attention.dim() == 5:
+    elif attention.size(0) > 1:
         W, H, _, E = attention.shape
         if use_max_pooling:
             attention = attention.max(dim=2).values
