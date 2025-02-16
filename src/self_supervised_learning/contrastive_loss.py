@@ -70,32 +70,21 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         # Apply random transformations
         # - Select two random transformations
-        t1 = _random.choice(transformations)
-        t2 = _random.choice(transformations)
-        while t1 == t2:
-            t2 = _random.choice(transformations)
+        transformation_1 = _random.choice(transformations)
+        transformation_2 = _random.choice(transformations)
+        while transformation_1 == transformation_2:
+            transformation_2 = _random.choice(transformations)
 
-        # - Apply transformations
-        x1 = t1(x)
-        x2 = t2(x)
-        del x
+        z = ()
+        for transformation_x in [transformation_1, transformation_2]:
+            x_ = transformation_x(x)
+            x_ = model.apply_patch_embedding_stage(x_)
+            x_ = model.apply_encoder_stage(patch_embeddings=x_)
+            for key, projection_head in zip(x_.keys(), projection_heads):
+                x_[key] = projection_head(x_[key])
+            z += (x_,)
 
-        # Forward pass
-        # - Convert images to patch embeddings
-        x1 = model.apply_patch_embedding_stage(x1)  # Output -> dict[str, _torch.Tensor]
-        x2 = model.apply_patch_embedding_stage(x2)  # Output -> dict[str, _torch.Tensor]
-        # - Encode patch embeddings
-        x1 = model.apply_encoder_stage(patch_embeddings=x1)  # Output -> dict[str, _torch.Tensor]
-        x2 = model.apply_encoder_stage(patch_embeddings=x2)  # Output -> dict[str, _torch.Tensor]
-
-        # Apply projection head to each patch embedding scale in the encoder output
-        keys = x1.keys()
-        assert keys == x2.keys(), "Scale names do not match."
-        for key, projection_head in zip(keys, projection_heads):
-            x1[key] = projection_head(x1[key])
-            x2[key] = projection_head(x2[key])
-
-        return x1, x2
+        return z
 
     def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
         """
