@@ -36,6 +36,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             patch_embedding_scale_3: _t.Tuple[int, int] = None,
             patch_embedding_scale_4: _t.Tuple[int, int] = None,
             patch_embedding_scale_5: _t.Tuple[int, int] = None,
+            window_size: str = "medium",
     ) -> None:
         """
         Initialize the vision_transformer.
@@ -57,6 +58,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         :param patch_embedding_scale_3: Optional, The patch embedding configuration for scale 3.
         :param patch_embedding_scale_4: Optional, The patch embedding configuration for scale 4.
         :param patch_embedding_scale_5: Optional, The patch embedding configuration for scale 5.
+        :param window_size: The window size for the Swin Transformer encoder.
         """
         in_channels, height, width = image_dims
 
@@ -74,6 +76,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         self.__num_encoder_heads = num_encoder_heads
         self.__use_skip_layer_gated_attention = use_skip_layer_gated_attention
         self.__use_learnable_skip_layers = use_learnable_skip_layers
+        self.__window_size = 8 if window_size == "small" else 4 if window_size == "medium" else 2
 
         # Create Patch Embedding Modules
         # - Determine which patch embedding scales are present
@@ -321,11 +324,12 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         num_encoder_layers = self.__num_encoder_layers
         encoder_dropout_rate = self.__encoder_dropout_rate
         num_encoder_heads = self.__num_encoder_heads
+        window_size = self.__window_size
 
         embed_dim = patch_embedding.embed_dim
         H = patch_embedding.H
 
-        window_size = max(H // 4, 4)  # 4 is the minimum window size, with 4 patches in each window
+        window_size = max(H // window_size, 2)  # H / number_of_windows, but at least 4 windows
         shift_size = window_size // 2
         shift_size = [shift_size, shift_size]
         kwargs = {

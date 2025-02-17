@@ -65,7 +65,6 @@ class TestDisplayFunctions(unittest.TestCase):
             num_classes=1,
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
-
         )
         images = torch.rand(2, 3, 256, 256)
         with unittest.mock.patch.object(_plt, 'show') as mock_show:
