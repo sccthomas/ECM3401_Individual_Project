@@ -14,6 +14,7 @@ class TestMaskedRegionLoss(unittest.TestCase):
             use_swin_transformer=False,
             use_heavyweight_decoder=False,
             skip_layer_ratio=4,
+            use_learnable_skip_layers=True,
             use_skip_layer_gated_attention=False,
             encoder_dropout_rate=0.25,
             patch_fusion_dropout_rate=0.25,

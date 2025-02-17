@@ -24,6 +24,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             use_swin_transformer: bool,
             use_heavyweight_decoder: bool,
             skip_layer_ratio: int,
+            use_learnable_skip_layers: bool,
             use_skip_layer_gated_attention: bool,
             encoder_dropout_rate: float,
             patch_fusion_dropout_rate: float,
@@ -44,6 +45,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         :param use_swin_transformer: Whether to use the Swin Transformer encoder layer.
         :param use_heavyweight_decoder: Whether to use the heavyweight decoder.
         :param skip_layer_ratio: The ratio of encoder layers to skip for patch fusion.
+        :param use_learnable_skip_layers: Whether to use learnable skip layers.
         :param use_skip_layer_gated_attention: Whether to use the skip layer gated attention.
         :param encoder_dropout_rate: The dropout rate in the encoder stage.
         :param patch_fusion_dropout_rate: The dropout rate in the patch fusion stage.
@@ -71,6 +73,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         self.__patch_fusion_dropout_rate = patch_fusion_dropout_rate
         self.__num_encoder_heads = num_encoder_heads
         self.__use_skip_layer_gated_attention = use_skip_layer_gated_attention
+        self.__use_learnable_skip_layers = use_learnable_skip_layers
 
         # Create Patch Embedding Modules
         # - Determine which patch embedding scales are present
@@ -350,7 +353,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             *,
             in_patch_embeddings: _t.List[_patch_embedding.PatchEmbedding],
             out_patch_embedding: _patch_embedding.PatchEmbedding
-    ) -> '_nn.ModuleList[_patch_fusion.PatchFusion]':
+    ) -> '_nn.ModuleList[_patch_fusion.PatchFusionLearnable]':
         """
         Create patch fusion layers for scale X to all other scales.
 
@@ -361,6 +364,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         num_patch_fusion_layers = self.__num_patch_fusion_layers
         patch_fusion_dropout_rate = self.__patch_fusion_dropout_rate
         use_skip_layer_gated_attention = self.__use_skip_layer_gated_attention
+        use_learnable_skip_layers = self.__use_learnable_skip_layers
 
         in_dims = [
             [patch_embedding.num_patches, patch_embedding.embed_dim]
@@ -376,9 +380,14 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
             'use_gated_attention': use_skip_layer_gated_attention,
             'num_heads': 2 if use_skip_layer_gated_attention else None,
         }
+        patch_fusion_module = (
+            _patch_fusion.PatchFusionLearnable
+            if use_learnable_skip_layers else
+            _patch_fusion.PatchFusionNonLearnable
+        )
         patch_fusion_layers_scale_X = _nn.ModuleList(
             [
-                _patch_fusion.PatchFusion(
+                patch_fusion_module(
                     **kwargs,
                 )
                 for _ in range(num_patch_fusion_layers)
