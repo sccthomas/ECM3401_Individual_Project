@@ -44,7 +44,7 @@ def train_model(
             # - Move data to the GPU using non_blocking transfer
             images = images.to(device, non_blocking=True)
             # - Use mixed precision for forward pass
-            with torch.amp.autocast(device.type):
+            with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16):
                 loss = ssl_model.forward_loss(images)
             # - Accumulate the scalar loss value (loss.item() returns a Python float)
             train_loss += loss.item()
@@ -69,7 +69,7 @@ def train_model(
                 # - Move data to the GPU using non_blocking transfer
                 images = images.to(device, non_blocking=True)
                 # - Use mixed precision for forward pass
-                with torch.amp.autocast(device.type):
+                with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16):
                     loss = ssl_model.forward_loss(images)
                 # - Accumulate the scalar loss value (loss.item() returns a Python float)
                 val_loss += loss.item()
@@ -94,8 +94,5 @@ def train_model(
             if patience_counter >= patience:
                 print("Early stopping triggered")
                 break
-
-        torch.save(ssl_model.state_dict(), f"segmentation_model_ssl_epoch_{epoch + 1}.pth")
-        torch.save(ssl_model.model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
 
         torch.cuda.empty_cache()

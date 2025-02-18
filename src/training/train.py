@@ -4,11 +4,11 @@ import torch.utils.data as _data
 import tqdm as _tqdm
 
 import src.training.metrics as _metrics
-import src.vision_transformer.model.base as _base
+import src.vision_transformer.model as _model
 
 
 def train_model(
-        model: _base.SemanticSegmentationVisionTransformerBase,
+        model: _model.SemanticSegmentationVisionTransformer,
         num_epochs: int,
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
@@ -46,7 +46,7 @@ def train_model(
         for images, masks in _tqdm.tqdm(train_loader, desc=f"Training"):
             images, masks = images.to(device, non_blocking=True), masks.to(device, non_blocking=True)
             # - Mixed Precision Forward Pass
-            with torch.amp.autocast(device.type):
+            with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16):
                 outputs = model.forward(images)
                 loss = criterion(outputs, masks)
             # - Update Metrics
@@ -70,7 +70,7 @@ def train_model(
             for images, masks in _tqdm.tqdm(val_loader, desc=f"Validation"):
                 images, masks = images.to(device, non_blocking=True), masks.to(device, non_blocking=True)
                 # - Mixed Precision Forward Pass
-                with torch.amp.autocast(device.type):
+                with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16):
                     outputs = model.forward(images)
                     loss = criterion(outputs, masks)
                 # - Update Metrics
@@ -96,8 +96,6 @@ def train_model(
             if patience_counter >= patience:
                 print("Early stopping triggered")
                 break
-        # - Save model checkpoint every epoch
-        torch.save(model.state_dict(), f"segmentation_model_epoch_{epoch + 1}.pth")
 
         # - Reset Metrics
         train_metrics.reset_metrics()

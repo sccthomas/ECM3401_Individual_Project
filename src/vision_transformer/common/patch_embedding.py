@@ -25,8 +25,18 @@ class PatchEmbedding(_nn.Module):
         self.__H = H
         self.__W = W
         self.__num_patches = num_patches
+        self.__embed_dim = embed_dim
 
         self.__initialize_weights()
+
+    @property
+    def embed_dim(self) -> int:
+        """
+        Get the length to project patches into.
+
+        :return: The length to project patches into.
+        """
+        return self.__embed_dim
 
     @property
     def num_patches(self) -> int:

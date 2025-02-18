@@ -6,7 +6,7 @@ import torch.nn as _nn
 import torchvision.transforms.v2 as _transforms
 
 import src.self_supervised_learning.base as _ssl_base
-import src.vision_transformer.model.base as _base
+import src.vision_transformer.model as _model
 
 
 class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
@@ -16,7 +16,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
     def __init__(
             self,
-            model: _base.SemanticSegmentationVisionTransformerBase,
+            model: _model.SemanticSegmentationVisionTransformer,
             max_patch_size: int,
             mask_ratio: float = 0.40,
     ) -> None:
@@ -58,7 +58,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         # - Patch Embedding
         patch_embeddings = model.apply_patch_embedding_stage(masked_image)
         # - Encoder Stage
-        patch_embeddings, _ = model.apply_encoder_stage(patch_embeddings=patch_embeddings)
+        patch_embeddings = model.apply_encoder_stage(patch_embeddings=patch_embeddings)
         # - Decoder Stage
         reconstructed = model.decoder.forward(patch_embeddings, apply_prediction_head=False)
         # - Apply temporary projection head to RGB

@@ -3,7 +3,7 @@ import abc as _abc
 import torch as _torch
 import torch.nn as _nn
 
-import src.vision_transformer.model.base as _base
+import src.vision_transformer.model as _model
 
 
 class SelfSupervisedLoss(_nn.Module):
@@ -13,7 +13,7 @@ class SelfSupervisedLoss(_nn.Module):
 
     def __init__(
             self,
-            model: _base.SemanticSegmentationVisionTransformerBase,
+            model: _model.SemanticSegmentationVisionTransformer,
     ) -> None:
         """
         Initialize the contrastive pre-training mixin.
@@ -24,7 +24,7 @@ class SelfSupervisedLoss(_nn.Module):
         self.__model = model
 
     @property
-    def model(self) -> _base.SemanticSegmentationVisionTransformerBase:
+    def model(self) -> _model.SemanticSegmentationVisionTransformer:
         """
         Get the model being trained.
 

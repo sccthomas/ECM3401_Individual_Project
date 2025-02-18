@@ -3,7 +3,7 @@ import unittest
 import torch
 
 from src.self_supervised_learning.contrastive_loss import ContrastivePreTraining
-from src.vision_transformer.model.two_scales import SemanticSegmentationVisionTransformer
+from src.vision_transformer.model import SemanticSegmentationVisionTransformer
 
 
 class TestContrastivePreTraining(unittest.TestCase):
@@ -11,8 +11,11 @@ class TestContrastivePreTraining(unittest.TestCase):
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 128, 128),
             num_encoder_layers=4,
-            decoder_type='lightweight',
+            use_swin_transformer=False,
+            use_heavyweight_decoder=False,
             skip_layer_ratio=4,
+            use_learnable_skip_layers=True,
+            use_skip_layer_gated_attention=False,
             encoder_dropout_rate=0.25,
             patch_fusion_dropout_rate=0.25,
             decoder_dropout_rate=0.25,
