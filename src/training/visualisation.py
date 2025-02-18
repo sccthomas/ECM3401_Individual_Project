@@ -6,6 +6,7 @@ import numpy as _np
 import torch as _torch
 import torch.nn as _nn
 from PIL import Image as _Image
+from torch import Tensor
 
 import src.vision_transformer.model as _model
 
@@ -71,12 +72,8 @@ def display_attention_weights(
         for stage, attention_group in processed_attention.items():
             for i, attention in enumerate(attention_group, start=1):
                 label_prefix = f"Scale:{scale} - Stage:{stage} - "
-                # If attention is not a list, wrap it in a list for uniform iteration.
-                if isinstance(attention, list):
-                    for j, att in enumerate(attention, start=1):
-                        _plot_attention(img_original, att, f"{label_prefix}Patch Fusion:{j}")
-                else:
-                    _plot_attention(img_original, attention, f"{label_prefix}Layer:{i}")
+                if isinstance(attention, _np.ndarray):
+                    _plot_attention(img_original, attention, f"{label_prefix} Layer:{i}")
 
 
 ########################################################################################################################
@@ -89,7 +86,7 @@ def _process_attention_scores(
         patch_size: int,
         attentions: _t.Dict[str, _t.List[_t.Union[_torch.Tensor, _t.List[_torch.Tensor]]]],
         use_max_pooling: bool = False,
-) -> _t.Dict[str, _t.List[_t.Union[_np.ndarray, _t.List[_np.ndarray]]]]:
+) -> _t.Dict[str, _t.List[Tensor | _t.List[Tensor]]]:
     """
     Function to visualize the attention of the model.
 
@@ -108,10 +105,7 @@ def _process_attention_scores(
     }
     for key in attentions.keys():
         for i, attention in enumerate(attentions[key]):
-            if isinstance(attention, list):
-                for j, att in enumerate(attention):
-                    attentions[key][i][j] = _upsample_attention(att, patch_size, **kwargs)
-            elif isinstance(attention, _torch.Tensor):
+            if isinstance(attention, _torch.Tensor):
                 attentions[key][i] = _upsample_attention(attention, patch_size, **kwargs)
 
     return attentions

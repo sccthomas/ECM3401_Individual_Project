@@ -19,6 +19,7 @@ class PatchFusion(_nn.Module):
             out_embed: int,
             out_resolution: int,
             in_resolutions: _t.List[int],
+            dropout_rate: float,
             use_gated_attention: bool = False,
             num_heads: int = None,
     ) -> None:
@@ -38,6 +39,10 @@ class PatchFusion(_nn.Module):
             raise ValueError("The number of attention heads must be provided if using gated attention.")
 
         self._patch_embedding_projectors = patch_embedding_projectors
+        self._gated_attention = (
+            _GatedSelfAttention(embed_dim=out_embed, num_heads=num_heads, dropout_rate=dropout_rate)
+            if use_gated_attention else None
+        )
         self._out_resolution = out_resolution
         self._in_resolutions = in_resolutions
         self._out_patches = out_patches
@@ -45,21 +50,17 @@ class PatchFusion(_nn.Module):
         self.__initialize_weights()
 
     @property
-    def attention_scores(self) -> _t.Optional[_t.List[_torch.Tensor]]:
+    def attention_scores(self) -> _t.Optional[_torch.Tensor]:
         """
         Get the attention scores of the gated self-attention mechanisms.
 
         :return: The attention scores.
         """
-        patch_embedding_projectors = self._patch_embedding_projectors
+        gated_attention = self._gated_attention
 
-        attention_scores = [
-            gated_attention.attention_scores
-            for _, gated_attention in patch_embedding_projectors.children()
-            if gated_attention is not None
-        ]
+        attention_scores = gated_attention.attention_scores if gated_attention else None
 
-        return attention_scores if attention_scores else None
+        return attention_scores
 
     def forward(
             self, target_tensor: _torch.Tensor, tensors: _t.List[_torch.Tensor], keep_attention_scores: bool = False
@@ -74,6 +75,7 @@ class PatchFusion(_nn.Module):
         :return: Fused tensor. Shape (batch_size, out_patches, out_embed).
         """
         patch_embedding_projectors = self._patch_embedding_projectors
+        gated_attention = self._gated_attention
         in_resolutions = self._in_resolutions
         out_resolution = self._out_resolution
         out_patches = self._out_patches
@@ -84,16 +86,20 @@ class PatchFusion(_nn.Module):
         target_tensor = target_tensor.reshape(B, out_resolution, out_resolution, E).permute(0, 3, 1, 2).contiguous()
 
         # Apply the patch embedding projectors
-        for tensor, (projector, gated_attention), in_resolution in zip(
+        tensors_ = _torch.zeros_like(target_tensor)
+        for tensor, projector, in_resolution in zip(
                 tensors, patch_embedding_projectors, in_resolutions
         ):
             B, _, E = tensor.shape
             tensor = tensor.reshape(B, in_resolution, in_resolution, E).permute(0, 3, 1, 2).contiguous()
-            tensor = projector(tensor)
-            if gated_attention is not None:
-                tensor = gated_attention(tensor, keep_attention_scores=keep_attention_scores)
-            target_tensor = target_tensor + tensor
+            tensors_ = tensors_ + projector(tensor)
 
+        # If using gated attention, apply the gated self-attention mechanism
+        if gated_attention:
+            target_tensor = gated_attention(target_tensor, keep_attention_scores=keep_attention_scores)
+
+        # Add the target tensor to the fused tensor
+        target_tensor = target_tensor + tensors_
         target_tensor = target_tensor.permute(0, 3, 1, 2).reshape(B, out_patches, out_embed).float()
 
         assert target_tensor.shape == (B, out_patches, out_embed)
@@ -154,13 +160,7 @@ class PatchFusionLearnable(PatchFusion):
                 operation = _nn.Identity()
 
             patch_embedding_projectors.append(
-                _nn.ModuleList(
-                    [
-                        _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate)),
-                        _GatedSelfAttention(embed_dim=out_embed, num_heads=num_heads, dropout_rate=dropout_rate)
-                        if use_gated_attention else None,
-                    ]
-                )
+                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate))
             )
             in_resolutions.append(in_resolution)
 
@@ -172,6 +172,7 @@ class PatchFusionLearnable(PatchFusion):
             in_resolutions=in_resolutions,
             use_gated_attention=use_gated_attention,
             num_heads=num_heads,
+            dropout_rate=dropout_rate,
         )
 
         self.__patch_embedding_projectors = patch_embedding_projectors
@@ -244,13 +245,7 @@ class PatchFusionNonLearnable(PatchFusion):
                 )
 
             patch_embedding_projectors.append(
-                _nn.ModuleList(
-                    [
-                        _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate)),
-                        _GatedSelfAttention(embed_dim=out_embed, num_heads=num_heads, dropout_rate=dropout_rate)
-                        if use_gated_attention else None,
-                    ]
-                )
+                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate))
             )
             in_resolutions.append(in_resolution)
 
@@ -262,6 +257,7 @@ class PatchFusionNonLearnable(PatchFusion):
             in_resolutions=in_resolutions,
             use_gated_attention=use_gated_attention,
             num_heads=num_heads,
+            dropout_rate=dropout_rate,
         )
 
         self.__patch_embedding_projectors = patch_embedding_projectors
