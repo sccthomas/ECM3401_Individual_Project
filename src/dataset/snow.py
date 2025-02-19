@@ -24,14 +24,15 @@ class SnowDataset(_Dataset):
             len_override: int = None,
             resize: bool = False,
             normalize: bool = False,
+            rotate: bool = False,
     ) -> None:
         """
 
         :param dataset_dir_path: The path to the directory containing the dataset.
         :param len_override: Optional. Override the length of the dataset. If not provided, the length of the dataset
-        :param resize: Optional. Resize the images and targets to 256x256.
-        :param normalize: Optional. Normalize the images.
-        :param rotate: Optional. Rotate the images and targets by a random multiple of 90 degrees.
+        :param resize: Resize the images and targets to 256x256. Defaults to False.
+        :param normalize: Normalize the images. Defaults to False.
+        :param rotate: Rotate the images and targets by a random multiple of 90 degrees. Defaults to False.
         """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
@@ -55,6 +56,7 @@ class SnowDataset(_Dataset):
         self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
+        self.__rotate = rotate
 
     def __len__(self) -> int:
         """
@@ -75,6 +77,7 @@ class SnowDataset(_Dataset):
         normalize = self.__normalize
         to_tensor = self.__to_tensor
         resize = self.__resize
+        rotate = self.__rotate
 
         # Load, resize and convert the image and target to tensors
         image_path, target_path = image_target_paths[idx]
@@ -82,6 +85,12 @@ class SnowDataset(_Dataset):
         image, target = resize(image), resize(target)
         image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
         image = normalize(image)
+
+        # Rotate the image and target by a random multiple of 90 degrees
+        if rotate:
+            k = _torch.randint(0, 4, (1,)).item()
+            image = _torch.rot90(image, k=k, dims=(1, 2))
+            target = _torch.rot90(target, k=k, dims=(1, 2))
 
         return image, target
 
