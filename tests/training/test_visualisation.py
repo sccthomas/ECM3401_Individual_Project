@@ -1,27 +1,37 @@
 import unittest
 import unittest.mock
 
-import matplotlib.pyplot as _plt
+import matplotlib.pyplot as plt
 import torch
-from PIL import Image
 
 from src.training.visualisation import display_tensor_mask, display_tensor_image, display_attention_weights
 from src.vision_transformer.model import SemanticSegmentationVisionTransformer
 
 
 class TestDisplayFunctions(unittest.TestCase):
+    def setUp(self) -> None:
+        self.device = torch.device("mps" if torch.cuda.is_available() else "cpu")
+
     def test_display_tensor_mask(self) -> None:
-        mask = torch.rand(1, 256, 256)
+        device = self.device
+
+        mask = torch.rand(1, 256, 256).to(device)
         mask = (mask > 0.5).float()
-        pil = display_tensor_mask(mask)
-        self.assertIsInstance(pil, Image.Image)
+        with unittest.mock.patch.object(plt, 'show') as mock_show:
+            display_tensor_mask(mask)
+            mock_show.assert_called()
 
     def test_display_tensor_image(self) -> None:
-        image = torch.rand(3, 256, 256)
-        pil = display_tensor_image(image)
-        self.assertIsInstance(pil, Image.Image)
+        device = self.device
+
+        image = torch.rand(3, 256, 256).to(device)
+        with unittest.mock.patch.object(plt, 'show') as mock_show:
+            display_tensor_image(image)
+            mock_show.assert_called()
 
     def test_display_attention_weights(self) -> None:
+        device = self.device
+
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 256, 256),
             num_encoder_layers=4,
@@ -38,18 +48,20 @@ class TestDisplayFunctions(unittest.TestCase):
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
 
-        )
-        images = torch.rand(2, 3, 256, 256)
-        with unittest.mock.patch.object(_plt, 'show') as mock_show:
+        ).to(device)
+        images = torch.rand(2, 3, 256, 256).to(device)
+        with unittest.mock.patch.object(plt, 'show') as mock_show:
             display_attention_weights(
                 model=model,
-                img_original=images[0],
-                img_pre=images[0],
+                image=images[0],
+                device=device,
                 patch_sizes=[16, 8],
             )
             mock_show.assert_called()
 
     def test_display_attention_weights_swin_transformer_encoder(self) -> None:
+        device = self.device
+
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 256, 256),
             num_encoder_layers=4,
@@ -65,13 +77,13 @@ class TestDisplayFunctions(unittest.TestCase):
             num_classes=1,
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
-        )
-        images = torch.rand(2, 3, 256, 256)
-        with unittest.mock.patch.object(_plt, 'show') as mock_show:
+        ).to(device)
+        images = torch.rand(2, 3, 256, 256).to(device)
+        with unittest.mock.patch.object(plt, 'show') as mock_show:
             display_attention_weights(
                 model=model,
-                img_original=images[0],
-                img_pre=images[0],
+                image=images[0],
+                device=device,
                 patch_sizes=[16, 8],
             )
             mock_show.assert_called()

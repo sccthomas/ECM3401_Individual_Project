@@ -5,13 +5,15 @@ import matplotlib.pyplot as _plt
 import numpy as _np
 import torch as _torch
 import torch.nn as _nn
+import torchvision.transforms.v2 as _transforms
 from PIL import Image as _Image
 from torch import Tensor
 
+import src.dataset.snow as _snow
 import src.vision_transformer.model as _model
 
 
-def display_tensor_mask(mask: _torch.Tensor) -> _Image:
+def display_tensor_mask(mask: _torch.Tensor) -> None:
     """
     Display the mask tensor as an image.
 
@@ -19,11 +21,12 @@ def display_tensor_mask(mask: _torch.Tensor) -> _Image:
     """
     mask = mask.detach().cpu().squeeze(0).numpy()
     mask = (mask * 255).astype(_np.uint8)
-    mask = _Image.fromarray(mask, mode='L')
-    return mask
+    _plt.imshow(mask, cmap='gray')  # Use grayscale colormap
+    _plt.axis('off')  # Hide axis
+    _plt.show()
 
 
-def display_tensor_image(image: _torch.Tensor) -> _Image:
+def display_tensor_image(image: _torch.Tensor) -> None:
     """
     Display the image tensor as an image.
 
@@ -31,36 +34,43 @@ def display_tensor_image(image: _torch.Tensor) -> _Image:
     """
     image = image.detach().cpu().permute(1, 2, 0).numpy()
     image = (image * 255).astype(_np.uint8)
-    image = _Image.fromarray(image)
-    return image
+    _plt.imshow(image)
+    _plt.axis('off')
+    _plt.show()
 
 
 def display_attention_weights(
         model: _model.SemanticSegmentationVisionTransformer,
-        img_original: _torch.Tensor,
-        img_pre: _torch.Tensor,
+        image: _torch.Tensor,
         patch_sizes: _t.List[int],
+        device: _torch.device,
         use_max_pooling: bool = False,
 ) -> None:
     """
     Function to visualize the attention of the model.
 
     :param model: The model to visualize.
-    :param img_original: The original image.
-    :param img_pre: The preprocessed image.
+    :param image: The original image.
     :param patch_sizes: The patch sizes to visualize.
+    :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling.
     """
-    img_pre = img_pre.unsqueeze(0)
-    _ = model(img_pre, keep_attention_scores=True)
+    model = model.to(device).eval()
+    image = image.to(device)
+
+    image_normalized = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image)
+
+    image_normalized = image_normalized.unsqueeze(0)
+    _ = model(image_normalized, keep_attention_scores=True)
+    del image_normalized
     attentions = model.get_attention_scores()
 
-    img_original = img_original.detach().cpu().permute(1, 2, 0).numpy()
-    img_original = (img_original * 255).astype(_np.uint8)
-    img_original = _Image.fromarray(img_original)
+    image = image.detach().cpu().permute(1, 2, 0).numpy()
+    image = (image * 255).astype(_np.uint8)
+    image = _Image.fromarray(image)
 
     kwargs = {
-        "img": img_pre,
+        "img": image,
         "use_max_pooling": use_max_pooling,
     }
     for scale, patch_size in zip(attentions.keys(), patch_sizes):
@@ -73,7 +83,7 @@ def display_attention_weights(
             for i, attention in enumerate(attention_group, start=1):
                 label_prefix = f"Scale:{scale} - Stage:{stage} - "
                 if isinstance(attention, _np.ndarray):
-                    _plot_attention(img_original, attention, f"{label_prefix} Layer:{i}")
+                    _plot_attention(image, attention, f"{label_prefix} Layer:{i}")
 
 
 ########################################################################################################################
@@ -82,7 +92,7 @@ def display_attention_weights(
 
 
 def _process_attention_scores(
-        img: _torch.Tensor,
+        img: _Image.Image,
         patch_size: int,
         attentions: _t.Dict[str, _t.List[_t.Union[_torch.Tensor, _t.List[_torch.Tensor]]]],
         use_max_pooling: bool = False,
@@ -95,8 +105,8 @@ def _process_attention_scores(
     :param use_max_pooling: Whether to use max pooling.
     :return: Attention map.
     """
-    w_featmap = img.shape[-2] // patch_size
-    h_featmap = img.shape[-1] // patch_size
+    w_featmap = img.size[-2] // patch_size
+    h_featmap = img.size[-1] // patch_size
 
     kwargs = {
         'w_featmap': w_featmap,

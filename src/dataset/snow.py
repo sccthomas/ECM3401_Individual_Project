@@ -53,7 +53,7 @@ class SnowDataset(_Dataset):
         )
         self.__count = count
         self.__image_target_paths = image_target_paths
-        self.__normalize = _transforms.Normalize(mean=_MEAN, std=_STD) if normalize else _nn.Identity()
+        self.__normalize = _transforms.Normalize(mean=MEAN, std=STD) if normalize else _nn.Identity()
         self.__to_tensor = _transforms.PILToTensor()
         self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
         self.__rotate = rotate
@@ -96,11 +96,15 @@ class SnowDataset(_Dataset):
 
 
 # --------------------------------------------
+# Public Constants
+# --------------------------------------------
+
+MEAN = [0.4808, 0.4178, 0.5046]
+STD = [0.2637, 0.2751, 0.2425]
+
+# --------------------------------------------
 # Private Constants
 # --------------------------------------------
 
-
 _IMAGES_DIR_NAME = 'image'
 _TARGETS_DIR_NAME = 'mask'
-_MEAN = [0.4808, 0.4178, 0.5046]
-_STD = [0.2637, 0.2751, 0.2425]
