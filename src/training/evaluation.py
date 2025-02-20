@@ -6,6 +6,7 @@ import matplotlib.pyplot as _plt
 import numpy as _np
 import torch as _torch
 import torch.nn as _nn
+import torchmetrics.segmentation as _metrics
 import torchvision.transforms.functional as _F
 import torchvision.transforms.v2 as _transforms
 
@@ -19,6 +20,7 @@ def evaluate_with_no_modifications(
         image: _torch.Tensor,
         mask: _torch.Tensor,
         device: _torch.device,
+        use_max_pooling: bool = True,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -27,31 +29,54 @@ def evaluate_with_no_modifications(
     :param image: The input image, shape (3, H, W).
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     """
     model = model.to(device).eval()
     image = image.to(device)
     mask = mask.to(device)
 
-    # Plot the images
-    # - Show the unmodified image
-    _visualisation.display_tensor_image(image)
+    # Create a figure with 4 subplots in one row.
+    fig, axes = _plt.subplots(1, 3, figsize=(20, 5))
 
-    # Test the robustness of the model
-    # - Normalise the image
-    image = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image)
-    # - Evaluate the model
-    outputs = model(image.unsqueeze(0).to(device))
-    criterion = _nn.BCEWithLogitsLoss()
-    loss = criterion(outputs, mask.unsqueeze(0)).item()
-    print("BCE Loss:", loss)
+    # Display the unmodified image.
+    axes[0].set_title("Original Image", fontsize=10)
+    _visualisation.display_tensor_image(image, ax=axes[0])
+
+    # Evaluate the model.
+    image_norm = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image)
+    outputs = model(image_norm.unsqueeze(0).to(device), keep_attention_scores=True)
+    # - Calculate the losses
+    mask = mask.unsqueeze(0)
+    #   - BCE Loss
+    bce_loss = _nn.BCEWithLogitsLoss()(outputs, mask).item()
+    #   - Dice & IoU Loss
+    outputs = _torch.sigmoid(outputs) > 0.5
+    dice_loss = _metrics.DiceScore(
+        average='micro',
+        num_classes=1,
+    ).to(device)(outputs, mask).item()
+    IoU_loss = _metrics.MeanIoU(
+        num_classes=1,
+    ).to(device)(outputs, mask.int()).item()
+    # - Set the title
+    fig.suptitle(
+        f"Evaluation of the Vision Transformer With No Modifications | BCE Loss: {bce_loss:.4f} | Dice Loss {dice_loss:.4f} | IoU Loss {IoU_loss:.4f}",
+        fontsize=16
+    )
 
     # Display the masks
     outputs = _torch.sigmoid(outputs).squeeze(0)
-    print("Target Mask")
-    _visualisation.display_tensor_mask(mask)
-    print("Predicted Mask")
-    _visualisation.display_tensor_mask(outputs > 0.5)
+    axes[1].set_title("Target Mask", fontsize=10)
+    _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[1])
+    axes[2].set_title("Predicted Mask", fontsize=10)
+    _visualisation.display_tensor_mask(outputs > 0.5, ax=axes[2])
+
+    _plt.tight_layout()
     _plt.show()
+
+    _visualisation.display_attention_weights(
+        image=image, attention_scores=model.get_attention_scores(), use_max_pooling=use_max_pooling
+    )
 
 
 def evaluate_with_texture_modifications(
@@ -60,6 +85,7 @@ def evaluate_with_texture_modifications(
         mask: _torch.Tensor,
         device: _torch.device,
         texture_type: str = "Staining",
+        use_max_pooling: bool = True,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -70,6 +96,7 @@ def evaluate_with_texture_modifications(
     :param device: The device to use.
     :param texture_type: The type of texture modification. Options are:
         "Staining", "Background Artifacts", "Microscopic Artifacts", "Cellular Variability".
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -97,7 +124,15 @@ def evaluate_with_texture_modifications(
         raise ValueError("Invalid type")
     image_modified = mask * image + (1 - mask) * noise_texture
 
-    _evaluate(model, image, image_modified, mask, device)
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title=f"Evaluation of the Vision Transformer With Texture Modification: {texture_type}",
+        use_max_pooling=use_max_pooling
+    )
 
 
 def evaluate_with_illumination_modifications(
@@ -106,6 +141,7 @@ def evaluate_with_illumination_modifications(
         mask: _torch.Tensor,
         device: _torch.device,
         per_pixel: bool = False,
+        use_max_pooling: bool = True,
 ) -> None:
     """
     Evaluate the model with illumination modifications
@@ -115,6 +151,7 @@ def evaluate_with_illumination_modifications(
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
     :param per_pixel: Whether to modify the image per pixel.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -132,7 +169,15 @@ def evaluate_with_illumination_modifications(
         new_background = (1 - mask) * image * brightness_factor
     image_modified = mask * image + new_background
 
-    _evaluate(model, image, image_modified, mask, device)
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title=f"Evaluation of the Vision Transformer With Illumination Modification: per_pixel = {per_pixel}",
+        use_max_pooling=use_max_pooling
+    )
 
 
 def evaluate_with_background_modifications(
@@ -141,6 +186,7 @@ def evaluate_with_background_modifications(
         mask: _torch.Tensor,
         device: _torch.device,
         mtype: str = "Simple",
+        use_max_pooling: bool = True,
 ) -> None:
     """
     Evaluate the model with background modifications
@@ -150,6 +196,7 @@ def evaluate_with_background_modifications(
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
     :param mtype: The type of background modification. Options are: "Simple", "Gaussian", "Contrast".
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -172,7 +219,15 @@ def evaluate_with_background_modifications(
         raise ValueError("Invalid type")
     image_modified = mask * image + new_background
 
-    _evaluate(model, image, image_modified, mask, device)
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title=f"Evaluation of the Vision Transformer With Background Modification: {mtype}",
+        use_max_pooling=use_max_pooling
+    )
 
 
 # --------------------------------------------
@@ -185,6 +240,8 @@ def _evaluate(
         image_modified: _torch.Tensor,
         mask: _torch.Tensor,
         device: _torch.device,
+        title: str,
+        use_max_pooling: bool = True,
 ) -> None:
     """
     Evaluate the model with the modified image
@@ -194,36 +251,50 @@ def _evaluate(
     :param image_modified: The modified image, shape (3, H, W).
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
+    :param title: The title of the figure.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     """
-    # Plot the images
-    # - Show the unmodified image
-    print("Original Image")
-    _visualisation.display_tensor_image(image)
-    # - Show the modified image
-    print("Modified Image")
-    _visualisation.display_tensor_image(image_modified)
+    # Create a figure with 4 subplots in one row.
+    fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
 
-    # Test the robustness of the model
-    # - Normalise the image
-    image_modified = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image_modified)
-    # - Evaluate the model
-    outputs = model(image_modified.unsqueeze(0).to(device))
-    criterion = _nn.BCEWithLogitsLoss()
-    loss = criterion(outputs, mask.unsqueeze(0)).item()
-    print("BCE Loss:", loss)
+    # Display the unmodified image.
+    axes[0].set_title("Original Image", fontsize=10)
+    _visualisation.display_tensor_image(image, ax=axes[0])
+
+    # Display the modified image.
+    axes[1].set_title("Modified Image", fontsize=10)
+    _visualisation.display_tensor_image(image_modified, ax=axes[1])
+
+    # Test the robustness of the model.
+    image_modified_norm = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image_modified)
+    # Evaluate the model.
+    outputs = model(image_modified_norm.unsqueeze(0).to(device), keep_attention_scores=True)
+    # - Calculate the losses
+    mask = mask.unsqueeze(0)
+    #   - BCE Loss
+    bce_loss = _nn.BCEWithLogitsLoss()(outputs, mask).item()
+    #   - Dice & IoU Loss
+    outputs = _torch.sigmoid(outputs) > 0.5
+    dice_loss = _metrics.DiceScore(
+        average='micro',
+        num_classes=1,
+    ).to(device)(outputs, mask).item()
+    IoU_loss = _metrics.MeanIoU(
+        num_classes=1,
+    ).to(device)(outputs, mask.int()).item()
+    # - Set the title
+    fig.suptitle(f"{title} | BCE Loss: {bce_loss:.4f} | Dice Loss {dice_loss:.4f} | IoU Loss {IoU_loss:.4f}",
+                 fontsize=16)
 
     # Display the masks
-    outputs = _torch.sigmoid(outputs).squeeze(0)
-    print("Target Mask")
-    _visualisation.display_tensor_mask(mask)
-    print("Predicted Mask")
-    _visualisation.display_tensor_mask(outputs > 0.5)
+    axes[2].set_title("Target Mask", fontsize=10)
+    _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[2])
+    axes[3].set_title("Predicted Mask", fontsize=10)
+    _visualisation.display_tensor_mask(outputs.squeeze(0), ax=axes[3])
 
+    _plt.tight_layout()
+    _plt.show()
 
-# --------------------------------------------
-# Private Constants
-# --------------------------------------------
-
-
-_MEAN = [0.4808, 0.4178, 0.5046]
-_STD = [0.2637, 0.2751, 0.2425]
+    _visualisation.display_attention_weights(
+        image=image, attention_scores=model.get_attention_scores(), use_max_pooling=use_max_pooling
+    )

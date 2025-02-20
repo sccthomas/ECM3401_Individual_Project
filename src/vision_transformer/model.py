@@ -250,7 +250,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
 
     def get_attention_scores(
             self
-    ) -> _t.Dict[str, _t.Dict[str, _t.List[_t.Union[_torch.Tensor, _t.List[_torch.Tensor]]]]]:
+    ) -> _t.Dict[_t.Tuple[str, int], _t.Dict[str, _t.List[_torch.Tensor]]]:
         """
         Get the attention scores for all encoder layers for a given tensor x.
 
@@ -260,6 +260,7 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         patch_fusions = self.__patch_fusions
         patch_embedding_modules = self.__patch_embedding_modules
 
+        # Get Attention Scores
         attention_scores = {
             key: {}
             for key in patch_embedding_modules.keys()
@@ -276,6 +277,12 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
                 for patch_fusion in patch_fusions[key].children()
                 if (attn_scores := patch_fusion.attention_scores) is not None
             ]
+
+        # Add Patch Size Information.
+        attention_scores = {
+            (key, patch_embedding_module.patch_size): attention_scores[key]
+            for key, patch_embedding_module in patch_embedding_modules.items()
+        }
 
         return attention_scores
 

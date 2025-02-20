@@ -1,89 +1,117 @@
 import math as _math
 import typing as _t
 
+import matplotlib.gridspec as _gridspec
 import matplotlib.pyplot as _plt
 import numpy as _np
 import torch as _torch
 import torch.nn as _nn
-import torchvision.transforms.v2 as _transforms
-from PIL import Image as _Image
-from torch import Tensor
-
-import src.dataset.snow as _snow
-import src.vision_transformer.model as _model
 
 
-def display_tensor_mask(mask: _torch.Tensor) -> None:
+def display_tensor_mask(mask: _torch.Tensor, ax: _t.Optional[_plt.Axes] = None) -> None:
     """
     Display the mask tensor as an image.
 
     :param mask: The mask tensor.
+    :param ax: Optional matplotlib Axes object to plot on.
     """
     mask = mask.detach().cpu().squeeze(0).numpy()
     mask = (mask * 255).astype(_np.uint8)
-    _plt.imshow(mask, cmap='gray')  # Use grayscale colormap
-    _plt.axis('off')  # Hide axis
-    _plt.show()
+    is_ax = ax is None
+    if is_ax:
+        fig, ax = _plt.subplots()
+    ax.imshow(mask, cmap='gray', aspect="equal")  # Use grayscale colormap
+    ax.axis('off')  # Hide axis
+    if is_ax:
+        _plt.show()
 
 
-def display_tensor_image(image: _torch.Tensor) -> None:
+def display_tensor_image(image: _torch.Tensor, ax: _t.Optional[_plt.Axes] = None) -> None:
     """
     Display the image tensor as an image.
 
     :param image: The image tensor.
+    :param ax: Optional matplotlib Axes object to plot on.
     """
     image = image.detach().cpu().permute(1, 2, 0).numpy()
     image = (image * 255).astype(_np.uint8)
-    _plt.imshow(image)
-    _plt.axis('off')
-    _plt.show()
+    is_ax = ax is None
+    if is_ax:
+        fig, ax = _plt.subplots()
+    ax.imshow(image, aspect="equal")
+    ax.axis('off')
+    if is_ax:
+        _plt.show()
 
 
 def display_attention_weights(
-        model: _model.SemanticSegmentationVisionTransformer,
         image: _torch.Tensor,
-        patch_sizes: _t.List[int],
-        device: _torch.device,
+        attention_scores: _t.Dict[_t.Tuple[str, int], _t.Dict[str, _t.List[_torch.Tensor]]],
         use_max_pooling: bool = False,
 ) -> None:
     """
     Function to visualize the attention of the model.
 
-    :param model: The model to visualize.
     :param image: The original image.
-    :param patch_sizes: The patch sizes to visualize.
-    :param device: The device to use.
+    :param attention_scores: The attention scores.
     :param use_max_pooling: Whether to use max pooling.
     """
-    model = model.to(device).eval()
-    image = image.to(device)
+    H, W = image.size()[-2:]
 
-    image_normalized = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image)
-
-    image_normalized = image_normalized.unsqueeze(0)
-    _ = model(image_normalized, keep_attention_scores=True)
-    del image_normalized
-    attentions = model.get_attention_scores()
-
-    image = image.detach().cpu().permute(1, 2, 0).numpy()
-    image = (image * 255).astype(_np.uint8)
-    image = _Image.fromarray(image)
-
-    kwargs = {
-        "img": image,
-        "use_max_pooling": use_max_pooling,
+    # Process the attention scores
+    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling, }
+    attentions = {
+        (scale, patch_size): _process_attention_scores(attentions=attentions_scale, patch_size=patch_size, **kwargs)
+        for (scale, patch_size), attentions_scale in attention_scores.items()
     }
-    for scale, patch_size in zip(attentions.keys(), patch_sizes):
-        processed_attention = _process_attention_scores(
-            attentions=attentions[scale],
-            patch_size=patch_size,
-            **kwargs,
-        )
-        for stage, attention_group in processed_attention.items():
-            for i, attention in enumerate(attention_group, start=1):
-                label_prefix = f"Scale:{scale} - Stage:{stage} - "
-                if isinstance(attention, _np.ndarray):
-                    _plot_attention(image, attention, f"{label_prefix} Layer:{i}")
+
+    # Plot the attention scores
+    rows = [
+        (scale, patch_size, stage, layer_list)
+        for (scale, patch_size), stage_dict in attentions.items()
+        for stage, layer_list in stage_dict.items()
+    ]
+    max_layers = max(len(layer_list) for (_, _, _, layer_list) in rows)
+    n_rows_total = len(rows)
+    fig = _plt.figure(figsize=(max_layers * 15, n_rows_total * 10), facecolor="white")
+    fig.suptitle("Attention Maps", fontsize=32, fontweight="bold")
+    outer_grid = _gridspec.GridSpec(n_rows_total, max_layers, hspace=0.01, wspace=0.05, figure=fig)
+
+    for grid_row, (scale, patch_size, stage, layer_list) in enumerate(rows):
+        num_layers = len(layer_list)
+
+        for l in range(max_layers):
+            if l < num_layers:
+                attn = layer_list[l]
+                num_heads = attn.shape[0]
+                nested = _gridspec.GridSpecFromSubplotSpec(
+                    2, num_heads,
+                    subplot_spec=outer_grid[grid_row, l],
+                    height_ratios=[15, 7.5], hspace=0.075, wspace=0.015
+                )
+                ax_avg = fig.add_subplot(nested[0, :])
+                ax_avg.set_facecolor("white")
+                avg_attn = attn.mean(axis=0)
+                im_avg = ax_avg.imshow(avg_attn, aspect="equal", origin="upper", cmap="inferno")
+                ax_avg.set_title(
+                    f"{scale} | Patch Size {patch_size} | {stage} | Layer {l + 1}\nAvg",
+                    fontsize=20, fontweight="bold"
+                )
+                ax_avg.axis("off")
+                _plt.colorbar(im_avg, ax=ax_avg, fraction=0.02, pad=0.015)
+
+                for h in range(num_heads):
+                    ax_head = fig.add_subplot(nested[1, h])
+                    ax_head.set_facecolor("white")
+                    im_head = ax_head.imshow(attn[h], aspect="auto", origin="upper", cmap="inferno")
+                    ax_head.set_title(f"Head {h}", fontsize=16)
+                    ax_head.axis("off")
+            else:
+                ax_dummy = fig.add_subplot(outer_grid[grid_row, l])
+                ax_dummy.set_facecolor("white")
+                ax_dummy.axis("off")
+
+    _plt.show()
 
 
 ########################################################################################################################
@@ -92,31 +120,31 @@ def display_attention_weights(
 
 
 def _process_attention_scores(
-        img: _Image.Image,
+        attentions: _t.Dict[str, _t.List[_torch.Tensor]],
         patch_size: int,
-        attentions: _t.Dict[str, _t.List[_t.Union[_torch.Tensor, _t.List[_torch.Tensor]]]],
+        H: int,
+        W: int,
         use_max_pooling: bool = False,
-) -> _t.Dict[str, _t.List[Tensor | _t.List[Tensor]]]:
+) -> _t.Dict[str, _t.Dict[int, _np.ndarray]]:
     """
-    Function to visualize the attention of the model.
+    Function to process the attention scores.
 
-    :param img: The image tensor.
+    :param attentions: The attention scores.
     :param patch_size: The patch size.
+    :param H: The height of the image.
+    :param W: The width of the image.
     :param use_max_pooling: Whether to use max pooling.
     :return: Attention map.
     """
-    w_featmap = img.size[-2] // patch_size
-    h_featmap = img.size[-1] // patch_size
-
-    kwargs = {
-        'w_featmap': w_featmap,
-        'h_featmap': h_featmap,
-        'use_max_pooling': use_max_pooling,
+    kwargs = {'w_featmap': W // patch_size, 'h_featmap': H // patch_size, 'use_max_pooling': use_max_pooling}
+    attentions = {
+        stage: {
+            layer: _upsample_attention(attention_tensor, patch_size, **kwargs)
+            for layer, attention_tensor in enumerate(attentions_stage)
+            if isinstance(attention_tensor, _torch.Tensor)
+        }
+        for stage, attentions_stage in attentions.items()
     }
-    for key in attentions.keys():
-        for i, attention in enumerate(attentions[key]):
-            if isinstance(attention, _torch.Tensor):
-                attentions[key][i] = _upsample_attention(attention, patch_size, **kwargs)
 
     return attentions
 
@@ -171,67 +199,3 @@ def _upsample_attention(
     )
 
     return attention
-
-
-def _plot_attention(img: _Image.Image, attention: _np.ndarray, title: str) -> None:
-    """
-    Function to plot the attention map.
-
-    :param img: The image tensor.
-    :param attention: The attention map.
-    :param title: The title of the plot.
-    """
-    n_heads = attention.shape[0]
-
-    # Dynamically determine grid dimensions for the attention heads.
-    # Use at least 2 columns so that the top row can show both "Original Image" and "Head Mean"
-    attn_cols = max(2, _math.ceil(_math.sqrt(n_heads)))
-    attn_rows = _math.ceil(n_heads / attn_cols)
-
-    total_rows = attn_rows + 1  # additional top row for the original image and head mean
-    total_cols = attn_cols
-
-    fig, axes = _plt.subplots(total_rows, total_cols, figsize=(total_cols * 3, total_rows * 3))
-
-    # Ensure axes is always a 2D array (handles cases when total_rows or total_cols equals 1)
-    if total_rows == 1:
-        axes = _np.array([axes])
-    if total_cols == 1:
-        axes = _np.array([[ax] for ax in axes])
-
-    # Set a title for the entire figure.
-    fig.suptitle(title, fontsize=16)
-
-    # --- Top row: Original Image and Head Mean ---
-    # Position 0,0: Original Image.
-    axes[0, 0].imshow(img, cmap="inferno")
-    axes[0, 0].set_title("Original Image")
-    axes[0, 0].axis("off")
-
-    # Position 0,1: Head Mean (if available).
-    if total_cols > 1:
-        axes[0, 1].imshow(_np.mean(attention, axis=0), cmap="inferno")
-        axes[0, 1].set_title("Head Mean")
-        axes[0, 1].axis("off")
-
-    # Hide any remaining subplots in the top row.
-    for c in range(2, total_cols):
-        axes[0, c].axis("off")
-
-    # --- Remaining rows: Attention Heads ---
-    for i in range(n_heads):
-        # Determine row and column for this head (offset row index by 1)
-        r, c = divmod(i, attn_cols)
-        r += 1
-        axes[r, c].imshow(attention[i], cmap="inferno")
-        axes[r, c].set_title(f"Head {i + 1}")
-        axes[r, c].axis("off")
-
-    # Hide any unused subplots in the attention heads grid.
-    for r in range(1, total_rows):
-        for c in range(total_cols):
-            if (r - 1) * attn_cols + c >= n_heads:
-                axes[r, c].axis("off")
-
-    _plt.tight_layout(rect=[0, 0, 1, 0.95])
-    _plt.show()
