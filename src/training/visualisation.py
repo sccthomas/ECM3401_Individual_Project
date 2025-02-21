@@ -92,7 +92,7 @@ def display_attention_weights(
                 ax_avg = fig.add_subplot(nested[0, :])
                 ax_avg.set_facecolor("white")
                 avg_attn = attn.mean(axis=0)
-                im_avg = ax_avg.imshow(avg_attn, aspect="equal", origin="upper", cmap="inferno")
+                im_avg = ax_avg.imshow(avg_attn, aspect="equal", cmap="inferno")
                 ax_avg.set_title(
                     f"{scale} | Patch Size {patch_size} | {stage} | Layer {l + 1}\nAvg",
                     fontsize=20, fontweight="bold"
@@ -103,7 +103,7 @@ def display_attention_weights(
                 for h in range(num_heads):
                     ax_head = fig.add_subplot(nested[1, h])
                     ax_head.set_facecolor("white")
-                    im_head = ax_head.imshow(attn[h], aspect="auto", origin="upper", cmap="inferno")
+                    im_head = ax_head.imshow(attn[h], aspect="equal", cmap="inferno")
                     ax_head.set_title(f"Head {h}", fontsize=16)
                     ax_head.axis("off")
             else:

@@ -1,13 +1,11 @@
 import random as _random
 
-import PIL.ImageFilter as _ImageFilter
 import cv2 as _cv2
 import matplotlib.pyplot as _plt
 import numpy as _np
 import torch as _torch
 import torch.nn as _nn
 import torchmetrics.segmentation as _metrics
-import torchvision.transforms.functional as _F
 import torchvision.transforms.v2 as _transforms
 
 import src.dataset.snow as _snow
@@ -106,23 +104,35 @@ def evaluate_with_texture_modifications(
     H, W = image.shape[-2:]
     if texture_type == "Staining":
         factor = _np.random.uniform(0.8, 1.5)
-        noise_texture = (image * factor).clamp(0, 1)
+        color_shift = _np.random.uniform(0.8, 1.2, size=(3, 1, 1))
+        noise_texture = (image * factor * _torch.tensor(color_shift, device=device, dtype=image.dtype))
+        noise_texture = noise_texture.clamp(0, 1)
+
     elif texture_type == "Background Artifacts":
-        noise = _np.random.randn(128, 128) * 0.1  # Low-intensity random noise
+        noise = _np.random.normal(loc=0, scale=0.1, size=(128, 128))
         noise = _cv2.resize(noise, (H, W), interpolation=_cv2.INTER_CUBIC)
         noise_texture = _torch.tensor(noise, device=device, dtype=image.dtype).squeeze(0).repeat(3, 1, 1)
+        noise_texture = noise_texture + (_torch.rand_like(noise_texture) * 0.1)
+
     elif texture_type == "Microscopic Artifacts":
-        artifact = _np.random.randn(128, 128) * 0.05  # Smaller noise
+        artifact = _np.random.normal(loc=0, scale=0.05, size=(128, 128))
         artifact = _cv2.resize(artifact, (H, W), interpolation=_cv2.INTER_CUBIC)
         noise_texture = _torch.tensor(artifact, device=device, dtype=image.dtype).squeeze(0).repeat(3, 1, 1)
+        gradient = _np.linspace(0, 1, H).reshape(-1, 1)
+        gradient = _torch.tensor(gradient, device=device, dtype=image.dtype)
+        noise_texture = noise_texture * gradient
+
     elif texture_type == "Cellular Variability":
-        cell_size = 10  # Size of cellular structures
-        cells = _np.random.randint(0, 2, (H // cell_size, W // cell_size))  # Random binary pattern
+        cell_size = _np.random.randint(5, 15)
+        cells = _np.random.randint(0, 2, (H // cell_size, W // cell_size))
         cells = _cv2.resize(cells.astype(_np.float32), (H, W), interpolation=_cv2.INTER_NEAREST)
+        cells = cells + (_np.random.randn(H, W) * 0.05)
         noise_texture = _torch.tensor(cells, device=device, dtype=image.dtype).squeeze(0).repeat(3, 1, 1)
+
     else:
         raise ValueError("Invalid type")
-    image_modified = mask * image + (1 - mask) * noise_texture
+    new_background = (1 - mask) * noise_texture
+    image_modified = mask * image + new_background
 
     _evaluate(
         model=model,
@@ -140,7 +150,6 @@ def evaluate_with_illumination_modifications(
         image: _torch.Tensor,
         mask: _torch.Tensor,
         device: _torch.device,
-        per_pixel: bool = False,
         use_max_pooling: bool = True,
 ) -> None:
     """
@@ -150,7 +159,6 @@ def evaluate_with_illumination_modifications(
     :param image: The input image, shape (3, H, W).
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
-    :param per_pixel: Whether to modify the image per pixel.
     :param use_max_pooling: Whether to use max pooling to downsample the attention
     """
     model = model.to(device).eval()
@@ -158,15 +166,8 @@ def evaluate_with_illumination_modifications(
     mask = mask.to(device)
 
     # Modify and image
-    if per_pixel:
-        gradient_map = _torch.linspace(0.8, 1.5, image.shape[-1]).to(device)
-        gradient_map = gradient_map.view(1, 1, -1).repeat(1, image.shape[1], 1)
-        gradient_map = gradient_map * (1 - mask)
-        new_background = image * gradient_map
-
-    else:
-        brightness_factor = _random.uniform(0.8, 1.5)
-        new_background = (1 - mask) * image * brightness_factor
+    brightened_tensor = _transforms.ColorJitter(brightness=_random.uniform(0.5, 1.5))(image)
+    new_background = (1 - mask) * brightened_tensor
     image_modified = mask * image + new_background
 
     _evaluate(
@@ -175,7 +176,7 @@ def evaluate_with_illumination_modifications(
         image_modified=image_modified,
         mask=mask,
         device=device,
-        title=f"Evaluation of the Vision Transformer With Illumination Modification: per_pixel = {per_pixel}",
+        title=f"Evaluation of the Vision Transformer With Illumination Modification",
         use_max_pooling=use_max_pooling
     )
 
@@ -195,7 +196,7 @@ def evaluate_with_background_modifications(
     :param image: The input image, shape (3, H, W).
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
-    :param mtype: The type of background modification. Options are: "Simple", "Gaussian", "Contrast".
+    :param mtype: The type of background modification. Options are: "Simple", "Gaussian Blur", "Gaussian Noise", "Contrast", "Invert".
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     """
     model = model.to(device).eval()
@@ -204,19 +205,22 @@ def evaluate_with_background_modifications(
 
     # Modify and image
     if mtype == "Simple":
-        random_color = _torch.rand(3, 1, 1).to(device)
-        new_background = (1 - mask) * random_color
-    elif mtype == "Gaussian":
-        img_pil = _F.to_pil_image(image)
-        blurred_pil = img_pil.filter(_ImageFilter.GaussianBlur(radius=5))
-        blurred_tensor = _F.to_tensor(blurred_pil).to(device)
-        new_background = (1 - mask) * blurred_tensor
+        modified_tensor = _torch.rand(3, 1, 1).to(device)
+    elif mtype == "Gaussian Blur":
+        modified_tensor = _transforms.GaussianBlur(kernel_size=5, sigma=1.5)(image)
+    elif mtype == "Gaussian Noise":
+        modified_tensor = _transforms.GaussianNoise(mean=0.5, sigma=0.25)(image)
     elif mtype == "Contrast":
-        contrast_factor = _random.uniform(0.5, 2.5)
-        mean_intensity = image.mean(dim=(1, 2), keepdim=True)  # Compute per-channel mean
-        new_background = (1 - mask) * (mean_intensity + contrast_factor * (image - mean_intensity))
+        modified_tensor = _transforms.ColorJitter(contrast=_random.uniform(0.5, 1.5))(image)
+    elif mtype == "Invert":
+        modified_tensor = _transforms.RandomInvert(p=1)(image)
+    elif mtype == "Sharpness":
+        modified_tensor = _transforms.RandomAdjustSharpness(
+            sharpness_factor=0, p=1
+        )(image)
     else:
         raise ValueError("Invalid type")
+    new_background = (1 - mask) * modified_tensor
     image_modified = mask * image + new_background
 
     _evaluate(

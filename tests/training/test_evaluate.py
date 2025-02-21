@@ -60,7 +60,6 @@ class TestEvaluate(unittest.TestCase):
         mask = torch.rand(1, 128, 128)
         with unittest.mock.patch.object(_plt, 'show') as mock_show:
             evaluate_with_illumination_modifications(model, image, mask, device)
-            evaluate_with_illumination_modifications(model, image, mask, device, per_pixel=True)
             mock_show.assert_called()
 
     def test_evaluate_with_background_modifications(self) -> None:
@@ -71,8 +70,11 @@ class TestEvaluate(unittest.TestCase):
         mask = torch.rand(1, 128, 128)
         with unittest.mock.patch.object(_plt, 'show') as mock_show:
             evaluate_with_background_modifications(model, image, mask, device, mtype="Simple")
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Gaussian")
+            evaluate_with_background_modifications(model, image, mask, device, mtype="Gaussian Blur")
+            evaluate_with_background_modifications(model, image, mask, device, mtype="Gaussian Noise")
             evaluate_with_background_modifications(model, image, mask, device, mtype="Contrast")
+            evaluate_with_background_modifications(model, image, mask, device, mtype="Invert")
+            evaluate_with_background_modifications(model, image, mask, device, mtype="Sharpness")
             mock_show.assert_called()
 
 
