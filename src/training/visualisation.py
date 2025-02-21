@@ -85,7 +85,7 @@ def display_attention_weights(
                 attn = layer_list[l]
                 num_heads = attn.shape[0]
                 nested = _gridspec.GridSpecFromSubplotSpec(
-                    2, num_heads,
+                    3, 4,
                     subplot_spec=outer_grid[grid_row, l],
                     height_ratios=[15, 7.5], hspace=0.075, wspace=0.015
                 )
@@ -100,12 +100,15 @@ def display_attention_weights(
                 ax_avg.axis("off")
                 _plt.colorbar(im_avg, ax=ax_avg, fraction=0.02, pad=0.015)
 
+                row = 1
                 for h in range(num_heads):
-                    ax_head = fig.add_subplot(nested[1, h])
+                    ax_head = fig.add_subplot(nested[row, h % 4])
                     ax_head.set_facecolor("white")
                     im_head = ax_head.imshow(attn[h], aspect="equal", cmap="inferno")
                     ax_head.set_title(f"Head {h}", fontsize=16)
                     ax_head.axis("off")
+                    if h % 4 == 3:
+                        row += 1
             else:
                 ax_dummy = fig.add_subplot(outer_grid[grid_row, l])
                 ax_dummy.set_facecolor("white")
