@@ -259,7 +259,7 @@ class _ProjectionHead(_nn.Module):
         # Normalize the output
         x = _F.normalize(x, dim=-1)
         # Apply Mean Pooling on the patch embeddings
-        x = x.mean(dim=1).values
+        x = x.mean(dim=1)
         # Normalize the output
         x = _F.normalize(x, dim=-1)
 
