@@ -105,7 +105,7 @@ def display_attention_weights(
                     ax_head = fig.add_subplot(nested[row, h % 4])
                     ax_head.set_facecolor("white")
                     im_head = ax_head.imshow(attn[h], aspect="equal", cmap="inferno")
-                    ax_head.set_title(f"Head {h}", fontsize=16)
+                    ax_head.set_title(f"Head {h + 1}", fontsize=16)
                     ax_head.axis("off")
                     if h % 4 == 3:
                         row += 1
