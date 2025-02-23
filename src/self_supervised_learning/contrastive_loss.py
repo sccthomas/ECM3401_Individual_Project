@@ -41,13 +41,25 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
                 for encoder_dim in encoder_dims
             ]
         )
+
         self.__transformations = [
-            _T.RandomRotation(degrees=90),
-            _T.RandomHorizontalFlip(p=1),
-            _T.RandomVerticalFlip(p=1),
-            _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-            _T.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 2.0)),
-            _T.RandomAffine(degrees=30, translate=(0.1, 0.1), scale=(0.8, 1.2), shear=10),
+            (_nn.Identity(), _nn.Identity()),
+            (_T.RandomHorizontalFlip(p=0.5), _T.RandomVerticalFlip(p=0.5)),
+
+            (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+             _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+
+            (_T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+            (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+            (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+
+            (_T.RandomErasing(p=0.2), _T.RandomErasing(p=0.2)),
+            (_T.RandomErasing(p=0.2), _T.RandomHorizontalFlip(p=0.5)),
+            (_T.RandomErasing(p=0.2), _T.RandomVerticalFlip(p=0.5)),
+            (_T.RandomErasing(p=0.2), _T.ColorJitter(brightness=0.1, contrast=0.1)),
+            (_T.RandomErasing(p=0.2), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
@@ -73,10 +85,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         # Apply random transformations
         # - Select two random transformations
-        transformation_1 = _random.choice(transformations)
-        transformation_2 = _random.choice(transformations)
-        while transformation_1 == transformation_2:
-            transformation_2 = _random.choice(transformations)
+        transformation_1, transformation_2 = _random.choice(transformations)
 
         z = ()
         for transformation_x in [transformation_1, transformation_2]:
