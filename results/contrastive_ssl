@@ -1,0 +1,301 @@
+Length of dataset: 18209
+
+Epoch 1/50
+Training: 100%|██████████| 324/324 [12:16<00:00,  2.27s/it]
+Training Loss: 1.2676
+Validation: 100%|██████████| 81/81 [01:13<00:00,  1.10it/s]
+Validation Loss: 1.3362
+
+Epoch 2/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.51s/it]
+Training Loss: 0.5677
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.8264
+
+Epoch 3/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.51s/it]
+Training Loss: 0.4606
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.7948
+
+Epoch 4/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.4045
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.50it/s]
+Validation Loss: 0.6714
+
+Epoch 5/50
+Training: 100%|██████████| 324/324 [08:10<00:00,  1.51s/it]
+Training Loss: 0.3773
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.6010
+
+Epoch 6/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.3556
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.52it/s]
+Validation Loss: 0.6417
+
+Epoch 7/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.3395
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.5670
+
+Epoch 8/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.3285
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.5670
+
+Epoch 9/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.3200
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.51it/s]
+Validation Loss: 0.4709
+
+Epoch 10/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.3128
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.4390
+
+Epoch 11/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.3063
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.5026
+
+Epoch 12/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.3011
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.4646
+
+Epoch 13/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2980
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.4035
+
+Epoch 14/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.2932
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.4022
+
+Epoch 15/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2905
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3776
+
+Epoch 16/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2888
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3685
+
+Epoch 17/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.2875
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3556
+
+Epoch 18/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.51s/it]
+Training Loss: 0.2855
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.3582
+
+Epoch 19/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2837
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3573
+
+Epoch 20/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2822
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3486
+
+Epoch 21/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2815
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.3486
+
+Epoch 22/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2806
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3448
+
+Epoch 23/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.2806
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.52it/s]
+Validation Loss: 0.3471
+
+Epoch 24/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.2794
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3508
+
+Epoch 25/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2804
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3476
+
+Epoch 26/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.3146
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.56it/s]
+Validation Loss: 0.3787
+
+Epoch 27/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.3020
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.3740
+
+Epoch 28/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2941
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.51it/s]
+Validation Loss: 0.3535
+
+Epoch 29/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2898
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.4038
+
+Epoch 30/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2868
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.3329
+
+Epoch 31/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.2834
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.51it/s]
+Validation Loss: 0.3390
+
+Epoch 32/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2821
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.3308
+
+Epoch 33/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2808
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3398
+
+Epoch 34/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2789
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.51it/s]
+Validation Loss: 0.3246
+
+Epoch 35/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2769
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.54it/s]
+Validation Loss: 0.3197
+
+Epoch 36/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2756
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.56it/s]
+Validation Loss: 0.3196
+
+Epoch 37/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2744
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.3215
+
+Epoch 38/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2736
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.52it/s]
+Validation Loss: 0.3179
+
+Epoch 39/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.50s/it]
+Training Loss: 0.2736
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.3204
+
+Epoch 40/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2732
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.3181
+
+Epoch 41/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2711
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.55it/s]
+Validation Loss: 0.3125
+
+Epoch 42/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2706
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.52it/s]
+Validation Loss: 0.3167
+
+Epoch 43/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2693
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3142
+
+Epoch 44/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2688
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3125
+
+Epoch 45/50
+Training: 100%|██████████| 324/324 [08:07<00:00,  1.51s/it]
+Training Loss: 0.2683
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.51it/s]
+Validation Loss: 0.3104
+
+Epoch 46/50
+Training: 100%|██████████| 324/324 [08:10<00:00,  1.51s/it]
+Training Loss: 0.2682
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3093
+
+Epoch 47/50
+Training: 100%|██████████| 324/324 [08:08<00:00,  1.51s/it]
+Training Loss: 0.2677
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.52it/s]
+Validation Loss: 0.3104
+
+Epoch 48/50
+Training: 100%|██████████| 324/324 [08:06<00:00,  1.50s/it]
+Training Loss: 0.2671
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.52it/s]
+Validation Loss: 0.3085
+
+Epoch 49/50
+Training: 100%|██████████| 324/324 [08:10<00:00,  1.51s/it]
+Training Loss: 0.2673
+Validation: 100%|██████████| 81/81 [00:22<00:00,  3.53it/s]
+Validation Loss: 0.3094
+
+Epoch 50/50
+Training: 100%|██████████| 324/324 [08:09<00:00,  1.51s/it]
+Training Loss: 0.2672
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.51it/s]
+Validation Loss: 0.3108
