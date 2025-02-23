@@ -148,6 +148,15 @@ class SemanticSegmentationVisionTransformer(_nn.Module):
         )
 
     @property
+    def encoder(self) -> _nn.ModuleDict:
+        """
+        Get the encoder modules.
+
+        :return: The encoder modules.
+        """
+        return self.__encoders
+
+    @property
     def decoder(self) -> _decoder.BaseDecoder:
         """
         Get the decoder module.

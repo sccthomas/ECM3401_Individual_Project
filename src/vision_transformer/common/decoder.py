@@ -359,9 +359,12 @@ class LightWeightDecoder(BaseDecoder):
             _nn.ConvTranspose2d(
                 in_channels=out_channels, out_channels=hidden_dim_1, kernel_size=kernel_size, stride=stride
             ),
+            _nn.BatchNorm2d(hidden_dim_1),
+            _nn.ReLU(),
             _nn.ConvTranspose2d(
                 in_channels=hidden_dim_1, out_channels=hidden_dim_2, kernel_size=2, stride=2
             ),
+            _nn.BatchNorm2d(hidden_dim_2),
         )
         prediction_head = _nn.Conv2d(in_channels=hidden_dim_2, out_channels=num_classes, kernel_size=1, stride=1)
 
