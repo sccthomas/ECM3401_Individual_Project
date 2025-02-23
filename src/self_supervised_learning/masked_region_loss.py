@@ -5,6 +5,7 @@ import torch as _torch
 import torch.nn as _nn
 import torchvision.transforms.v2 as _transforms
 
+import src.dataset.snow as _snow
 import src.self_supervised_learning.base as _ssl_base
 import src.vision_transformer.model as _model
 
@@ -34,7 +35,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
                 model.decoder.prediction_head.in_channels, 3, kernel_size=1, stride=1
             ),
             _nn.Sigmoid(),
-            _transforms.Normalize(mean=_MEAN, std=_STD),
+            _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD),
         )
         # Initialize Weights
         self.__initialize_weights()
@@ -146,7 +147,3 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
             if isinstance(layer, _nn.ConvTranspose2d):
                 _nn.init.kaiming_normal_(layer.weight)
                 _nn.init.zeros_(layer.bias)
-
-
-_MEAN = [0.4808, 0.4178, 0.5046]
-_STD = [0.2637, 0.2751, 0.2425]
