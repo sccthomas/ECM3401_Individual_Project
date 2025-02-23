@@ -123,20 +123,10 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         assert z1.shape == z2.shape, "Embeddings must have the same shape."
 
         B = z1.size(0)
+        similarity_matrix = _F.cosine_similarity(z1.unsqueeze(1), z2.unsqueeze(0), dim=-1) / temperature
+        labels = _torch.arange(B, device=similarity_matrix.device)
+        loss = criterion(similarity_matrix, labels)
 
-        # Compute similarity matrix
-        similarity_matrix = _torch.mm(z1, z2.t()) / temperature
-        del z1, z2
-
-        # Labels for contrastive loss
-        labels = _torch.arange(B).to(similarity_matrix.device)
-
-        # Loss for z1 -> z2 and z2 -> z1
-        loss_1 = criterion(similarity_matrix, labels)
-        loss_2 = criterion(similarity_matrix.t(), labels)
-
-        # Average the losses
-        loss = (loss_1 + loss_2) / 2
         return loss
 
     def __initialize_weights(self) -> None:
