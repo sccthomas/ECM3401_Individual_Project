@@ -87,7 +87,7 @@ def display_attention_weights(
                 nested = _gridspec.GridSpecFromSubplotSpec(
                     3, 4,
                     subplot_spec=outer_grid[grid_row, l],
-                    height_ratios=[15, 7.5], hspace=0.075, wspace=0.015
+                    height_ratios=[15, 7.5, 7.5], hspace=0.075, wspace=0.015
                 )
                 ax_avg = fig.add_subplot(nested[0, :])
                 ax_avg.set_facecolor("white")
