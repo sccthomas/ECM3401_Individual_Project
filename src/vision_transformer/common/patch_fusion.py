@@ -381,7 +381,7 @@ class ModifyEmbeddingDim(_nn.Module):
         increase = self.__increase
 
         if increase:
-            x = _torch.cat([x, x[:, :out_embed - in_embed, :, :]], dim=1)
+            x = _F.pad(x, (0, 0, 0, 0, 0, out_embed - in_embed), mode="constant", value=0)
         else:
             x = _F.adaptive_avg_pool2d(
                 x.permute(0, 2, 3, 1), (x.size(-1), out_embed)
