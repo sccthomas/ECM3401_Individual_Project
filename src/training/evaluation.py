@@ -20,6 +20,8 @@ def evaluate_with_no_modifications(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        path: str = None,
+        name: str = None,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -30,6 +32,8 @@ def evaluate_with_no_modifications(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -72,10 +76,18 @@ def evaluate_with_no_modifications(
     _visualisation.display_tensor_mask(outputs > 0.5, ax=axes[2])
 
     _plt.tight_layout()
-    _plt.show()
+
+    if path is not None:
+        _plt.savefig(f"{path}/predictions/{name}.png")
+    else:
+        _plt.show()
 
     _visualisation.display_attention_weights(
-        image=image, attention_scores=model.get_attention_scores(), use_max_pooling=use_max_pooling
+        image=image,
+        attention_scores=model.get_attention_scores(),
+        use_max_pooling=use_max_pooling,
+        path=path,
+        name=name,
     )
 
 
@@ -87,6 +99,8 @@ def evaluate_with_texture_modifications(
         texture_type: str = "Staining",
         use_max_pooling: bool = True,
         normalise: bool = True,
+        path: str = None,
+        name: str = None,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -99,6 +113,8 @@ def evaluate_with_texture_modifications(
         "Staining", "Background Artifacts", "Microscopic Artifacts", "Cellular Variability".
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -147,6 +163,8 @@ def evaluate_with_texture_modifications(
         title=f"Evaluation of the Vision Transformer With Texture Modification: {texture_type}",
         use_max_pooling=use_max_pooling,
         normalise=normalise,
+        path=path,
+        name=name,
     )
 
 
@@ -157,6 +175,8 @@ def evaluate_with_illumination_modifications(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        path: str = None,
+        name: str = None,
 ) -> None:
     """
     Evaluate the model with illumination modifications
@@ -167,6 +187,8 @@ def evaluate_with_illumination_modifications(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention
     :param normalise: Whether to normalise the image.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -186,6 +208,8 @@ def evaluate_with_illumination_modifications(
         title=f"Evaluation of the Vision Transformer With Illumination Modification",
         use_max_pooling=use_max_pooling,
         normalise=normalise,
+        path=path,
+        name=name,
     )
 
 
@@ -197,6 +221,8 @@ def evaluate_with_background_modifications(
         mtype: str = "Simple",
         use_max_pooling: bool = True,
         normalise: bool = True,
+        path: str = None,
+        name: str = None,
 ) -> None:
     """
     Evaluate the model with background modifications
@@ -208,6 +234,8 @@ def evaluate_with_background_modifications(
     :param mtype: The type of background modification. Options are: "Simple", "Gaussian Blur", "Gaussian Noise", "Contrast", "Invert".
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -242,6 +270,8 @@ def evaluate_with_background_modifications(
         title=f"Evaluation of the Vision Transformer With Background Modification: {mtype}",
         use_max_pooling=use_max_pooling,
         normalise=normalise,
+        path=path,
+        name=name,
     )
 
 
@@ -258,6 +288,8 @@ def _evaluate(
         title: str,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        path: str = None,
+        name: str = None,
 ) -> None:
     """
     Evaluate the model with the modified image
@@ -270,6 +302,8 @@ def _evaluate(
     :param title: The title of the figure.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
     """
     # Create a figure with 4 subplots in one row.
     fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
@@ -312,8 +346,16 @@ def _evaluate(
     _visualisation.display_tensor_mask(outputs.squeeze(0), ax=axes[3])
 
     _plt.tight_layout()
-    _plt.show()
+
+    if path is not None:
+        _plt.savefig(f"{path}/predictions/{name}.png")
+    else:
+        _plt.show()
 
     _visualisation.display_attention_weights(
-        image=image, attention_scores=model.get_attention_scores(), use_max_pooling=use_max_pooling
+        image=image,
+        attention_scores=model.get_attention_scores(),
+        use_max_pooling=use_max_pooling,
+        path=path,
+        name=name,
     )

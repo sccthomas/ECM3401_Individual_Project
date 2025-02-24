@@ -48,6 +48,8 @@ def display_attention_weights(
         image: _torch.Tensor,
         attention_scores: _t.Dict[_t.Tuple[str, int], _t.Dict[str, _t.List[_torch.Tensor]]],
         use_max_pooling: bool = False,
+        path: _t.Optional[str] = None,
+        name: _t.Optional[str] = None,
 ) -> None:
     """
     Function to visualize the attention of the model.
@@ -55,6 +57,8 @@ def display_attention_weights(
     :param image: The original image.
     :param attention_scores: The attention scores.
     :param use_max_pooling: Whether to use max pooling.
+    :param path: The path to save the image.
+    :param name: The name of the image.
     """
     H, W = image.size()[-2:]
 
@@ -114,7 +118,10 @@ def display_attention_weights(
                 ax_dummy.set_facecolor("white")
                 ax_dummy.axis("off")
 
-    _plt.show()
+    if path is not None:
+        _plt.savefig(f"{path}/attention_scores/{name}.png")
+    else:
+        _plt.show()
 
 
 ########################################################################################################################
