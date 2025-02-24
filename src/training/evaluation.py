@@ -19,6 +19,7 @@ def evaluate_with_no_modifications(
         mask: _torch.Tensor,
         device: _torch.device,
         use_max_pooling: bool = True,
+        normalise: bool = True,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -28,6 +29,7 @@ def evaluate_with_no_modifications(
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -41,8 +43,8 @@ def evaluate_with_no_modifications(
     _visualisation.display_tensor_image(image, ax=axes[0])
 
     # Evaluate the model.
-    image_norm = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image)
-    outputs = model(image_norm.unsqueeze(0).to(device), keep_attention_scores=True)
+    image_ = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image) if normalise else image
+    outputs = model(image_.unsqueeze(0).to(device), keep_attention_scores=True)
     # - Calculate the losses
     mask = mask.unsqueeze(0)
     #   - BCE Loss
@@ -84,6 +86,7 @@ def evaluate_with_texture_modifications(
         device: _torch.device,
         texture_type: str = "Staining",
         use_max_pooling: bool = True,
+        normalise: bool = True,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -95,6 +98,7 @@ def evaluate_with_texture_modifications(
     :param texture_type: The type of texture modification. Options are:
         "Staining", "Background Artifacts", "Microscopic Artifacts", "Cellular Variability".
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -141,7 +145,8 @@ def evaluate_with_texture_modifications(
         mask=mask,
         device=device,
         title=f"Evaluation of the Vision Transformer With Texture Modification: {texture_type}",
-        use_max_pooling=use_max_pooling
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
     )
 
 
@@ -151,6 +156,7 @@ def evaluate_with_illumination_modifications(
         mask: _torch.Tensor,
         device: _torch.device,
         use_max_pooling: bool = True,
+        normalise: bool = True,
 ) -> None:
     """
     Evaluate the model with illumination modifications
@@ -160,6 +166,7 @@ def evaluate_with_illumination_modifications(
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention
+    :param normalise: Whether to normalise the image.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -177,7 +184,8 @@ def evaluate_with_illumination_modifications(
         mask=mask,
         device=device,
         title=f"Evaluation of the Vision Transformer With Illumination Modification",
-        use_max_pooling=use_max_pooling
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
     )
 
 
@@ -188,6 +196,7 @@ def evaluate_with_background_modifications(
         device: _torch.device,
         mtype: str = "Simple",
         use_max_pooling: bool = True,
+        normalise: bool = True,
 ) -> None:
     """
     Evaluate the model with background modifications
@@ -198,6 +207,7 @@ def evaluate_with_background_modifications(
     :param device: The device to use.
     :param mtype: The type of background modification. Options are: "Simple", "Gaussian Blur", "Gaussian Noise", "Contrast", "Invert".
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -230,7 +240,8 @@ def evaluate_with_background_modifications(
         mask=mask,
         device=device,
         title=f"Evaluation of the Vision Transformer With Background Modification: {mtype}",
-        use_max_pooling=use_max_pooling
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
     )
 
 
@@ -246,6 +257,7 @@ def _evaluate(
         device: _torch.device,
         title: str,
         use_max_pooling: bool = True,
+        normalise: bool = True,
 ) -> None:
     """
     Evaluate the model with the modified image
@@ -257,6 +269,7 @@ def _evaluate(
     :param device: The device to use.
     :param title: The title of the figure.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
     """
     # Create a figure with 4 subplots in one row.
     fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
@@ -270,9 +283,11 @@ def _evaluate(
     _visualisation.display_tensor_image(image_modified, ax=axes[1])
 
     # Test the robustness of the model.
-    image_modified_norm = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image_modified)
+    image_modified_ = (
+        _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image_modified) if normalise else image_modified
+    )
     # Evaluate the model.
-    outputs = model(image_modified_norm.unsqueeze(0).to(device), keep_attention_scores=True)
+    outputs = model(image_modified_.unsqueeze(0).to(device), keep_attention_scores=True)
     # - Calculate the losses
     mask = mask.unsqueeze(0)
     #   - BCE Loss

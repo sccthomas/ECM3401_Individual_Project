@@ -1,12 +1,14 @@
 import random as _random
 import typing as _t
 
+import matplotlib.pyplot as _plt
 import torch as _torch
 import torch.nn as _nn
 import torchvision.transforms.v2 as _transforms
 
 import src.dataset.snow as _snow
 import src.self_supervised_learning.base as _ssl_base
+import src.training.visualisation as _visualisation
 import src.vision_transformer.model as _model
 
 
@@ -20,12 +22,14 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
             model: _model.SemanticSegmentationVisionTransformer,
             max_patch_size: int,
             mask_ratio: float = 0.40,
+            normalise: bool = True,
     ) -> None:
         """
 
         :param model: The Vision Transformer Model to train.
         :param max_patch_size: The maximum size of the patches to mask.
         :param mask_ratio: The ratio of patches to mask.
+        :param normalise: Whether to normalise the input image tensor.
         """
         super(MaskedRegionLoss, self).__init__(model=model)
         self.__max_patch_size = max_patch_size
@@ -35,7 +39,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
                 model.decoder.prediction_head.in_channels, 3, kernel_size=1, stride=1
             ),
             _nn.Sigmoid(),
-            _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD),
+            _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD) if normalise else _nn.Identity(),
         )
         # Initialize Weights
         self.__initialize_weights()
@@ -147,3 +151,44 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
             if isinstance(layer, _nn.ConvTranspose2d):
                 _nn.init.kaiming_normal_(layer.weight)
                 _nn.init.zeros_(layer.bias)
+
+
+def visualise_masked_region_prediction(model: MaskedRegionLoss, image: _torch.Tensor, normalise: bool = True) -> None:
+    """
+    Visualise the Masked Region Prediction for a given image.
+
+    :param model: The Masked Region Loss model.
+    :param image: The image tensor.
+    :param normalise: Whether to normalise the image tensor
+    """
+    model.eval()
+    with _torch.no_grad():
+        image_ = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image) if normalise else image
+        reconstructed_image, mask = model.forward(image_)
+
+    # Denormalize the reconstructed_image for visualisation
+    if normalise:
+        dtype = image.dtype
+        device = image.device
+        mean = _torch.tensor(_snow.MEAN, dtype=dtype, device=device).view(-1, 1, 1)
+        std = _torch.tensor(_snow.STD, dtype=dtype, device=device).view(-1, 1, 1)
+        reconstructed_image = (reconstructed_image * std) + mean
+
+        # Visualise the Image
+    fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
+
+    axes[0].set_title("Input Image", fontsize=10)
+    _visualisation.display_tensor_image(image, ax=axes[0])
+
+    axes[1].set_title("Reconstructed Image", fontsize=10)
+    _visualisation.display_tensor_image(reconstructed_image, ax=axes[1])
+
+    mask = (1 - mask).squeeze(0)
+    axes[2].set_title("Masked Input Image", fontsize=10)
+    _visualisation.display_tensor_image(image * mask, ax=axes[2])
+
+    axes[3].set_title("Reconstructed Masked Image", fontsize=10)
+    _visualisation.display_tensor_image(reconstructed_image * mask, ax=axes[2])
+
+    _plt.tight_layout()
+    _plt.show()

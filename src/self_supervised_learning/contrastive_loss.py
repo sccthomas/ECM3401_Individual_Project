@@ -8,7 +8,9 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 import torchvision.transforms as _T
+import torchvision.transforms.v2 as _transforms
 
+import src.dataset.snow as _snow
 import src.self_supervised_learning.base as _ssl_base
 import src.vision_transformer.model as _model
 
@@ -158,6 +160,7 @@ def visualize_tsne(
         model: ContrastivePreTraining,
         images: _torch.Tensor,
         title="t-SNE Visualization of Image-Level Embeddings",
+        normalise: bool = True,
 ) -> None:
     """
     Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
@@ -165,7 +168,9 @@ def visualize_tsne(
     :param model: Contrastive pre-training model.
     :param images: Input images.
     :param title: Title of the plot.
+    :param normalise: Whether to normalize the image.
     """
+    images = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
 
     scales = z1.keys()
