@@ -98,17 +98,8 @@ class BaseDecoder(_nn.Module):
         fused_embedding_operations = self._fused_embedding_operations
         prediction_head = self._prediction_head
 
-        key = set(
-            patch_embeddings.keys()).difference(
-            set(patch_embedding_operations.keys())
-        ).pop()
-        patch_embedding = patch_embeddings[key]
-        B, P, E = patch_embedding.shape
-        P = int(P ** 0.5)
-        patch_embedding = patch_embedding.reshape(B, P, P, E).permute(0, 3, 1, 2).contiguous()
-
         # Apply the patch embedding operations
-        feature_maps = [patch_embedding, ]
+        feature_maps = []
         for key, operation in patch_embedding_operations.items():
             patch_embedding = patch_embeddings[key]
             B, P, E = patch_embedding.shape
@@ -203,44 +194,58 @@ class HeavyWeightDecoder(BaseDecoder):
         num_classes = output_dims[0]
         num_scales = len(patch_embedding_scales)
         highest_resolution_patch_embedding = min(patch_embedding_scales, key=lambda x: x[0])
-        out_patch_size, out_channels = highest_resolution_patch_embedding
-
-        patch_embedding_scales.remove(highest_resolution_patch_embedding)
+        target_patch_size, target_channels = (dim // 2 for dim in highest_resolution_patch_embedding)
 
         patch_embedding_operations = _nn.ModuleDict(
             {
                 f'x{i}': _nn.Sequential(
+                    # Block 1
                     _nn.ConvTranspose2d(
                         in_channels=embed_dim,
-                        out_channels=out_channels,
-                        kernel_size=patch_size // out_patch_size,
-                        stride=patch_size // out_patch_size,
+                        out_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        kernel_size=(patch_size // target_patch_size) // 2,
+                        stride=(patch_size // target_patch_size) // 2,
                     ),
-                    _nn.BatchNorm2d(out_channels),
+                    _nn.BatchNorm2d(embed_dim + (embed_dim - target_channels) // 2),
+                    _nn.ReLU(),
+                    _nn.Dropout2d(p=dropout_rate),
+
+                    # Block 2
+                    _nn.ConvTranspose2d(
+                        in_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        out_channels=target_channels,
+                        kernel_size=2,
+                        stride=2,
+                    ),
+                    _nn.BatchNorm2d(target_channels),
                     _nn.ReLU(),
                     _nn.Dropout2d(p=dropout_rate),
                 )
                 for i, (patch_size, embed_dim) in enumerate(patch_embedding_scales, start=1)
             }
         )
-        hidden_dim_1 = out_channels // 2
-        hidden_dim_2 = out_channels // 4
-        kernel_size = stride = out_patch_size // 2
+
+        hidden_dim_1 = target_channels // 2
+        hidden_dim_2 = target_channels // 4
+        kernel_size = stride = target_patch_size // 2
         fused_embedding_operations = _nn.Sequential(
+            # Block 1
             _nn.ConvTranspose2d(
-                in_channels=out_channels * num_scales, out_channels=out_channels, kernel_size=1, stride=1
+                in_channels=target_channels * num_scales, out_channels=target_channels, kernel_size=1, stride=1
             ),
-            _nn.BatchNorm2d(out_channels),
+            _nn.BatchNorm2d(target_channels),
             _nn.ReLU(),
             _nn.Dropout2d(p=dropout_rate),
 
+            # Block 2
             _nn.ConvTranspose2d(
-                in_channels=out_channels, out_channels=hidden_dim_1, kernel_size=kernel_size, stride=stride
+                in_channels=target_channels, out_channels=hidden_dim_1, kernel_size=kernel_size, stride=stride
             ),
             _nn.BatchNorm2d(hidden_dim_1),
             _nn.ReLU(),
             _nn.Dropout2d(p=dropout_rate),
 
+            # Block 3
             _nn.ConvTranspose2d(
                 in_channels=hidden_dim_1, out_channels=hidden_dim_2, kernel_size=2, stride=2
             ),
@@ -303,33 +308,54 @@ class LightWeightDecoder(BaseDecoder):
         num_classes = output_dims[0]
         num_scales = len(patch_embedding_scales)
         highest_resolution_patch_embedding = min(patch_embedding_scales, key=lambda x: x[0])
-        out_patch_size, out_channels = highest_resolution_patch_embedding
-
-        patch_embedding_scales.remove(highest_resolution_patch_embedding)
+        target_patch_size, target_channels = (dim // 2 for dim in highest_resolution_patch_embedding)
 
         patch_embedding_operations = _nn.ModuleDict(
             {
                 f'x{i}': _nn.Sequential(
-                    _nn.Conv2d(in_channels=embed_dim, out_channels=out_channels, kernel_size=1, stride=1),
-                    _nn.BatchNorm2d(out_channels),
+                    # Block 1
+                    _nn.Conv2d(
+                        in_channels=embed_dim,
+                        out_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        kernel_size=1,
+                        stride=1
+                    ),
+                    _nn.BatchNorm2d(embed_dim + (embed_dim - target_channels) // 2),
                     _nn.ReLU(),
                     _nn.Dropout2d(p=dropout_rate),
-                    _nn.Upsample(scale_factor=patch_size / out_patch_size, mode='nearest'),
+                    _nn.Upsample(scale_factor=(patch_size // target_patch_size) // 2, mode='nearest'),
+
+                    # Block 2
+                    _nn.Conv2d(
+                        in_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        out_channels=target_channels,
+                        kernel_size=1,
+                        stride=1
+                    ),
+                    _nn.BatchNorm2d(target_channels),
+                    _nn.ReLU(),
+                    _nn.Dropout2d(p=dropout_rate),
+                    _nn.Upsample(scale_factor=2, mode='nearest'),
                 )
                 for i, (patch_size, embed_dim) in enumerate(patch_embedding_scales, start=1)
             }
         )
-        hidden_dim_1 = out_channels // 2
-        hidden_dim_2 = out_channels // 4
-        kernel_size = stride = out_patch_size // 2
+        hidden_dim_1 = target_channels // 2
+        hidden_dim_2 = target_channels // 4
+        kernel_size = stride = target_patch_size // 2
         fused_embedding_operations = _nn.Sequential(
-            _nn.Conv2d(in_channels=out_channels * num_scales, out_channels=out_channels, kernel_size=1, stride=1),
-            _nn.BatchNorm2d(out_channels),
+            # Block 1
+            _nn.Conv2d(in_channels=target_channels * num_scales, out_channels=target_channels, kernel_size=1, stride=1),
+            _nn.BatchNorm2d(target_channels),
             _nn.ReLU(),
             _nn.Dropout2d(p=dropout_rate),
+
+            # Block 2
             _nn.ConvTranspose2d(
-                in_channels=out_channels, out_channels=hidden_dim_1, kernel_size=kernel_size, stride=stride
+                in_channels=target_channels, out_channels=hidden_dim_1, kernel_size=kernel_size, stride=stride
             ),
+
+            # Block 3
             _nn.ConvTranspose2d(
                 in_channels=hidden_dim_1, out_channels=hidden_dim_2, kernel_size=2, stride=2
             ),
