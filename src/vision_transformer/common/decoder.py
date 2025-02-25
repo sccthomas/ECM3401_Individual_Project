@@ -191,7 +191,7 @@ class HeavyWeightDecoder(BaseDecoder):
             dropout_rate: float,
     ) -> 'HeavyWeightDecoder':
         """
-        Create a heavy-weight decoder that will upsample the final embeddings to the output dimensions.
+        Create a light-weight decoder that will upsample the final embeddings to the output dimensions.
 
         :param patch_embedding_scales: List of tuples containing the patch size and embedding dimension.
         :param input_dims: Input dimensions of the image.
