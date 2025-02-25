@@ -160,7 +160,7 @@ class PatchFusionLearnable(PatchFusion):
                 operation = _nn.Identity()
 
             patch_embedding_projectors.append(
-                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate))
+                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout2d(dropout_rate))
             )
             in_resolutions.append(in_resolution)
 
