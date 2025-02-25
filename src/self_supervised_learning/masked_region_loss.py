@@ -164,7 +164,8 @@ def visualise_masked_region_prediction(model: MaskedRegionLoss, image: _torch.Te
     model.eval()
     with _torch.no_grad():
         image_ = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(image) if normalise else image
-        reconstructed_image, mask = model.forward(image_)
+        reconstructed_image, mask = model.forward(image_.unsqueeze(0))
+        reconstructed_image = reconstructed_image.squeeze(0)
 
     # Denormalize the reconstructed_image for visualisation
     if normalise:
@@ -188,7 +189,7 @@ def visualise_masked_region_prediction(model: MaskedRegionLoss, image: _torch.Te
     _visualisation.display_tensor_image(image * mask, ax=axes[2])
 
     axes[3].set_title("Reconstructed Masked Image", fontsize=10)
-    _visualisation.display_tensor_image(reconstructed_image * mask, ax=axes[2])
+    _visualisation.display_tensor_image(reconstructed_image * mask, ax=axes[3])
 
     _plt.tight_layout()
     _plt.show()
