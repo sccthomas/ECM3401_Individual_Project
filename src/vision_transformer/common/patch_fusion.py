@@ -147,14 +147,33 @@ class PatchFusionLearnable(PatchFusion):
                 scale = out_resolution // in_resolution
                 operation = _nn.Sequential(
                     _nn.Conv2d(
-                        in_channels=in_embed, out_channels=out_embed, kernel_size=1, stride=1
+                        in_channels=in_embed,
+                        out_channels=out_embed,
+                        kernel_size=1,
+                        stride=1,
                     ),
-                    _nn.Upsample(scale_factor=scale, mode="nearest")
+                    _nn.BatchNorm2d(out_embed),
+                    _nn.Upsample(scale_factor=scale, mode="bilinear", align_corners=True),
                 )
             elif in_patches > out_patches:
                 scale = in_resolution // out_resolution
-                operation = _nn.Conv2d(
-                    in_channels=in_embed, out_channels=out_embed, kernel_size=scale, stride=scale
+                operation = _nn.Sequential(
+                    _nn.Conv2d(
+                        in_channels=in_embed,
+                        out_channels=in_embed,
+                        kernel_size=scale,
+                        stride=scale,
+                        groups=in_embed,
+                        bias=False,
+                    ),
+                    _nn.BatchNorm2d(in_embed),
+                    _nn.Conv2d(
+                        in_embed,
+                        out_embed,
+                        kernel_size=1,
+                        stride=1,
+                    ),
+                    _nn.BatchNorm2d(out_embed),
                 )
             else:
                 operation = _nn.Identity()
