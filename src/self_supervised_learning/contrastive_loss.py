@@ -8,7 +8,9 @@ import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
 import torchvision.transforms as _T
+import torchvision.transforms.v2 as _transforms
 
+import src.dataset.snow as _snow
 import src.self_supervised_learning.base as _ssl_base
 import src.vision_transformer.model as _model
 
@@ -41,10 +43,25 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
                 for encoder_dim in encoder_dims
             ]
         )
+
         self.__transformations = [
-            _T.RandomRotation(degrees=90),
-            _T.RandomHorizontalFlip(),
-            _T.RandomVerticalFlip(),
+            (_nn.Identity(), _nn.Identity()),
+            (_T.RandomHorizontalFlip(p=0.5), _T.RandomVerticalFlip(p=0.5)),
+
+            (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+             _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+
+            (_T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+            (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+            (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+
+            (_T.RandomErasing(p=0.2), _T.RandomErasing(p=0.2)),
+            (_T.RandomErasing(p=0.2), _T.RandomHorizontalFlip(p=0.5)),
+            (_T.RandomErasing(p=0.2), _T.RandomVerticalFlip(p=0.5)),
+            (_T.RandomErasing(p=0.2), _T.ColorJitter(brightness=0.1, contrast=0.1)),
+            (_T.RandomErasing(p=0.2), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
@@ -70,10 +87,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         # Apply random transformations
         # - Select two random transformations
-        transformation_1 = _random.choice(transformations)
-        transformation_2 = _random.choice(transformations)
-        while transformation_1 == transformation_2:
-            transformation_2 = _random.choice(transformations)
+        transformation_1, transformation_2 = _random.choice(transformations)
 
         z = ()
         for transformation_x in [transformation_1, transformation_2]:
@@ -120,20 +134,10 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         assert z1.shape == z2.shape, "Embeddings must have the same shape."
 
         B = z1.size(0)
+        similarity_matrix = _F.cosine_similarity(z1.unsqueeze(1), z2.unsqueeze(0), dim=-1) / temperature
+        labels = _torch.arange(B, device=similarity_matrix.device)
+        loss = criterion(similarity_matrix, labels)
 
-        # Compute similarity matrix
-        similarity_matrix = _torch.mm(z1, z2.t()) / temperature
-        del z1, z2
-
-        # Labels for contrastive loss
-        labels = _torch.arange(B).to(similarity_matrix.device)
-
-        # Loss for z1 -> z2 and z2 -> z1
-        loss_1 = criterion(similarity_matrix, labels)
-        loss_2 = criterion(similarity_matrix.t(), labels)
-
-        # Average the losses
-        loss = (loss_1 + loss_2) / 2
         return loss
 
     def __initialize_weights(self) -> None:
@@ -156,6 +160,7 @@ def visualize_tsne(
         model: ContrastivePreTraining,
         images: _torch.Tensor,
         title="t-SNE Visualization of Image-Level Embeddings",
+        normalise: bool = True,
 ) -> None:
     """
     Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
@@ -163,7 +168,9 @@ def visualize_tsne(
     :param model: Contrastive pre-training model.
     :param images: Input images.
     :param title: Title of the plot.
+    :param normalise: Whether to normalize the image.
     """
+    images = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
 
     scales = z1.keys()
@@ -258,8 +265,8 @@ class _ProjectionHead(_nn.Module):
         x = x.view(B, P, -1)
         # Normalize the output
         x = _F.normalize(x, dim=-1)
-        # Apply Max Pooling on the patch embeddings
-        x = x.max(dim=1).values
+        # Apply Mean Pooling on the patch embeddings
+        x = x.mean(dim=1)
         # Normalize the output
         x = _F.normalize(x, dim=-1)
 

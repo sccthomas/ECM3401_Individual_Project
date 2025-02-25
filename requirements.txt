@@ -8,3 +8,6 @@ torchmetrics==1.6.1
 tqdm==4.66.3
 scikit-learn==1.5.0
 scipy==1.12.0
+opencv-python==4.11.0.86
+matplotlib==3.8.1
+protobuf==4.25.6

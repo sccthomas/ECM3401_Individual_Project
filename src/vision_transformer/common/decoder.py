@@ -57,6 +57,31 @@ class BaseDecoder(_nn.Module):
         """
         return self._prediction_head
 
+    @property
+    def convolutional_operation_weights(self) -> _t.Dict[str, _t.List[_torch.Tensor]]:
+        """
+        Get the weights of the convolutional operations in the decoder.
+
+        :return: List of weights of the convolutional operations in the decoder.
+        """
+        patch_embedding_operations = self._patch_embedding_operations
+        fused_embedding_operations = self._fused_embedding_operations
+
+        weights = {
+            'patch_embedding_operations': [
+                m.weight
+                for module in patch_embedding_operations.values() for m in module.modules()
+                if isinstance(m, _nn.Conv2d) or isinstance(m, _nn.ConvTranspose2d)
+            ],
+            'fused_embedding_operations': [
+                module.weight
+                for module in fused_embedding_operations
+                if isinstance(module, _nn.Conv2d) or isinstance(module, _nn.ConvTranspose2d)
+            ],
+        }
+
+        return weights
+
     @_abc.abstractmethod
     def forward(
             self,
@@ -323,17 +348,22 @@ class LightWeightDecoder(BaseDecoder):
                 for i, (patch_size, embed_dim) in enumerate(patch_embedding_scales, start=1)
             }
         )
-        hidden_dim = out_channels // 2
+        hidden_dim_1 = out_channels // 2
+        hidden_dim_2 = out_channels // 4
+        kernel_size = stride = out_patch_size // 2
         fused_embedding_operations = _nn.Sequential(
             _nn.Conv2d(in_channels=out_channels * num_scales, out_channels=out_channels, kernel_size=1, stride=1),
             _nn.BatchNorm2d(out_channels),
             _nn.ReLU(),
             _nn.Dropout(p=dropout_rate),
             _nn.ConvTranspose2d(
-                in_channels=out_channels, out_channels=hidden_dim, kernel_size=out_patch_size, stride=out_patch_size
+                in_channels=out_channels, out_channels=hidden_dim_1, kernel_size=kernel_size, stride=stride
+            ),
+            _nn.ConvTranspose2d(
+                in_channels=hidden_dim_1, out_channels=hidden_dim_2, kernel_size=2, stride=2
             ),
         )
-        prediction_head = _nn.Conv2d(in_channels=hidden_dim, out_channels=num_classes, kernel_size=1, stride=1)
+        prediction_head = _nn.Conv2d(in_channels=hidden_dim_2, out_channels=num_classes, kernel_size=1, stride=1)
 
         return cls(
             patch_embedding_operations=patch_embedding_operations,

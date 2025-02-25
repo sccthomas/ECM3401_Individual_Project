@@ -86,7 +86,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
         device = self.device
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 128, 128),
-            num_encoder_layers=4,
+            num_encoder_layers=6,
             use_swin_transformer=False,
             use_heavyweight_decoder=False,
             skip_layer_ratio=2,

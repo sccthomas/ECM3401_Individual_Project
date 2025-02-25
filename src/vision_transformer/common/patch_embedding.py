@@ -24,10 +24,20 @@ class PatchEmbedding(_nn.Module):
 
         self.__H = H
         self.__W = W
+        self.__patch_size = patch_size
         self.__num_patches = num_patches
         self.__embed_dim = embed_dim
 
         self.__initialize_weights()
+
+    @property
+    def patch_size(self) -> int:
+        """
+        Get the size of each patch in the image.
+
+        :return: The size of each patch in the image.
+        """
+        return self.__patch_size
 
     @property
     def embed_dim(self) -> int:
