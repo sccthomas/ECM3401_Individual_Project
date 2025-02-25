@@ -202,17 +202,17 @@ class HeavyWeightDecoder(BaseDecoder):
                     # Block 1
                     _nn.ConvTranspose2d(
                         in_channels=embed_dim,
-                        out_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        out_channels=embed_dim - (embed_dim - target_channels) // 2,
                         kernel_size=(patch_size // target_patch_size) // 2,
                         stride=(patch_size // target_patch_size) // 2,
                     ),
-                    _nn.BatchNorm2d(embed_dim + (embed_dim - target_channels) // 2),
+                    _nn.BatchNorm2d(embed_dim - (embed_dim - target_channels) // 2),
                     _nn.ReLU(),
                     _nn.Dropout2d(p=dropout_rate),
 
                     # Block 2
                     _nn.ConvTranspose2d(
-                        in_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        in_channels=embed_dim - (embed_dim - target_channels) // 2,
                         out_channels=target_channels,
                         kernel_size=2,
                         stride=2,
@@ -316,18 +316,18 @@ class LightWeightDecoder(BaseDecoder):
                     # Block 1
                     _nn.Conv2d(
                         in_channels=embed_dim,
-                        out_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        out_channels=embed_dim - (embed_dim - target_channels) // 2,
                         kernel_size=1,
                         stride=1
                     ),
-                    _nn.BatchNorm2d(embed_dim + (embed_dim - target_channels) // 2),
+                    _nn.BatchNorm2d(embed_dim - (embed_dim - target_channels) // 2),
                     _nn.ReLU(),
                     _nn.Dropout2d(p=dropout_rate),
                     _nn.Upsample(scale_factor=(patch_size // target_patch_size) // 2, mode='nearest'),
 
                     # Block 2
                     _nn.Conv2d(
-                        in_channels=embed_dim + (embed_dim - target_channels) // 2,
+                        in_channels=embed_dim - (embed_dim - target_channels) // 2,
                         out_channels=target_channels,
                         kernel_size=1,
                         stride=1
