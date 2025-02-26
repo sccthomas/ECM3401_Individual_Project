@@ -173,23 +173,40 @@ def visualise_masked_region_prediction(model: MaskedRegionLoss, image: _torch.Te
         device = image.device
         mean = _torch.tensor(_snow.MEAN, dtype=dtype, device=device).view(-1, 1, 1)
         std = _torch.tensor(_snow.STD, dtype=dtype, device=device).view(-1, 1, 1)
-        reconstructed_image = (reconstructed_image * std) + mean
+        reconstructed_image_ = (reconstructed_image * std) + mean
+    else:
+        reconstructed_image_ = reconstructed_image
 
-        # Visualise the Image
-    fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
+    fig, axes = _plt.subplots(2, 6, figsize=(20, 10))  # Adjusted to fit all images
+    axes = axes.flatten()  # Convert to a 1D list for easier iteration
 
-    axes[0].set_title("Input Image", fontsize=10)
-    _visualisation.display_tensor_image(image, ax=axes[0])
+    mask = mask.squeeze(0)
+    for ax, (title, tensor) in zip(
+            axes,
+            (
+                    # Input Image
+                    ("Input Image", image),
+                    ("Input Image Normalised", image_),
 
-    axes[1].set_title("Reconstructed Image", fontsize=10)
-    _visualisation.display_tensor_image(reconstructed_image, ax=axes[1])
+                    ("Input Patches Image", image * mask),
+                    ("Input Patches Image Normalised", image_ * mask),
 
-    mask = (1 - mask).squeeze(0)
-    axes[2].set_title("Masked Input Image", fontsize=10)
-    _visualisation.display_tensor_image(image * mask, ax=axes[2])
+                    ("Missing Patches", image * (1 - mask)),
+                    ("Missing Patches Normalised", image_ * (1 - mask)),
 
-    axes[3].set_title("Reconstructed Masked Image", fontsize=10)
-    _visualisation.display_tensor_image(reconstructed_image * mask, ax=axes[3])
+                    # Reconstructed Image
+                    ("Reconstructed Image", reconstructed_image_),
+                    ("Reconstructed Image Normalised", reconstructed_image),
+
+                    ("Reconstructed Input Patches", reconstructed_image_ * mask),
+                    ("Reconstructed Input Patches Normalised", reconstructed_image * mask),
+
+                    ("Reconstructed Missing Patches", reconstructed_image_ * (1 - mask)),
+                    ("Reconstructed Missing Patches Normalised", reconstructed_image * (1 - mask)),
+            )
+    ):
+        ax.set_title(title, fontsize=10)  # Use correct title
+        _visualisation.display_tensor_image(tensor, ax=ax)  # Use correct tensor
 
     _plt.tight_layout()
     _plt.show()
