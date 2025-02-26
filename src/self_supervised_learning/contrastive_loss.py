@@ -236,7 +236,7 @@ class _ProjectionHead(_nn.Module):
         :param output_dim: The output dimension.
         """
         super(_ProjectionHead, self).__init__()
-        hidden_dim = input_dim // 2
+        hidden_dim = (input_dim + output_dim) // 2
         self.__fc1 = _nn.Linear(input_dim, hidden_dim)
         self.__n1 = _nn.BatchNorm1d(hidden_dim)
         self.__fc2 = _nn.Linear(hidden_dim, output_dim)
