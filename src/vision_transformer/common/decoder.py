@@ -316,18 +316,18 @@ class LightWeightDecoder(BaseDecoder):
                     # Block 1
                     _nn.Conv2d(
                         in_channels=embed_dim,
-                        out_channels=hidden_dim,
+                        out_channels=(embed_dim - target_channels) // 2,
                         kernel_size=1,
                         stride=1
                     ),
-                    _nn.BatchNorm2d(hidden_dim),
+                    _nn.BatchNorm2d((embed_dim - target_channels) // 2),
                     _nn.ReLU(),
                     _nn.Dropout2d(p=dropout_rate),
                     _nn.Upsample(scale_factor=(patch_size // target_patch_size) // 2, mode='nearest'),
 
                     # Block 2
                     _nn.Conv2d(
-                        in_channels=hidden_dim,
+                        in_channels=(embed_dim - target_channels) // 2,
                         out_channels=target_channels,
                         kernel_size=1,
                         stride=1
@@ -338,7 +338,6 @@ class LightWeightDecoder(BaseDecoder):
                     _nn.Upsample(scale_factor=2, mode='nearest'),
                 )
                 for i, (patch_size, embed_dim) in enumerate(patch_embedding_scales, start=1)
-                if (hidden_dim := (embed_dim - target_channels) // 2 > target_channels)
             }
         )
         hidden_dim_1 = target_channels // 2

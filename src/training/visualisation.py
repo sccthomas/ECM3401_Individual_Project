@@ -1,4 +1,5 @@
 import math as _math
+import os as _os
 import typing as _t
 
 import matplotlib.gridspec as _gridspec
@@ -119,6 +120,7 @@ def display_attention_weights(
                 ax_dummy.axis("off")
 
     if path is not None:
+        _os.makedirs(f"{path}/attention_scores", exist_ok=True)
         _plt.savefig(f"{path}/attention_scores/{name}.png")
     else:
         _plt.show()

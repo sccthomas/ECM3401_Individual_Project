@@ -1,4 +1,5 @@
 import os as _os
+import random as _random
 from typing import Tuple
 
 import torch as _torch
@@ -25,6 +26,7 @@ class SnowDataset(_Dataset):
             resize: bool = False,
             normalize: bool = False,
             rotate: bool = False,
+            augment_image: bool = False,
     ) -> None:
         """
 
@@ -33,6 +35,7 @@ class SnowDataset(_Dataset):
         :param resize: Resize the images and targets to 256x256. Defaults to False.
         :param normalize: Normalize the images. Defaults to False.
         :param rotate: Rotate the images and targets by a random multiple of 90 degrees. Defaults to False.
+        :param augment_image: Augment the images. Defaults to False.
         """
         images_dir_path = _os.path.join(dataset_dir_path, _IMAGES_DIR_NAME)
         targets_dir_path = _os.path.join(dataset_dir_path, _TARGETS_DIR_NAME)
@@ -53,10 +56,15 @@ class SnowDataset(_Dataset):
         )
         self.__count = count
         self.__image_target_paths = image_target_paths
-        self.__normalize = _transforms.Normalize(mean=MEAN, std=STD) if normalize else _nn.Identity()
+        self.__normalize = _transforms.Normalize(mean=MEAN, std=STD) if normalize else None
         self.__to_tensor = _transforms.PILToTensor()
-        self.__resize = _transforms.Resize((256, 256)) if resize else _nn.Identity()
+        self.__resize = _transforms.Resize((256, 256)) if resize else None
         self.__rotate = rotate
+        self.__augment_image = augment_image
+        self.__augmentations = [
+            _transforms.GaussianBlur(kernel_size=7, sigma=STD[:2]),
+            _transforms.GaussianNoise(mean=MEAN[0], sigma=STD[0]),
+        ] if augment_image else None
 
     def __len__(self) -> int:
         """
@@ -78,19 +86,42 @@ class SnowDataset(_Dataset):
         to_tensor = self.__to_tensor
         resize = self.__resize
         rotate = self.__rotate
+        augment_image = self.__augment_image
+        augmentations = self.__augmentations
 
         # Load, resize and convert the image and target to tensors
         image_path, target_path = image_target_paths[idx]
         image, target = _Image.open(image_path), _Image.open(target_path)
-        image, target = resize(image), resize(target)
+
+        # Resize the image and target to 256x256
+        if resize is not None:
+            image, target = resize(image), resize(target)
+
         image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
-        image = normalize(image)
 
         # Rotate the image and target by a random multiple of 90 degrees
-        if rotate:
+        if rotate is not None:
             k = _torch.randint(0, 4, (1,)).item()
             image = _torch.rot90(image, k=k, dims=(1, 2))
             target = _torch.rot90(target, k=k, dims=(1, 2))
+
+        # Augment the image
+        if augment_image:
+            augmentations += [
+                _transforms.ColorJitter(brightness=_random.uniform(0, 1.5)),
+                _transforms.ColorJitter(
+                    contrast=_random.uniform(0, 1.5),
+                    saturation=_random.uniform(0, 1.5),
+                    hue=_random.uniform(0, 0.1)
+                ),
+                _nn.Identity(),
+            ]
+            augmentation = _random.choice(augmentations)
+            image = target * image + (1 - target) * augmentation(image)
+
+        # Normalize the image
+        if normalize is not None:
+            image = normalize(image)
 
         return image, target
 
