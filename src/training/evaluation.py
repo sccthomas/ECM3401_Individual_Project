@@ -256,9 +256,9 @@ def evaluate_with_synthetic_background(
 
     background_color = _torch.tensor(
         [
-            _random.uniform(0.8, 1.0),
-            _random.uniform(0.8, 1.0),
-            _random.uniform(0.8, 1.0)
+            _random.uniform(0, 1.0),
+            _random.uniform(0, 1.0),
+            _random.uniform(0, 1.0)
         ],
         device=device,
         dtype=image.dtype,
