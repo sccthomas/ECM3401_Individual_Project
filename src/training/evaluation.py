@@ -216,7 +216,7 @@ def evaluate_with_blur(
     image = image.to(device)
     mask = mask.to(device)
 
-    blurred_tensor = _transforms.GaussianBlur(kernel_size=5, sigma=_snow.STD[:2])(image)
+    blurred_tensor = _transforms.GaussianBlur(kernel_size=7, sigma=(1, 2))(image)
     new_background = (1 - mask) * blurred_tensor
     image_modified = mask * image + new_background
 
