@@ -117,6 +117,10 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         ]
         loss = _torch.stack(loss).mean()
 
+        # Check if the loss is nan
+        if _torch.isnan(loss):
+            raise ValueError("Loss is NaN.")
+
         return loss
 
     def __loss_fn(self, z1: _torch.Tensor, z2: _torch.Tensor):
@@ -139,6 +143,10 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         similarity_matrix = _F.cosine_similarity(z1.unsqueeze(1), z2.unsqueeze(0), dim=-1) / temperature
         labels = _torch.arange(B, device=similarity_matrix.device)
         loss = criterion(similarity_matrix, labels)
+
+        # Check if the loss is nan
+        if _torch.isnan(loss):
+            raise ValueError("Loss is NaN.")
 
         return loss
 
