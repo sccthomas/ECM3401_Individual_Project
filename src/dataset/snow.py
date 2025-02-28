@@ -63,10 +63,10 @@ class SnowDataset(_Dataset):
         self.__augment_image = augment_image
         self.__augmentations = [
             _transforms.GaussianBlur(kernel_size=5, sigma=(0.5, 1.0)),
-            _transforms.ColorJitter(brightness=(0.1, 1.5)),
+            _transforms.ColorJitter(brightness=(0.5, 1.5)),
             _transforms.ColorJitter(
-                contrast=(0.1, 1.5),
-                saturation=(0.1, 1.5),
+                contrast=(0.5, 1.5),
+                saturation=(0.5, 1.5),
                 hue=0.125,
             ),
             _nn.Identity(),
@@ -114,7 +114,11 @@ class SnowDataset(_Dataset):
         # Augment the image
         if augment_image:
             augmentation = _random.choice(augmentations)
-            image = target * image + (1 - target) * augmentation(image)
+            if _random.random() < 0.5:
+                # Only apply the augmentation to the background
+                image = target * image + (1 - target) * augmentation(image)
+            else:
+                image = augmentation(image)
 
         # Normalize the image
         if normalize is not None:
