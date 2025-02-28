@@ -48,20 +48,19 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             (_nn.Identity(), _nn.Identity()),
             (_T.RandomHorizontalFlip(p=0.5), _T.RandomVerticalFlip(p=0.5)),
 
-            (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-             _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
-            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
-            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)),
+            (_T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125),
+             _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
+            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
+            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
 
-            (_T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
-            (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
-            (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+            (_T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0)), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
+            (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
+            (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
 
             (_T.RandomErasing(p=0.2), _T.RandomErasing(p=0.2)),
             (_T.RandomErasing(p=0.2), _T.RandomHorizontalFlip(p=0.5)),
             (_T.RandomErasing(p=0.2), _T.RandomVerticalFlip(p=0.5)),
-            (_T.RandomErasing(p=0.2), _T.ColorJitter(brightness=0.1, contrast=0.1)),
-            (_T.RandomErasing(p=0.2), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0))),
+            (_T.RandomErasing(p=0.2), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()

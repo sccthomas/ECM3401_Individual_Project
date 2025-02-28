@@ -62,8 +62,14 @@ class SnowDataset(_Dataset):
         self.__rotate = rotate
         self.__augment_image = augment_image
         self.__augmentations = [
-            _transforms.GaussianBlur(kernel_size=7, sigma=STD[:2]),
-            _transforms.GaussianNoise(mean=MEAN[0], sigma=STD[0]),
+            _transforms.GaussianBlur(kernel_size=5, sigma=(0.5, 1.0)),
+            _transforms.ColorJitter(brightness=(0.5, 1.5)),
+            _transforms.ColorJitter(
+                contrast=(0.5, 1.5),
+                saturation=(0.5, 1.5),
+                hue=0.125,
+            ),
+            _nn.Identity(),
         ] if augment_image else None
 
     def __len__(self) -> int:
@@ -107,15 +113,6 @@ class SnowDataset(_Dataset):
 
         # Augment the image
         if augment_image:
-            augmentations += [
-                _transforms.ColorJitter(brightness=_random.uniform(0, 1.5)),
-                _transforms.ColorJitter(
-                    contrast=_random.uniform(0, 1.5),
-                    saturation=_random.uniform(0, 1.5),
-                    hue=_random.uniform(0, 0.1)
-                ),
-                _nn.Identity(),
-            ]
             augmentation = _random.choice(augmentations)
             image = target * image + (1 - target) * augmentation(image)
 
