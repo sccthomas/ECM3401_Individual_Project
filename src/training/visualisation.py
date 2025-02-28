@@ -1,9 +1,11 @@
 import math as _math
 import os as _os
+import re
 import typing as _t
 
 import matplotlib.gridspec as _gridspec
 import matplotlib.pyplot as _plt
+import matplotlib.pyplot as plt
 import numpy as _np
 import torch as _torch
 import torch.nn as _nn
@@ -126,6 +128,66 @@ def display_attention_weights(
         _plt.show()
 
 
+def display_training_metrics(file_name: str) -> None:
+    """
+    Plot the training metrics.
+
+    :param file_name: The file name.
+    """
+    parsed_file = _parse_log_file(file_name)
+    epochs = parsed_file[0]
+    training_losses = parsed_file[1]
+    validation_losses = parsed_file[2]
+    training_dice_scores = parsed_file[3]
+    validation_dice_scores = parsed_file[4]
+    training_miou = parsed_file[5]
+    validation_miou = parsed_file[6]
+
+    if len(epochs) == 0:
+        print("No epochs found in the log file.")
+        return
+    if len(training_losses) == 0 or len(validation_losses) == 0:
+        print("No training or validation losses found in the log file.")
+        return
+
+    plt.figure(figsize=(20, 8))
+
+    plt.subplot(1, 3, 1)
+    plt.plot(epochs, training_losses, label='Training Loss', marker='o')
+    plt.plot(epochs, validation_losses, label='Validation Loss', marker='s')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Over Epochs')
+    plt.legend()
+    plt.grid()
+
+    if len(training_dice_scores) == 0:
+        print("No training or validation dice scores found in the log file.")
+    else:
+        plt.subplot(1, 3, 2)
+        plt.plot(epochs, training_dice_scores, label='Training Dice', marker='o')
+        plt.plot(epochs, validation_dice_scores, label='Validation Dice', marker='s')
+        plt.xlabel('Epochs')
+        plt.ylabel('Dice Score')
+        plt.title('Dice Score Over Epochs')
+        plt.legend()
+        plt.grid()
+
+    if len(training_miou) == 0:
+        print("No training or validation mean IoU scores found in the log file.")
+    else:
+        plt.subplot(1, 3, 3)
+        plt.plot(epochs, training_miou, label='Training mIoU', marker='o')
+        plt.plot(epochs, validation_miou, label='Validation mIoU', marker='s')
+        plt.xlabel('Epochs')
+        plt.ylabel('Mean IoU')
+        plt.title('Mean IoU Over Epochs')
+        plt.legend()
+        plt.grid()
+
+    plt.show()
+
+
 ########################################################################################################################
 # Private Helpers
 ########################################################################################################################
@@ -211,3 +273,74 @@ def _upsample_attention(
     )
 
     return attention
+
+
+def _parse_log_file(
+        file_name: str
+) -> _t.Tuple[
+    _t.List[int], _t.List[float], _t.List[float], _t.List[float], _t.List[float], _t.List[float], _t.List[float]
+]:
+    """
+    Parse the log file.
+
+    :param file_name: The file name.
+    :return: The parsed log file.
+    """
+    epochs = []
+    training_losses = []
+    validation_losses = []
+    training_dice_scores = []
+    validation_dice_scores = []
+    training_miou = []
+    validation_miou = []
+
+    with open(file_name, 'r') as file:
+        lines = file.readlines()
+
+    current_phase = None  # Track whether we're in Training or Validation section
+
+    for line in lines:
+        epoch_match = re.match(r"\s*Epoch (\d+)/", line)
+        if epoch_match:
+            epochs.append(int(epoch_match.group(1)))
+            continue
+
+        if "Training Metrics" in line or "Training:" in line:
+            current_phase = "training"
+            continue
+        elif "Validation Metrics" in line or "Validation:" in line:
+            current_phase = "validation"
+            continue
+
+        loss_match = re.match(
+            r"\s*(?:Average Binary Cross Entropy Loss|Average Loss|Training Loss|Validation Loss): ([0-9\.]+)",
+            line
+        )
+        dice_match = re.match(r"\s*Average Dice Score: ([0-9\.]+)", line)
+        miou_match = re.match(r"\s*Average Mean IoU: ([0-9\.]+)", line)
+
+        if loss_match:
+            if current_phase == "training":
+                training_losses.append(float(loss_match.group(1)))
+            elif current_phase == "validation":
+                validation_losses.append(float(loss_match.group(1)))
+        elif dice_match:
+            if current_phase == "training":
+                training_dice_scores.append(float(dice_match.group(1)))
+            elif current_phase == "validation":
+                validation_dice_scores.append(float(dice_match.group(1)))
+        elif miou_match:
+            if current_phase == "training":
+                training_miou.append(float(miou_match.group(1)))
+            elif current_phase == "validation":
+                validation_miou.append(float(miou_match.group(1)))
+
+    return (
+        epochs,
+        training_losses,
+        validation_losses,
+        training_dice_scores,
+        validation_dice_scores,
+        training_miou,
+        validation_miou
+    )
