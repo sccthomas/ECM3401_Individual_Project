@@ -106,7 +106,7 @@ class SnowDataset(_Dataset):
         image, target = to_tensor(image).float() / 255, to_tensor(target).float() // 255
 
         # Rotate the image and target by a random multiple of 90 degrees
-        if rotate is not None:
+        if rotate:
             k = _torch.randint(0, 4, (1,)).item()
             image = _torch.rot90(image, k=k, dims=(1, 2))
             target = _torch.rot90(target, k=k, dims=(1, 2))
