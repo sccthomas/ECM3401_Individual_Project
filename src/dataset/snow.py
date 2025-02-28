@@ -63,7 +63,7 @@ class SnowDataset(_Dataset):
         self.__augment_image = augment_image
         self.__augmentations = [
             _transforms.GaussianBlur(kernel_size=5, sigma=(0.5, 1.0)),
-            _transforms.ColorJitter(brightness=(0.5, 1.5)),
+            _transforms.ColorJitter(brightness=(0.1, 1.5)),
             _transforms.ColorJitter(
                 contrast=(0.5, 1.5),
                 saturation=(0.5, 1.5),
