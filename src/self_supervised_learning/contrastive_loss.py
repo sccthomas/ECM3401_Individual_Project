@@ -48,10 +48,10 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             (_nn.Identity(), _nn.Identity()),
             (_T.RandomHorizontalFlip(p=0.5), _T.RandomVerticalFlip(p=0.5)),
 
-            (_T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125),
-             _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
-            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
-            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
+            (_T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.125),
+             _T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.125)),
+            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.125)),
+            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.125)),
 
             (_T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0)), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
             (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
