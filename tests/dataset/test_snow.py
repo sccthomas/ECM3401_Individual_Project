@@ -10,10 +10,11 @@ class TestSnowDataset(unittest.TestCase):
                              '/ECM3401_Individual_Literature_Review_and_Project/SNOW_Semantic_Segmentation'
                              '/snow_dataset',
             resize=True,
+            normalize=True,
             rotate=True,
             augment_image=True,
         )
-        
+
         image_1, mask_1 = snow_dataset[0]
         self.assertTrue(type(image_1).__name__ == 'Tensor')
         self.assertTrue(type(mask_1).__name__ == 'Tensor')
