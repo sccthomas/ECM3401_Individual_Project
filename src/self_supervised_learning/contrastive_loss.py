@@ -56,10 +56,10 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
             (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
 
-            (_T.RandomAdjustSharpness(0.5), _T.RandomErasing(p=0.2)),
-            (_T.RandomAdjustSharpness(0.5), _T.RandomHorizontalFlip(p=0.5)),
-            (_T.RandomAdjustSharpness(0.5), _T.RandomVerticalFlip(p=0.5)),
-            (_T.RandomAdjustSharpness(0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
+            (_T.RandomAdjustSharpness(sharpness_factor=.5), _T.RandomAdjustSharpness(sharpness_factor=1.5)),
+            (_T.RandomAdjustSharpness(sharpness_factor=.5), _T.RandomHorizontalFlip(p=0.5)),
+            (_T.RandomAdjustSharpness(sharpness_factor=.5), _T.RandomVerticalFlip(p=0.5)),
+            (_T.RandomAdjustSharpness(sharpness_factor=.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
