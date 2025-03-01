@@ -62,11 +62,11 @@ class SnowDataset(_Dataset):
         self.__rotate = rotate
         self.__augment_image = augment_image
         self.__augmentations = [
-            _transforms.GaussianBlur(kernel_size=5, sigma=(0.5, 1.0)),
-            _transforms.ColorJitter(brightness=(0.5, 1.5)),
+            _transforms.GaussianBlur(kernel_size=5, sigma=(0.3, 0.8)),
+            _transforms.ColorJitter(brightness=(0.8, 1.2)),
             _transforms.ColorJitter(
-                contrast=(0.5, 1.5),
-                saturation=(0.5, 1.5),
+                contrast=(0.7, 1.3),
+                saturation=(0.8, 1.2),
                 hue=0.125,
             ),
             _nn.Identity(),

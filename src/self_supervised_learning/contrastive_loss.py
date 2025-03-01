@@ -7,8 +7,7 @@ import sklearn.manifold as _manifold
 import torch as _torch
 import torch.nn as _nn
 import torch.nn.functional as _F
-import torchvision.transforms as _T
-import torchvision.transforms.v2 as _transforms
+import torchvision.transforms.v2 as _T
 
 import src.dataset.snow as _snow
 import src.self_supervised_learning.base as _ssl_base
@@ -48,19 +47,19 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             (_nn.Identity(), _nn.Identity()),
             (_T.RandomHorizontalFlip(p=0.5), _T.RandomVerticalFlip(p=0.5)),
 
-            (_T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125),
-             _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
-            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
-            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.125)),
+            (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+             _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
+            (_T.RandomHorizontalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
+            (_T.RandomVerticalFlip(p=0.5), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
 
-            (_T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0)), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
-            (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
-            (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
+            (_T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5)), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
+            (_T.RandomHorizontalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
+            (_T.RandomVerticalFlip(p=0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
 
-            (_T.RandomErasing(p=0.2), _T.RandomErasing(p=0.2)),
-            (_T.RandomErasing(p=0.2), _T.RandomHorizontalFlip(p=0.5)),
-            (_T.RandomErasing(p=0.2), _T.RandomVerticalFlip(p=0.5)),
-            (_T.RandomErasing(p=0.2), _T.GaussianBlur(kernel_size=5, sigma=(0.1, 1.0))),
+            (_T.RandomAdjustSharpness(0.5), _T.RandomErasing(p=0.2)),
+            (_T.RandomAdjustSharpness(0.5), _T.RandomHorizontalFlip(p=0.5)),
+            (_T.RandomAdjustSharpness(0.5), _T.RandomVerticalFlip(p=0.5)),
+            (_T.RandomAdjustSharpness(0.5), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
@@ -136,9 +135,6 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         assert z1.shape == z2.shape, "Embeddings must have the same shape."
 
-        z1 = _F.normalize(z1, p=2, dim=-1)
-        z2 = _F.normalize(z2, p=2, dim=-1)
-
         B = z1.size(0)
         similarity_matrix = _F.cosine_similarity(z1.unsqueeze(1), z2.unsqueeze(0), dim=-1) / temperature
         labels = _torch.arange(B, device=similarity_matrix.device)
@@ -180,7 +176,7 @@ def visualize_tsne(
     :param title: Title of the plot.
     :param normalise: Whether to normalize the image.
     """
-    images = _transforms.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
+    images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
 
     scales = z1.keys()
