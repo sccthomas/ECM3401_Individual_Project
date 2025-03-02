@@ -254,10 +254,10 @@ class _ProjectionHead(_nn.Module):
         super(_ProjectionHead, self).__init__()
         hidden_dim = (input_dim + output_dim) // 2
         self.__operations = _nn.Sequential(
-            _nn.Conv1d(in_channels=input_dim, out_channels=hidden_dim, kernel_size=1),
+            _nn.Linear(input_dim, hidden_dim),
             _nn.BatchNorm1d(hidden_dim),
-            _nn.GELU(),
-            _nn.Conv1d(in_channels=hidden_dim, out_channels=output_dim, kernel_size=1),
+            _nn.ReLU(),
+            _nn.Linear(hidden_dim, output_dim),
             _nn.BatchNorm1d(output_dim)
         )
         self.__output_dim = output_dim
@@ -271,13 +271,15 @@ class _ProjectionHead(_nn.Module):
         operations = self.__operations
         output_dim = self.__output_dim
 
-        B, P = x.shape[:2]
+        B, P, C = x.shape
+
         # Apply the projection head
-        x = x.permute(0, 2, 1)
+        x = x.reshape(B * P, C)
         x = operations(x)
-        x = x.permute(0, 2, 1)
+        x = x.reshape(B, P, output_dim)
         # Apply Max Pooling on the patch embeddings
         x = x.max(dim=1).values
+        x = _F.normalize(x, p=2, dim=-1)
 
         assert x.shape == (B, output_dim), f"Output shape is incorrect. Expected {(B, output_dim)}, got {x.shape}."
 
