@@ -277,8 +277,8 @@ class _ProjectionHead(_nn.Module):
         x = x.reshape(B * P, C)
         x = operations(x)
         x = x.reshape(B, P, output_dim)
-        # Apply Max Pooling on the patch embeddings
-        x = x.max(dim=1).values
+        # Apply Hybrid Max and Mean Pooling on the patch embeddings
+        x = (x.max(dim=1).values + x.mean(dim=1)) // 2
         x = _F.normalize(x, p=2, dim=-1)
 
         assert x.shape == (B, output_dim), f"Output shape is incorrect. Expected {(B, output_dim)}, got {x.shape}."
