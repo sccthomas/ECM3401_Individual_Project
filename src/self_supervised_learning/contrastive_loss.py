@@ -63,12 +63,9 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             (_nn.Identity(), _T.RandomAdjustSharpness(sharpness_factor=2, p=1)),
             (_T.RandomAdjustSharpness(sharpness_factor=0, p=1), _T.RandomAdjustSharpness(sharpness_factor=2, p=1)),
 
-            (_nn.Identity(), _T.RandomRotation(degrees=90)),
-            (_T.RandomRotation(degrees=90), _nn.Identity()),
-            (_nn.Identity(), _T.RandomRotation(degrees=-90)),
-            (_T.RandomRotation(degrees=-90), _nn.Identity()),
-            (_T.RandomRotation(degrees=90), _T.RandomRotation(degrees=-90)),
-            (_T.RandomRotation(degrees=-90), _T.RandomRotation(degrees=90)),
+            (_nn.Identity(), _T.RandomRotation(degrees=360)),
+            (_T.RandomRotation(degrees=360), _nn.Identity()),
+            (_T.RandomRotation(degrees=360), _T.RandomRotation(degrees=360)),
 
             (_T.RandomErasing(p=1, scale=(0.02, 0.1)), _nn.Identity()),
             (_nn.Identity(), _T.RandomErasing(p=1, scale=(0.02, 0.1))),
