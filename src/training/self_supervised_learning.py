@@ -59,7 +59,7 @@ def train_model(
             torch.cuda.empty_cache()
 
         train_loss /= len_train_loader
-        print(f"Training Loss: {train_loss:.4f}")
+        print(f"Training Loss: {train_loss}")
 
         # --- Validation Loop ---
         ssl_model.eval()
@@ -78,7 +78,7 @@ def train_model(
                 torch.cuda.empty_cache()
 
         val_loss /= len_val_loader
-        print(f"Validation Loss: {val_loss:.4f}")
+        print(f"Validation Loss: {val_loss}")
 
         # Update learning rate scheduler
         scheduler.step()
