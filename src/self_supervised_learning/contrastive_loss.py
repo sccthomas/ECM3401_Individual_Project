@@ -118,13 +118,13 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         """
         x1, x2 = self.forward(x)
 
-        # Compute the contrastive loss
-        loss = [
-            self.__loss_fn(z1, z2)
-            for (key1, z1), (key2, z2) in zip(x1.items(), x2.items())
-            if key1 == key2
-        ]
-        loss = _torch.stack(loss).mean()
+        # Combine each scale's embeddings to a single tensor
+        x1 = _torch.stack(list(x1.values()), dim=1).sum(dim=0)
+        x2 = _torch.stack(list(x2.values()), dim=1).sum(dim=0)
+        assert x1.shape == x2.shape, "Embeddings must have the same shape."
+
+        # Compute the loss
+        loss = self.__loss_fn(x1, x2)
 
         # Check if the loss is nan
         if _torch.isnan(loss):
