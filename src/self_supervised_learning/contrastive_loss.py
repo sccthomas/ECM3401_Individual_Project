@@ -48,26 +48,31 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             (_T.RandomHorizontalFlip(p=1), _nn.Identity()),
             (_T.RandomHorizontalFlip(p=1), _T.RandomVerticalFlip(p=1)),
 
+            (_nn.Identity(), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
+            (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2), _nn.Identity()),
             (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
              _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
-            (_T.RandomHorizontalFlip(p=1), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
-            (_T.RandomVerticalFlip(p=1), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
-            (_nn.Identity(), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
 
-            (_T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5)), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
-            (_nn.Identity(), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
-            (_T.RandomHorizontalFlip(p=1), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
-            (_T.RandomVerticalFlip(p=1), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
+            (_nn.Identity(), _T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5))),
+            (_T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5)), _nn.Identity(),),
+            (_T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5)), _T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5))),
 
-            (_T.RandomAdjustSharpness(sharpness_factor=.5, p=1), _T.RandomAdjustSharpness(sharpness_factor=1.5, p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=.5, p=1), _nn.Identity()),
-            (_nn.Identity(), _T.RandomAdjustSharpness(sharpness_factor=1.5, p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=.5, p=1), _T.RandomHorizontalFlip(p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=.5, p=1), _T.RandomVerticalFlip(p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=.5, p=1), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
-            (_T.RandomAdjustSharpness(sharpness_factor=1.5, p=1), _T.RandomHorizontalFlip(p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=1.5, p=1), _T.RandomVerticalFlip(p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=1.5, p=1), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5))),
+            (_T.RandomAdjustSharpness(sharpness_factor=0, p=1), _nn.Identity()),
+            (_nn.Identity(), _T.RandomAdjustSharpness(sharpness_factor=0, p=1)),
+            (_T.RandomAdjustSharpness(sharpness_factor=2, p=1), _nn.Identity()),
+            (_nn.Identity(), _T.RandomAdjustSharpness(sharpness_factor=2, p=1)),
+            (_T.RandomAdjustSharpness(sharpness_factor=0, p=1), _T.RandomAdjustSharpness(sharpness_factor=2, p=1)),
+
+            (_nn.Identity(), _T.RandomRotation(degrees=90)),
+            (_T.RandomRotation(degrees=90), _nn.Identity()),
+            (_nn.Identity(), _T.RandomRotation(degrees=-90)),
+            (_T.RandomRotation(degrees=-90), _nn.Identity()),
+            (_T.RandomRotation(degrees=90), _T.RandomRotation(degrees=-90)),
+            (_T.RandomRotation(degrees=-90), _T.RandomRotation(degrees=90)),
+
+            (_T.RandomErasing(p=1, scale=(0.02, 0.1)), _nn.Identity()),
+            (_nn.Identity(), _T.RandomErasing(p=1, scale=(0.02, 0.1))),
+            (_T.RandomErasing(p=1, scale=(0.02, 0.1)), _T.RandomErasing(p=1, scale=(0.02, 0.1))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
@@ -272,16 +277,12 @@ class _ProjectionHead(_nn.Module):
         # Flatten patches into batch dimension
         x = x.view(-1, C)
         x = fc1(x)
-        x = _F.relu(n1(x))
+        x = _F.gelu(n1(x))
         x = fc2(x)
         x = n2(x)
         # Reshape back to [B, P, output_dim]
         x = x.view(B, P, -1)
-        # Normalize the output
-        x = _F.normalize(x, dim=-1)
-        # Apply Mean Pooling on the patch embeddings
-        x = x.mean(dim=1)
-        # Normalize the output
-        x = _F.normalize(x, dim=-1)
+        # Apply Max Pooling on the patch embeddings
+        x = x.max(dim=1).values
 
         return x
