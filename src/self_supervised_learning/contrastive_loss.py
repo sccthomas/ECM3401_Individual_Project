@@ -260,6 +260,7 @@ class _ProjectionHead(_nn.Module):
             _nn.Conv1d(in_channels=hidden_dim, out_channels=output_dim, kernel_size=1),
             _nn.BatchNorm1d(output_dim)
         )
+        self.__output_dim = output_dim
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -268,12 +269,16 @@ class _ProjectionHead(_nn.Module):
         :return: The output tensor. Shape -> [B, output_dim]
         """
         operations = self.__operations
+        output_dim = self.__output_dim
 
+        B, P = x.shape[:2]
         # Apply the projection head
         x = x.permute(0, 2, 1)
         x = operations(x)
         x = x.permute(0, 2, 1)
         # Apply Max Pooling on the patch embeddings
         x = x.max(dim=1).values
+
+        assert x.shape == (B, output_dim), f"Output shape is incorrect. Expected {(B, output_dim)}, got {x.shape}."
 
         return x
