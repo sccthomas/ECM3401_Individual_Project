@@ -24,7 +24,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             model: _model.SemanticSegmentationVisionTransformer,
             encoder_dims: _t.List[int],
             projection_dim: int,
-            temperature: float = 0.2
+            temperature: float = 0.2,
+            pooling_method: str = "hybrid",
     ) -> None:
         """
 
@@ -32,13 +33,14 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         :param encoder_dims: Dimensions of the encoder's output features.
         :param projection_dim: Dimension of the projection space.
         :param temperature: Temperature parameter for scaling the logits.
+        :param pooling_method: The pooling method to use.
         """
         assert temperature > 0, "Temperature must be positive and non-zero."
 
         super(ContrastivePreTraining, self).__init__(model=model)
         self.__projection_heads = _nn.ModuleList(
             [
-                _ProjectionHead(encoder_dim, projection_dim)
+                _ProjectionHead(encoder_dim, projection_dim, pooling_method=pooling_method)
                 for encoder_dim in encoder_dims
             ]
         )
@@ -245,11 +247,12 @@ class _ProjectionHead(_nn.Module):
 
     """
 
-    def __init__(self, input_dim: int, output_dim: int) -> None:
+    def __init__(self, input_dim: int, output_dim: int, pooling_method: str = "hybrid") -> None:
         """
 
         :param input_dim: The input dimension.
         :param output_dim: The output dimension.
+        :param pooling_method: The pooling method to use.
         """
         super(_ProjectionHead, self).__init__()
         hidden_dim = (input_dim + output_dim) // 2
@@ -261,6 +264,15 @@ class _ProjectionHead(_nn.Module):
             _nn.BatchNorm1d(output_dim)
         )
         self.__output_dim = output_dim
+        self.__pooling = (
+            lambda x: (x.max(dim=1).values + x.mean(dim=1)) / 2
+            if pooling_method == "hybrid" else
+            (
+                x.max(dim=1).values
+                if pooling_method == "max" else
+                x.mean(dim=1)
+            )
+        )
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -270,6 +282,7 @@ class _ProjectionHead(_nn.Module):
         """
         operations = self.__operations
         output_dim = self.__output_dim
+        pooling = self.__pooling
 
         B, P, C = x.shape
 
@@ -278,7 +291,7 @@ class _ProjectionHead(_nn.Module):
         x = operations(x)
         x = x.reshape(B, P, output_dim)
         # Apply Hybrid Max and Mean Pooling on the patch embeddings
-        x = (x.max(dim=1).values + x.mean(dim=1)) / 2
+        x = pooling(x)
         x = _F.normalize(x, p=2, dim=-1)
 
         assert x.shape == (B, output_dim), f"Output shape is incorrect. Expected {(B, output_dim)}, got {x.shape}."

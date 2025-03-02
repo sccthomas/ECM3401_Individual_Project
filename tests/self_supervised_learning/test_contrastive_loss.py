@@ -30,6 +30,7 @@ class TestContrastivePreTraining(unittest.TestCase):
             model=model,
             encoder_dims=[1024, 768],
             projection_dim=128,
+            pooling_method='max',
         )
 
         y = contrastive_model.forward_loss(x)
