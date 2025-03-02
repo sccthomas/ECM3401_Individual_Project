@@ -253,10 +253,13 @@ class _ProjectionHead(_nn.Module):
         """
         super(_ProjectionHead, self).__init__()
         hidden_dim = (input_dim + output_dim) // 2
-        self.__fc1 = _nn.Linear(input_dim, hidden_dim)
-        self.__n1 = _nn.BatchNorm1d(hidden_dim)
-        self.__fc2 = _nn.Linear(hidden_dim, output_dim)
-        self.__n2 = _nn.BatchNorm1d(output_dim)
+        self.__operations = _nn.Sequential(
+            _nn.Conv1d(in_channels=input_dim, out_channels=hidden_dim, kernel_size=1),
+            _nn.BatchNorm1d(hidden_dim),
+            _nn.GELU(),
+            _nn.Conv1d(in_channels=hidden_dim, out_channels=output_dim, kernel_size=1),
+            _nn.BatchNorm1d(output_dim)
+        )
 
     def forward(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -264,21 +267,12 @@ class _ProjectionHead(_nn.Module):
         :param x: The input tensor. Shape -> [B, P, C]
         :return: The output tensor. Shape -> [B, output_dim]
         """
-        fc1 = self.__fc1
-        n1 = self.__n1
-        fc2 = self.__fc2
-        n2 = self.__n2
+        operations = self.__operations
 
-        # x shape: [B, P, C]
-        B, P, C = x.shape
-        # Flatten patches into batch dimension
-        x = x.view(-1, C)
-        x = fc1(x)
-        x = _F.gelu(n1(x))
-        x = fc2(x)
-        x = n2(x)
-        # Reshape back to [B, P, output_dim]
-        x = x.view(B, P, -1)
+        # Apply the projection head
+        x = x.permute(0, 2, 1)
+        x = operations(x)
+        x = x.permute(0, 2, 1)
         # Apply Max Pooling on the patch embeddings
         x = x.max(dim=1).values
 
