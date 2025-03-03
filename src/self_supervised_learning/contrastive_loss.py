@@ -25,7 +25,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             encoder_dims: _t.List[int],
             projection_dim: int,
             temperature: float = 0.2,
-            pooling_method: str = "hybrid",
+            pooling_method: str = "max",
     ) -> None:
         """
 
