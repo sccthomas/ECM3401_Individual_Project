@@ -178,6 +178,8 @@ def visualize_tsne(
         model: ContrastivePreTraining,
         images: _torch.Tensor,
         title="t-SNE Visualization of Image-Level Embeddings",
+        n_components: int = 2,
+        perplexity: float = 3,
         normalise: bool = True,
 ) -> None:
     """
@@ -186,54 +188,54 @@ def visualize_tsne(
     :param model: Contrastive pre-training model.
     :param images: Input images.
     :param title: Title of the plot.
+    :param n_components: Number of components for t-SNE.
+    :param perplexity: Perplexity parameter for t-SNE.
     :param normalise: Whether to normalize the image.
+
     """
     images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
-
-    scales = z1.keys()
-    assert scales == z2.keys(), "Scale names do not match."
+    # Combine each scale's embeddings to a single tensor
+    z1 = _torch.stack(list(z1.values()), dim=1).sum(dim=0).cpu().numpy()
+    z2 = _torch.stack(list(z2.values()), dim=1).sum(dim=0).cpu().numpy()
+    assert z1.shape == z2.shape, "Embeddings must have the same shape."
 
     with _torch.no_grad():
-        for scale in scales:
-            x1 = z1[scale].cpu().numpy()
-            x2 = z2[scale].cpu().numpy()
+        B, E = z1.shape  # Batch, Patches, Embedding Dim
+        print(z1.shape)
 
-            B, E = x1.shape  # Batch, Patches, Embedding Dim
-            print(x1.shape)
+        # Combine embeddings for t-SNE visualization [2B, E]
+        embeddings = _np.concatenate([z1, z2], axis=0)
 
-            # Combine embeddings for t-SNE visualization [2B, E]
-            embeddings = _np.concatenate([x1, x2], axis=0)
+        # Apply t-SNE
+        tsne = _manifold.TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
+        embeddings_2d = tsne.fit_transform(embeddings)
 
-            # Apply t-SNE
-            tsne = _manifold.TSNE(n_components=2, perplexity=3, random_state=42)
-            embeddings_2d = tsne.fit_transform(embeddings)
+        # Define a distinct color for each image
+        cmap = _plt.get_cmap("tab10")  # "tab10" has 10 distinct colors
+        colors = [cmap(i % 10) for i in range(B)]  # Assign each image a unique color
 
-            # Define a distinct color for each image
-            cmap = _plt.get_cmap("tab10")  # "tab10" has 10 distinct colors
-            colors = [cmap(i % 10) for i in range(B)]  # Assign each image a unique color
+        # Plot
+        _plt.figure(figsize=(8, 6))
 
-            # Plot
-            _plt.figure(figsize=(8, 6))
+        for i in range(B):  # Each image
+            idx_x1, idx_x2 = i, B + i  # First and second augmentation indices
+            color = colors[i]  # Unique color for this image
 
-            for i in range(B):  # Each image
-                idx_x1, idx_x2 = i, B + i  # First and second augmentation indices
-                color = colors[i]  # Unique color for this image
+            # Scatter points
+            _plt.scatter(embeddings_2d[idx_x1, 0], embeddings_2d[idx_x1, 1], color=color, label=f'Image {i}',
+                         alpha=0.8,
+                         marker='o')
+            _plt.scatter(embeddings_2d[idx_x2, 0], embeddings_2d[idx_x2, 1], color=color, alpha=0.8, marker='x')
 
-                # Scatter points
-                _plt.scatter(embeddings_2d[idx_x1, 0], embeddings_2d[idx_x1, 1], color=color, label=f'Image {i}',
-                             alpha=0.8,
-                             marker='o')
-                _plt.scatter(embeddings_2d[idx_x2, 0], embeddings_2d[idx_x2, 1], color=color, alpha=0.8, marker='x')
+            # Draw line connecting views of the same image
+            _plt.plot([embeddings_2d[idx_x1, 0], embeddings_2d[idx_x2, 0]],
+                      [embeddings_2d[idx_x1, 1], embeddings_2d[idx_x2, 1]],
+                      color=color, alpha=0.5, linestyle="--")
 
-                # Draw line connecting views of the same image
-                _plt.plot([embeddings_2d[idx_x1, 0], embeddings_2d[idx_x2, 0]],
-                          [embeddings_2d[idx_x1, 1], embeddings_2d[idx_x2, 1]],
-                          color=color, alpha=0.5, linestyle="--")
-
-            _plt.legend()
-            _plt.title(f'{title}_{scale}')
-            _plt.show()
+        _plt.legend()
+        _plt.title(f'{title} - Combined Patch Embedding Scales')
+        _plt.show()
 
 
 ########################################################################################################################
