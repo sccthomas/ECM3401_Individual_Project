@@ -196,8 +196,8 @@ def visualize_tsne(
     images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
     # Combine each scale's embeddings to a single tensor
-    z1 = _torch.stack(list(z1.values()), dim=1).sum(dim=0).cpu().numpy()
-    z2 = _torch.stack(list(z2.values()), dim=1).sum(dim=0).cpu().numpy()
+    z1 = _torch.stack(list(z1.values()), dim=1).sum(dim=0).detach().cpu().numpy()
+    z2 = _torch.stack(list(z2.values()), dim=1).sum(dim=0).detach().cpu().numpy()
     assert z1.shape == z2.shape, "Embeddings must have the same shape."
 
     with _torch.no_grad():
