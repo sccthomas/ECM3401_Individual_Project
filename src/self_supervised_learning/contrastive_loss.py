@@ -79,7 +79,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Initialize weights
         self.__initialize_weights()
 
-    def forward(self, x: _torch.Tensor) -> _t.Tuple[_t.Dict[str, _torch.Tensor], _t.Dict[str, _torch.Tensor]]:
+    def forward(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
         """
         Forward pass of the contrastive pre-training. This method applied 2 random transformations to the input tensor
         which represent positive pairs. The model encoder is then applied to the transformed tensors and the contrastive
@@ -108,7 +108,12 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
                 x_[key] = projection_head(x_[key])
             z += (x_,)
 
-        return z
+        # Combine each scale's embeddings to a single tensor
+        z1 = _torch.stack(list(z[0].values()), dim=1).sum(dim=1)
+        z2 = _torch.stack(list(z[1].values()), dim=1).sum(dim=1)
+        assert z1.shape == z2.shape, "Embeddings must have the same shape."
+
+        return z1, z2
 
     def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
         """
@@ -119,11 +124,6 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         :return: The loss.
         """
         x1, x2 = self.forward(x)
-
-        # Combine each scale's embeddings to a single tensor
-        x1 = _torch.stack(list(x1.values()), dim=1).sum(dim=0)
-        x2 = _torch.stack(list(x2.values()), dim=1).sum(dim=0)
-        assert x1.shape == x2.shape, "Embeddings must have the same shape."
 
         # Compute the loss
         loss = self.__loss_fn(x1, x2)
@@ -195,10 +195,6 @@ def visualize_tsne(
     """
     images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
-    # Combine each scale's embeddings to a single tensor
-    z1 = _torch.stack(list(z1.values()), dim=1).sum(dim=0).detach().cpu().numpy()
-    z2 = _torch.stack(list(z2.values()), dim=1).sum(dim=0).detach().cpu().numpy()
-    assert z1.shape == z2.shape, "Embeddings must have the same shape."
 
     with _torch.no_grad():
         B, E = z1.shape  # Batch, Patches, Embedding Dim

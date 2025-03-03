@@ -26,7 +26,7 @@ class TestContrastivePreTraining(unittest.TestCase):
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
         )
-        x = torch.rand(2, 3, 128, 128).float()
+        x = torch.rand(5, 3, 128, 128).float()
 
         contrastive_model = ContrastivePreTraining(
             model=model,
