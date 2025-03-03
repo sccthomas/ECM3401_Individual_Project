@@ -24,7 +24,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             model: _model.SemanticSegmentationVisionTransformer,
             encoder_dims: _t.List[int],
             projection_dim: int,
-            temperature: float = 0.2,
+            temperature: float = 0.07,
             pooling_method: str = "max",
     ) -> None:
         """
