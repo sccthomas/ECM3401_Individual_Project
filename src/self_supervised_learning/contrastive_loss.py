@@ -48,26 +48,12 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         self.__transformations = [
             (_nn.Identity(), _T.RandomVerticalFlip(p=1)),
             (_T.RandomHorizontalFlip(p=1), _nn.Identity()),
-            (_T.RandomHorizontalFlip(p=1), _T.RandomVerticalFlip(p=1)),
 
             (_nn.Identity(), _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
             (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2), _nn.Identity()),
-            (_T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-             _T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2)),
 
-            (_nn.Identity(), _T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5))),
-            (_T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5)), _nn.Identity(),),
-            (_T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5)), _T.GaussianBlur(kernel_size=5, sigma=(0.2, 0.5))),
-
-            (_T.RandomAdjustSharpness(sharpness_factor=0, p=1), _nn.Identity()),
-            (_nn.Identity(), _T.RandomAdjustSharpness(sharpness_factor=0, p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=2, p=1), _nn.Identity()),
-            (_nn.Identity(), _T.RandomAdjustSharpness(sharpness_factor=2, p=1)),
-            (_T.RandomAdjustSharpness(sharpness_factor=0, p=1), _T.RandomAdjustSharpness(sharpness_factor=2, p=1)),
-
-            (_nn.Identity(), _T.RandomRotation(degrees=360)),
-            (_T.RandomRotation(degrees=360), _nn.Identity()),
-            (_T.RandomRotation(degrees=360), _T.RandomRotation(degrees=360)),
+            (_T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.7)), _nn.Identity()),
+            (_nn.Identity(), _T.GaussianBlur(kernel_size=3, sigma=(0.1, 0.7))),
         ]
         self.__temperature = temperature
         self.__criterion = _nn.CrossEntropyLoss()
