@@ -106,7 +106,13 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             x_ = model.apply_encoder_stage(patch_embeddings=x_)
             for key, projection_head in zip(x_.keys(), projection_heads):
                 x_[key] = projection_head(x_[key])
-            z += (_torch.stack(list(x_.values()), dim=1).sum(dim=1),)
+            z += (
+                _F.normalize(
+                    input=_torch.stack(list(x_.values()), dim=1).sum(dim=1),
+                    p=2,
+                    dim=-1
+                ),
+            )
 
         assert z[0].shape == z[0].shape, "Embeddings must have the same shape."
 
