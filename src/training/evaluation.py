@@ -412,15 +412,23 @@ def _evaluate(
     :param name: The name of the figure.
     """
     # Create a figure with 4 subplots in one row.
-    fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
+    fig, axes = _plt.subplots(1, 8, figsize=(20, 5))
 
     # Display the unmodified image.
     axes[0].set_title("Original Image", fontsize=10)
     _visualisation.display_tensor_image(image, ax=axes[0])
+    axes[1].set_title("Original Image - Background Context", fontsize=10)
+    _visualisation.display_tensor_image(image * (1 - mask), ax=axes[1])
+    axes[2].set_title("Original Image - Cells", fontsize=10)
+    _visualisation.display_tensor_image(image * mask, ax=axes[2])
 
     # Display the modified image.
-    axes[1].set_title("Modified Image", fontsize=10)
-    _visualisation.display_tensor_image(image_modified, ax=axes[1])
+    axes[3].set_title("Modified Image", fontsize=10)
+    _visualisation.display_tensor_image(image_modified, ax=axes[3])
+    axes[4].set_title("Modified Image - Background Context", fontsize=10)
+    _visualisation.display_tensor_image(image_modified * (1 - mask), ax=axes[4])
+    axes[5].set_title("Modified Image - Cells", fontsize=10)
+    _visualisation.display_tensor_image(image_modified * mask, ax=axes[5])
 
     # Test the robustness of the model.
     image_modified_ = (
@@ -446,10 +454,10 @@ def _evaluate(
                  fontsize=16)
 
     # Display the masks
-    axes[2].set_title("Target Mask", fontsize=10)
-    _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[2])
-    axes[3].set_title("Predicted Mask", fontsize=10)
-    _visualisation.display_tensor_mask(outputs.squeeze(0), ax=axes[3])
+    axes[6].set_title("Target Mask", fontsize=10)
+    _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[6])
+    axes[7].set_title("Predicted Mask", fontsize=10)
+    _visualisation.display_tensor_mask(outputs.squeeze(0), ax=axes[7])
 
     _plt.tight_layout()
 
