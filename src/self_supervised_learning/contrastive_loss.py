@@ -106,14 +106,11 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
             x_ = model.apply_encoder_stage(patch_embeddings=x_)
             for key, projection_head in zip(x_.keys(), projection_heads):
                 x_[key] = projection_head(x_[key])
-            z += (x_,)
+            z += (_torch.stack(list(x_.values()), dim=1).sum(dim=1),)
 
-        # Combine each scale's embeddings to a single tensor
-        z1 = _torch.stack(list(z[0].values()), dim=1).sum(dim=1)
-        z2 = _torch.stack(list(z[1].values()), dim=1).sum(dim=1)
-        assert z1.shape == z2.shape, "Embeddings must have the same shape."
+        assert z[0].shape == z[0].shape, "Embeddings must have the same shape."
 
-        return z1, z2
+        return z
 
     def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
         """
