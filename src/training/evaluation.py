@@ -99,6 +99,7 @@ def evaluate_with_color_jitter(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
 ) -> None:
@@ -111,6 +112,7 @@ def evaluate_with_color_jitter(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
     """
@@ -118,13 +120,21 @@ def evaluate_with_color_jitter(
     image = image.to(device)
     mask = mask.to(device)
 
-    jitter_tensor = _transforms.ColorJitter(
+    transform_colour = _transforms.ColorJitter(
         contrast=_random.uniform(0.5, 1.5),
         saturation=_random.uniform(0.5, 1.5),
         hue=_random.uniform(0, 0.1)
-    )(image)
+    )
+    jitter_tensor = transform_colour(image)
     new_background = (1 - mask) * jitter_tensor
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        jitter_tensor = transform_colour(image)
+        new_foreground = mask * jitter_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
 
     if path is not None:
         path = f"{path}/color_jitter"
@@ -150,6 +160,7 @@ def evaluate_with_noise_addition(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
 ) -> None:
@@ -162,6 +173,7 @@ def evaluate_with_noise_addition(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
     """
@@ -171,7 +183,14 @@ def evaluate_with_noise_addition(
 
     noise_tensor = _transforms.GaussianNoise(mean=_snow.MEAN[0], sigma=_snow.STD[0])(image)
     new_background = (1 - mask) * noise_tensor
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        noise_tensor = _transforms.GaussianNoise()(image)
+        new_foreground = mask * noise_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
 
     if path is not None:
         path = f"{path}/noise_addition"
@@ -197,6 +216,7 @@ def evaluate_with_blur(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
 ) -> None:
@@ -209,6 +229,7 @@ def evaluate_with_blur(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
     """
@@ -216,9 +237,17 @@ def evaluate_with_blur(
     image = image.to(device)
     mask = mask.to(device)
 
-    blurred_tensor = _transforms.GaussianBlur(kernel_size=7, sigma=(1, 2))(image)
+    transform_blur = _transforms.GaussianBlur(kernel_size=7, sigma=(1, 2))
+    blurred_tensor = transform_blur(image)
     new_background = (1 - mask) * blurred_tensor
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        blurred_tensor = transform_blur(image)
+        new_foreground = mask * blurred_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
 
     if path is not None:
         path = f"{path}/blur"
@@ -244,11 +273,22 @@ def evaluate_with_synthetic_background(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
 ) -> None:
     """
     Evaluate the model with a synthetic plain background color.
+
+    :param model: The model to evaluate.
+    :param image: The input image, shape (3, H, W).
+    :param mask: The target mask, shape (1, H, W).
+    :param device: The device to use.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -264,7 +304,22 @@ def evaluate_with_synthetic_background(
         dtype=image.dtype,
     ).view(3, 1, 1)
     new_background = (1 - mask) * background_color
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        cell_color = _torch.tensor(
+            [
+                _random.uniform(0, 1.0),
+                _random.uniform(0, 1.0),
+                _random.uniform(0, 1.0)
+            ],
+            device=device,
+            dtype=image.dtype,
+        ).view(3, 1, 1)
+        new_foreground = mask * cell_color
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
 
     if path is not None:
         path = f"{path}/synthetic_background"
@@ -290,6 +345,7 @@ def evaluate_with_stain_variation(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
 ) -> None:
@@ -302,6 +358,7 @@ def evaluate_with_stain_variation(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
     """
@@ -309,12 +366,20 @@ def evaluate_with_stain_variation(
     image = image.to(device)
     mask = mask.to(device)
 
-    stain_variation = _transforms.ColorJitter(
+    transform_stain_variation = _transforms.ColorJitter(
         brightness=_random.uniform(0.8, 1.2),
         contrast=_random.uniform(0.8, 1.2)
-    )(image)
+    )
+    stain_variation = transform_stain_variation(image)
     new_background = (1 - mask) * stain_variation
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        stain_variation = transform_stain_variation(image)
+        new_foreground = mask * stain_variation
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
 
     if path is not None:
         path = f"{path}/stain_variation"
@@ -340,6 +405,7 @@ def evaluate_with_illumination_modifications(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
 ) -> None:
@@ -352,6 +418,7 @@ def evaluate_with_illumination_modifications(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
     """
@@ -360,9 +427,17 @@ def evaluate_with_illumination_modifications(
     mask = mask.to(device)
 
     # Modify and image
-    brightened_tensor = _transforms.ColorJitter(brightness=_random.uniform(0.5, 1.5))(image)
+    transform_illumination = _transforms.ColorJitter(brightness=_random.uniform(0.5, 1.5))
+    brightened_tensor = transform_illumination(image)
     new_background = (1 - mask) * brightened_tensor
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        brightened_tensor = transform_illumination(image)
+        new_foreground = mask * brightened_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
 
     if path is not None:
         path = f"{path}/illumination_modifications"
