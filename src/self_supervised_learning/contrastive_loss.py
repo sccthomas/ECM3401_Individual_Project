@@ -180,6 +180,8 @@ def visualize_tsne(
     """
     images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
+    z1 = z1.detach().cpu().numpy()
+    z2 = z2.detach().cpu().numpy()
 
     with _torch.no_grad():
         B, E = z1.shape  # Batch, Patches, Embedding Dim
