@@ -253,6 +253,8 @@ def visualize_tsne_causality(
         display_tensor_image(images_2[0])
 
     z1, z2 = model.forward_encoder(x_1=images_1, x_2=images_2)
+    loss = model.loss_fn(z1, z2)
+    print(loss)
     _visualise_tsne(
         z1=z1,
         z2=z2,
