@@ -61,7 +61,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         # Initialize weights
         self.__initialize_weights()
 
-    def forward(self, x: _torch.Tensor, apply_projection: bool = True) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+    def forward(self, x: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
         """
         Forward pass of the contrastive pre-training. This method applied 2 random transformations to the input tensor
         which represent positive pairs. The model encoder is then applied to the transformed tensors and the contrastive
@@ -71,7 +71,6 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         different images (2N -1).
 
         :param x: The input tensor.
-        :param apply_projection: Whether to apply the projection head.
         :return: The positive and negative patch embeddings.
         """
         transformations = self.__transformations
@@ -85,13 +84,11 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         x_2 = transformation_2(x)
 
         # Forward pass
-        z = self.forward_encoder(x_1, x_2, apply_projection=apply_projection)
+        z = self.forward_encoder(x_1, x_2)
 
         return z
 
-    def forward_encoder(
-            self, x_1: _torch.Tensor, x_2: _torch.Tensor, apply_projection: bool = True
-    ) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+    def forward_encoder(self, x_1: _torch.Tensor, x_2: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
         """
         Forward pass of the contrastive pre-training. The model encoder is applied to the transformed tensors and the contrastive
         loss is computed between the positive patch embeddings pairs and the negative patch embedding pairs which are
@@ -101,7 +98,6 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         :param x_1: One of the transformed input tensors, shape [B, C, W, H].
         :param x_2: The other transformed input tensor, shape [B, C, W, H].
-        :param apply_projection: Whether to apply the projection head.
         :return: The positive and negative patch embeddings.
         """
         model = self.model
@@ -111,9 +107,8 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         for x in [x_1, x_2]:
             x = model.apply_patch_embedding_stage(x)
             x = model.apply_encoder_stage(patch_embeddings=x)
-            if apply_projection:
-                for key, projection_head in zip(x.keys(), projection_heads):
-                    x[key] = projection_head(x[key])
+            for key, projection_head in zip(x.keys(), projection_heads):
+                x[key] = projection_head(x[key])
             z += (
                 _F.normalize(
                     input=_torch.stack(list(x.values()), dim=1).sum(dim=1),
@@ -126,16 +121,15 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         return z
 
-    def forward_loss(self, x: _torch.Tensor, apply_projection: bool = True) -> _torch.Tensor:
+    def forward_loss(self, x: _torch.Tensor) -> _torch.Tensor:
         """
         Forward pass for the contrastive pre-training. This method wraps the forward pass and calculates the
         loss between the positive patch embeddings and the negative patch embeddings.
 
         :param x: The input tensor.
-        :param apply_projection: Whether to apply the projection head.
         :return: The loss.
         """
-        x1, x2 = self.forward(x, apply_projection=apply_projection)
+        x1, x2 = self.forward(x)
 
         # Compute the loss
         loss = self.loss_fn(x1, x2)
@@ -193,7 +187,6 @@ def visualize_tsne_standard(
         n_components: int = 2,
         perplexity: float = 3,
         normalise: bool = True,
-        apply_projection: bool = True,
 ) -> None:
     """
     Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
@@ -204,10 +197,9 @@ def visualize_tsne_standard(
     :param n_components: Number of components for t-SNE.
     :param perplexity: Perplexity parameter for t-SNE.
     :param normalise: Whether to normalize the image.
-    :param apply_projection: Whether to apply the projection head.
     """
     images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
-    z1, z2 = model.forward(images, apply_projection=apply_projection)
+    z1, z2 = model.forward(images)
     _visualise_tsne(
         z1=z1,
         z2=z2,
@@ -225,7 +217,6 @@ def visualize_tsne_causality(
         n_components: int = 2,
         perplexity: float = 3,
         normalise: bool = True,
-        apply_projection: bool = True
 ) -> None:
     """
     Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
@@ -238,17 +229,16 @@ def visualize_tsne_causality(
     :param n_components: Number of components for t-SNE.
     :param perplexity: Perplexity parameter for t-SNE.
     :param normalise: Whether to normalize the image.
-    :param apply_projection: Whether to apply the projection head.
     """
     # Create augmented images
     kwargs = {"device": images.device, "dtype": images.dtype}
     # - Augmentation 1
-    background_color = _torch.tensor(data=[0.69, 0.16, 0.38], **kwargs).view(3, 1, 1)
-    new_background = (1 - masks) * background_color
+    image_1_blurred = _T.GaussianBlur(kernel_size=7, sigma=1)(images)
+    new_background = (1 - masks) * image_1_blurred
     images_1 = masks * images + new_background
     # - Augmentation 2
-    background_color = _torch.tensor(data=[0.92, 0.61, 0.77], **kwargs).view(3, 1, 1)
-    new_background = (1 - masks) * background_color
+    image_2_blurred = _T.GaussianBlur(kernel_size=7, sigma=2)(images)
+    new_background = (1 - masks) * image_2_blurred
     images_2 = masks * images + new_background
 
     from src.training.visualisation import display_tensor_image
@@ -259,12 +249,9 @@ def visualize_tsne_causality(
         norm_transform = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)
         images_1 = norm_transform(images_1)
         images_2 = norm_transform(images_2)
-        display_tensor_image(images_1[0])
-        display_tensor_image(images_2[0])
 
-    z1, z2 = model.forward_encoder(x_1=images_1, x_2=images_2, apply_projection=apply_projection)
-    loss = model.loss_fn(z1, z2)
-    print(loss)
+    z1, z2 = model.forward_encoder(images_1, images_2)
+
     _visualise_tsne(
         z1=z1,
         z2=z2,

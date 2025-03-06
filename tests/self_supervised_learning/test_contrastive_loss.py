@@ -60,6 +60,7 @@ class TestTSNE(unittest.TestCase):
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
         )
+        self.model = model
         self.x = torch.rand(2, 3, 128, 128).float()
         self.contrastive_model = ContrastivePreTraining(
             model=model,
@@ -81,12 +82,12 @@ class TestTSNE(unittest.TestCase):
 
     def test_visualize_tsne_causality(self) -> None:
         x = self.x
-        contrastive_model = self.contrastive_model
+        model = self.model
 
         masks = torch.rand(2, 1, 128, 128).float()
         with patch.object(plt, 'show') as mock_show:
             visualize_tsne_causality(
-                model=contrastive_model,
+                model=model,
                 images=x,
                 masks=masks,
             )
