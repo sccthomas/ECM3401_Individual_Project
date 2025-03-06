@@ -42,7 +42,7 @@ class SelfSupervisedLoss(_nn.Module):
         """
 
     @_abc.abstractmethod
-    def __loss_fn(self, **kwargs) -> _torch.Tensor:
+    def loss_fn(self, **kwargs) -> _torch.Tensor:
         """
         Compute the current self-supervised loss.
 

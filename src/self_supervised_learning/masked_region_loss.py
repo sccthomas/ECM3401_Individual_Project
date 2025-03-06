@@ -83,7 +83,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
         """
         reconstructed, mask = self.forward(x)
         mask = 1 - mask
-        loss = self.__loss_fn(reconstructed, x, mask)
+        loss = self.loss_fn(reconstructed, x, mask)
 
         return loss
 
@@ -127,7 +127,7 @@ class MaskedRegionLoss(_ssl_base.SelfSupervisedLoss):
 
         return masked_tensor, mask
 
-    def __loss_fn(self, reconstructed: _torch.Tensor, original: _torch.Tensor, mask: _torch.Tensor) -> _torch.Tensor:
+    def loss_fn(self, reconstructed: _torch.Tensor, original: _torch.Tensor, mask: _torch.Tensor) -> _torch.Tensor:
         """
         Calculate the MSE loss between the reconstructed and original image.
 

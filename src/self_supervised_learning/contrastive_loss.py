@@ -73,24 +73,45 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         :param x: The input tensor.
         :return: The positive and negative patch embeddings.
         """
-        model = self.model
-        projection_heads = self.__projection_heads
         transformations = self.__transformations
 
         # Apply random transformations
         # - Select two random transformations
         transformation_1, transformation_2 = _random.choice(transformations)
 
+        # - Apply the transformations
+        x_1 = transformation_1(x)
+        x_2 = transformation_2(x)
+
+        # Forward pass
+        z = self.forward_encoder(x_1, x_2)
+
+        return z
+
+    def forward_encoder(self, x_1: _torch.Tensor, x_2: _torch.Tensor) -> _t.Tuple[_torch.Tensor, _torch.Tensor]:
+        """
+        Forward pass of the contrastive pre-training. The model encoder is applied to the transformed tensors and the contrastive
+        loss is computed between the positive patch embeddings pairs and the negative patch embedding pairs which are
+        all other images which have been transformed. The loss is aimed at maximizing the similarity between the
+        positive pairs which are the same image and minimizing the similarity between the negative pairs which are
+        different images (2N -1).
+
+        :param x_1: One of the transformed input tensors, shape [B, C, W, H].
+        :param x_2: The other transformed input tensor, shape [B, C, W, H].
+        :return: The positive and negative patch embeddings.
+        """
+        model = self.model
+        projection_heads = self.__projection_heads
+
         z = ()
-        for transformation_x in [transformation_1, transformation_2]:
-            x_ = transformation_x(x)
-            x_ = model.apply_patch_embedding_stage(x_)
-            x_ = model.apply_encoder_stage(patch_embeddings=x_)
-            for key, projection_head in zip(x_.keys(), projection_heads):
-                x_[key] = projection_head(x_[key])
+        for x in [x_1, x_2]:
+            x = model.apply_patch_embedding_stage(x)
+            x = model.apply_encoder_stage(patch_embeddings=x)
+            for key, projection_head in zip(x.keys(), projection_heads):
+                x[key] = projection_head(x[key])
             z += (
                 _F.normalize(
-                    input=_torch.stack(list(x_.values()), dim=1).sum(dim=1),
+                    input=_torch.stack(list(x.values()), dim=1).sum(dim=1),
                     p=2,
                     dim=-1
                 ),
@@ -111,7 +132,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
         x1, x2 = self.forward(x)
 
         # Compute the loss
-        loss = self.__loss_fn(x1, x2)
+        loss = self.loss_fn(x1, x2)
 
         # Check if the loss is nan
         if _torch.isnan(loss):
@@ -119,7 +140,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
 
         return loss
 
-    def __loss_fn(self, z1: _torch.Tensor, z2: _torch.Tensor):
+    def loss_fn(self, z1: _torch.Tensor, z2: _torch.Tensor):
         """
         Compute the InfoNCE loss.
 
@@ -159,7 +180,7 @@ class ContrastivePreTraining(_ssl_base.SelfSupervisedLoss):
                     _nn.init.zeros_(layer.bias)
 
 
-def visualize_tsne(
+def visualize_tsne_standard(
         model: ContrastivePreTraining,
         images: _torch.Tensor,
         title="t-SNE Visualization of Image-Level Embeddings",
@@ -176,49 +197,63 @@ def visualize_tsne(
     :param n_components: Number of components for t-SNE.
     :param perplexity: Perplexity parameter for t-SNE.
     :param normalise: Whether to normalize the image.
-
     """
     images = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)(images) if normalise else images
     z1, z2 = model.forward(images)
-    z1 = z1.detach().cpu().numpy()
-    z2 = z2.detach().cpu().numpy()
+    _visualise_tsne(
+        z1=z1,
+        z2=z2,
+        title=title,
+        n_components=n_components,
+        perplexity=perplexity
+    )
 
-    with _torch.no_grad():
-        B, E = z1.shape  # Batch, Patches, Embedding Dim
-        print(z1.shape)
 
-        # Combine embeddings for t-SNE visualization [2B, E]
-        embeddings = _np.concatenate([z1, z2], axis=0)
+def visualize_tsne_causality(
+        model: ContrastivePreTraining,
+        images: _torch.Tensor,
+        masks: _torch.Tensor,
+        title="t-SNE Visualization of Image-Level Embeddings with Causality Intervention",
+        n_components: int = 2,
+        perplexity: float = 3,
+        normalise: bool = True,
+) -> None:
+    """
+    Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
+    Each image will be augmented with causality in mind.
 
-        # Apply t-SNE
-        tsne = _manifold.TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
-        embeddings_2d = tsne.fit_transform(embeddings)
+    :param model: Contrastive pre-training model.
+    :param images: Input images.
+    :param masks: Input masks.
+    :param title: Title of the plot.
+    :param n_components: Number of components for t-SNE.
+    :param perplexity: Perplexity parameter for t-SNE.
+    :param normalise: Whether to normalize the image.
+    """
+    # Create augmented images
+    kwargs = {"device": images.device, "dtype": images.dtype}
+    # - Augmentation 1
+    background_color = _torch.tensor(data=[0, 0.7, 0], **kwargs).view(3, 1, 1)
+    new_background = (1 - masks) * background_color
+    images_1 = masks * images + new_background
+    # - Augmentation 2
+    background_color = _torch.tensor(data=[0.7, 0, 0.7], **kwargs).view(3, 1, 1)
+    new_background = (1 - masks) * background_color
+    images_2 = masks * images + new_background
 
-        # Define a distinct color for each image
-        cmap = _plt.get_cmap("tab10")  # "tab10" has 10 distinct colors
-        colors = [cmap(i % 10) for i in range(B)]  # Assign each image a unique color
+    if normalise:
+        norm_transform = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)
+        images_1 = norm_transform(images_1)
+        images_2 = norm_transform(images_2)
 
-        # Plot
-        _plt.figure(figsize=(8, 6))
-
-        for i in range(B):  # Each image
-            idx_x1, idx_x2 = i, B + i  # First and second augmentation indices
-            color = colors[i]  # Unique color for this image
-
-            # Scatter points
-            _plt.scatter(embeddings_2d[idx_x1, 0], embeddings_2d[idx_x1, 1], color=color, label=f'Image {i}',
-                         alpha=0.8,
-                         marker='o')
-            _plt.scatter(embeddings_2d[idx_x2, 0], embeddings_2d[idx_x2, 1], color=color, alpha=0.8, marker='x')
-
-            # Draw line connecting views of the same image
-            _plt.plot([embeddings_2d[idx_x1, 0], embeddings_2d[idx_x2, 0]],
-                      [embeddings_2d[idx_x1, 1], embeddings_2d[idx_x2, 1]],
-                      color=color, alpha=0.5, linestyle="--")
-
-        _plt.legend()
-        _plt.title(f'{title} - Combined Patch Embedding Scales')
-        _plt.show()
+    z1, z2 = model.forward_encoder(x_1=images_1, x_2=images_2)
+    _visualise_tsne(
+        z1=z1,
+        z2=z2,
+        title=title,
+        n_components=n_components,
+        perplexity=perplexity
+    )
 
 
 ########################################################################################################################
@@ -282,3 +317,64 @@ class _ProjectionHead(_nn.Module):
         assert x.shape == (B, output_dim), f"Output shape is incorrect. Expected {(B, output_dim)}, got {x.shape}."
 
         return x
+
+
+########################################################################################################################
+# Private Functions
+########################################################################################################################
+
+def _visualise_tsne(
+        z1: _torch.Tensor,
+        z2: _torch.Tensor,
+        title: str,
+        n_components: int = 2,
+        perplexity: float = 3,
+) -> None:
+    """
+    Visualizes image-level embeddings using t-SNE, where each image is represented as a single point.
+
+    :param z1: Patch embedding representation from the first augmentation.
+    :param z2: Patch embedding representation from the second augmentation.
+    :param title: Title of the plot.
+    :param n_components: Number of components for t-SNE.
+    :param perplexity: Perplexity parameter for t-SNE.
+    """
+    z1 = z1.detach().cpu().numpy()
+    z2 = z2.detach().cpu().numpy()
+
+    with _torch.no_grad():
+        B, E = z1.shape  # Batch, Patches, Embedding Dim
+        print(z1.shape)
+
+        # Combine embeddings for t-SNE visualization [2B, E]
+        embeddings = _np.concatenate([z1, z2], axis=0)
+
+        # Apply t-SNE
+        tsne = _manifold.TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
+        embeddings_2d = tsne.fit_transform(embeddings)
+
+        # Define a distinct color for each image
+        cmap = _plt.get_cmap("tab10")  # "tab10" has 10 distinct colors
+        colors = [cmap(i % 10) for i in range(B)]  # Assign each image a unique color
+
+        # Plot
+        _plt.figure(figsize=(8, 6))
+
+        for i in range(B):  # Each image
+            idx_x1, idx_x2 = i, B + i  # First and second augmentation indices
+            color = colors[i]  # Unique color for this image
+
+            # Scatter points
+            _plt.scatter(embeddings_2d[idx_x1, 0], embeddings_2d[idx_x1, 1], color=color, label=f'Image {i}',
+                         alpha=0.8,
+                         marker='o')
+            _plt.scatter(embeddings_2d[idx_x2, 0], embeddings_2d[idx_x2, 1], color=color, alpha=0.8, marker='x')
+
+            # Draw line connecting views of the same image
+            _plt.plot([embeddings_2d[idx_x1, 0], embeddings_2d[idx_x2, 0]],
+                      [embeddings_2d[idx_x1, 1], embeddings_2d[idx_x2, 1]],
+                      color=color, alpha=0.5, linestyle="--")
+
+        _plt.legend()
+        _plt.title(f'{title} - Combined Patch Embedding Scales')
+        _plt.show()
