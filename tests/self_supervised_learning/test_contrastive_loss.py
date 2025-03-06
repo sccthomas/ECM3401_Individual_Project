@@ -4,12 +4,14 @@ from unittest.mock import patch
 import matplotlib.pyplot as plt
 import torch
 
-from src.self_supervised_learning.contrastive_loss import ContrastivePreTraining, visualize_tsne
+from src.self_supervised_learning.contrastive_loss import (
+    ContrastivePreTraining, visualize_tsne_standard, visualize_tsne_causality
+)
 from src.vision_transformer.model import SemanticSegmentationVisionTransformer
 
 
 class TestContrastivePreTraining(unittest.TestCase):
-    def test_forward(self) -> None:
+    def test_forward_loss(self) -> None:
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 128, 128),
             num_encoder_layers=4,
@@ -41,7 +43,7 @@ class TestContrastivePreTraining(unittest.TestCase):
 
 
 class TestTSNE(unittest.TestCase):
-    def test_plot(self) -> None:
+    def setUp(self) -> None:
         model = SemanticSegmentationVisionTransformer(
             image_dims=(3, 128, 128),
             num_encoder_layers=4,
@@ -58,19 +60,35 @@ class TestTSNE(unittest.TestCase):
             patch_embedding_scale_1=(16, 1024),
             patch_embedding_scale_2=(8, 768),
         )
-        x = torch.rand(2, 3, 128, 128).float()
-
-        contrastive_model = ContrastivePreTraining(
+        self.x = torch.rand(2, 3, 128, 128).float()
+        self.contrastive_model = ContrastivePreTraining(
             model=model,
             encoder_dims=[1024, 768],
             projection_dim=128,
             pooling_method='max',
         )
 
+    def test_visualize_tsne_standard(self) -> None:
+        x = self.x
+        contrastive_model = self.contrastive_model
+
         with patch.object(plt, 'show') as mock_show:
-            visualize_tsne(
+            visualize_tsne_standard(
                 model=contrastive_model,
                 images=x,
+            )
+            mock_show.assert_called()
+
+    def test_visualize_tsne_causality(self) -> None:
+        x = self.x
+        contrastive_model = self.contrastive_model
+
+        masks = torch.rand(2, 1, 128, 128).float()
+        with patch.object(plt, 'show') as mock_show:
+            visualize_tsne_causality(
+                model=contrastive_model,
+                images=x,
+                masks=masks,
             )
             mock_show.assert_called()
 
