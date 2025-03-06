@@ -233,18 +233,24 @@ def visualize_tsne_causality(
     # Create augmented images
     kwargs = {"device": images.device, "dtype": images.dtype}
     # - Augmentation 1
-    background_color = _torch.tensor(data=[0, 0.7, 0], **kwargs).view(3, 1, 1)
+    background_color = _torch.tensor(data=[0.69, 0.16, 0.38], **kwargs).view(3, 1, 1)
     new_background = (1 - masks) * background_color
     images_1 = masks * images + new_background
     # - Augmentation 2
-    background_color = _torch.tensor(data=[0.7, 0, 0.7], **kwargs).view(3, 1, 1)
+    background_color = _torch.tensor(data=[0.92, 0.61, 0.77], **kwargs).view(3, 1, 1)
     new_background = (1 - masks) * background_color
     images_2 = masks * images + new_background
+
+    from src.training.visualisation import display_tensor_image
+    display_tensor_image(images_1[0])
+    display_tensor_image(images_2[0])
 
     if normalise:
         norm_transform = _T.Normalize(mean=_snow.MEAN, std=_snow.STD)
         images_1 = norm_transform(images_1)
         images_2 = norm_transform(images_2)
+        display_tensor_image(images_1[0])
+        display_tensor_image(images_2[0])
 
     z1, z2 = model.forward_encoder(x_1=images_1, x_2=images_2)
     _visualise_tsne(
