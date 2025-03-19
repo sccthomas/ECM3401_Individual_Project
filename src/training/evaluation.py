@@ -39,7 +39,7 @@ def evaluate_with_no_modifications(
     mask = mask.to(device)
 
     # Create a figure with 4 subplots in one row.
-    fig, axes = _plt.subplots(1, 3, figsize=(20, 5))
+    fig, axes = _plt.subplots(1, 3, figsize=(12, 5))
 
     # Display the unmodified image.
     axes[0].set_title("Original Image", fontsize=10)
@@ -64,7 +64,7 @@ def evaluate_with_no_modifications(
     # - Set the title
     fig.suptitle(
         f"Evaluation of the Vision Transformer With No Modifications | BCE Loss: {bce_loss:.4f} | Dice Loss {dice_loss:.4f} | IoU Loss {IoU_loss:.4f}",
-        fontsize=16
+        fontsize=10
     )
 
     # Display the masks

@@ -189,5 +189,6 @@ Validation Loss: 0.05460715899243951
 Epoch 32/50
 Training: 100%|██████████| 324/324 [07:52<00:00,  1.46s/it]
 Training Loss: 0.022086046960917705
-Validation: 100%|██████████| 81/81 [00:23<00:00,  3.50it/s]Validation Loss: 0.06147539153419159
+Validation: 100%|██████████| 81/81 [00:23<00:00,  3.50it/s]
+Validation Loss: 0.06147539153419159
 Early stopping triggered
