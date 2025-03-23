@@ -146,44 +146,104 @@ def display_training_metrics(file_name: str) -> None:
     if len(epochs) == 0:
         print("No epochs found in the log file.")
         return
-    if len(training_losses) == 0 or len(validation_losses) == 0:
-        print("No training or validation losses found in the log file.")
+    if len(validation_losses) == 0:
+        print("No validation losses found in the log file.")
         return
+
+    # Find the epoch where validation loss is lowest
+    best_epoch_idx = validation_losses.index(min(validation_losses))
+    best_epoch = epochs[best_epoch_idx]
 
     plt.figure(figsize=(20, 8))
 
+    # Loss Plot
     plt.subplot(1, 3, 1)
     plt.plot(epochs, training_losses, label='Training Loss', marker='o')
     plt.plot(epochs, validation_losses, label='Validation Loss', marker='s')
+    plt.axvline(x=best_epoch, linestyle='--', color='red', alpha=0.6)
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Loss Over Epochs')
     plt.legend()
     plt.grid()
 
-    if len(training_dice_scores) == 0:
-        print("No training or validation dice scores found in the log file.")
+    # Annotate values at best validation loss epoch
+    if training_losses[best_epoch_idx] > validation_losses[best_epoch_idx]:
+        plt.annotate(f"{training_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, training_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, 30), ha='center', fontsize=10, fontweight='bold')
+
+        plt.annotate(f"{validation_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, validation_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, -15), ha='center', fontsize=10, fontweight='bold')
     else:
+        plt.annotate(f"{training_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, training_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, -15), ha='center', fontsize=10, fontweight='bold')
+
+        plt.annotate(f"{validation_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, validation_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, 30), ha='center', fontsize=10, fontweight='bold')
+
+    # Dice Score Plot
+    if len(training_dice_scores) > 0:
         plt.subplot(1, 3, 2)
         plt.plot(epochs, training_dice_scores, label='Training Dice', marker='o')
         plt.plot(epochs, validation_dice_scores, label='Validation Dice', marker='s')
+        plt.axvline(x=best_epoch, linestyle='--', color='red', alpha=0.6)
         plt.xlabel('Epochs')
         plt.ylabel('Dice Score')
         plt.title('Dice Score Over Epochs')
         plt.legend()
         plt.grid()
 
-    if len(training_miou) == 0:
-        print("No training or validation mean IoU scores found in the log file.")
-    else:
+        # Annotate values at best validation loss epoch
+        if training_dice_scores[best_epoch_idx] > validation_dice_scores[best_epoch_idx]:
+            plt.annotate(f"{training_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, training_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 20), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+        else:
+            plt.annotate(f"{training_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, training_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 10), ha='center', fontsize=10, fontweight='bold')
+
+    # Mean IoU Plot
+    if len(training_miou) > 0:
         plt.subplot(1, 3, 3)
         plt.plot(epochs, training_miou, label='Training mIoU', marker='o')
         plt.plot(epochs, validation_miou, label='Validation mIoU', marker='s')
+        plt.axvline(x=best_epoch, linestyle='--', color='red', alpha=0.6)
         plt.xlabel('Epochs')
         plt.ylabel('Mean IoU')
         plt.title('Mean IoU Over Epochs')
         plt.legend()
         plt.grid()
+
+        # Annotate values at best validation loss epoch
+        if training_miou[best_epoch_idx] > validation_miou[best_epoch_idx]:
+            plt.annotate(f"{training_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, training_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 20), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+        else:
+            plt.annotate(f"{training_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, training_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 10), ha='center', fontsize=10, fontweight='bold')
 
     plt.show()
 
