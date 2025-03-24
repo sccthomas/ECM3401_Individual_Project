@@ -28,6 +28,7 @@ class SegmentationMetrics:
         self.__binary_cross_entropy_loss = 0
         self.__dice_score_metric = 0
         self.__mean_intersection_over_union_metric = 0
+        self.__memory = ""
 
     @property
     def binary_cross_entropy_loss(self) -> float:
@@ -37,6 +38,15 @@ class SegmentationMetrics:
         :return: The Binary Cross Entropy Loss.
         """
         return self.__binary_cross_entropy_loss
+
+    @property
+    def memory(self) -> str:
+        """
+        Get the memory of the metrics.
+
+        :return: The memory of the metrics.
+        """
+        return self.__memory
 
     def update_metrics(
             self, preds: _torch.Tensor, target: _torch.Tensor, binary_cross_entropy_loss: float
@@ -68,6 +78,7 @@ class SegmentationMetrics:
         End of epoch so divide all total loss values to get average loss for epoch.
         """
         len_dataset = self.__len_dataset
+        memory = self.__memory
 
         try:
             self.__binary_cross_entropy_loss /= len_dataset
@@ -75,6 +86,8 @@ class SegmentationMetrics:
             self.__mean_intersection_over_union_metric /= len_dataset
         except ZeroDivisionError:
             print("There are no values to average")
+
+        self.__memory = memory + self.__str__()
 
     def reset_metrics(self) -> None:
         """
