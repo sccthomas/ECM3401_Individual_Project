@@ -102,8 +102,8 @@ def train_model(
         val_metrics.reset_metrics()
 
     # Export Metrics
-    with open("/content/drive/MyDrive/snow_dataset/train_metrics.txt", "w") as f:
+    with open("train_metrics.txt", "w") as f:
         f.write(train_metrics.memory)
 
-    with open("/content/drive/MyDrive/snow_dataset/val_metrics.txt", "w") as f:
+    with open("val_metrics.txt", "w") as f:
         f.write(val_metrics.memory)
