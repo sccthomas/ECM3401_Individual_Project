@@ -63,6 +63,7 @@ def train_model(
 
         train_loss /= len_train_loader
         msg = f"Training Loss: {train_loss}"
+        print(msg)
         metrics_str += f"\n{msg}"
 
         # --- Validation Loop ---
