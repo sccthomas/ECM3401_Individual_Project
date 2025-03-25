@@ -33,9 +33,12 @@ def train_model(
     patience_counter = 0
     len_train_loader = len(train_loader)
     len_val_loader = len(val_loader)
+    metrics_str = ""
 
     for epoch in range(num_epochs):
-        print(f"\nEpoch {epoch + 1}/{num_epochs}")
+        msg = f"\nEpoch {epoch + 1}/{num_epochs}"
+        print(msg)
+        metrics_str += msg
 
         # --- Training Loop ---
         ssl_model.train()
@@ -59,7 +62,8 @@ def train_model(
             torch.cuda.empty_cache()
 
         train_loss /= len_train_loader
-        print(f"Training Loss: {train_loss}")
+        msg = f"Training Loss: {train_loss}"
+        metrics_str += f"\n{msg}"
 
         # --- Validation Loop ---
         ssl_model.eval()
@@ -78,7 +82,9 @@ def train_model(
                 torch.cuda.empty_cache()
 
         val_loss /= len_val_loader
-        print(f"Validation Loss: {val_loss}")
+        msg = f"Validation Loss: {val_loss}"
+        print(msg)
+        metrics_str += f"\n{msg}"
 
         # Update learning rate scheduler
         scheduler.step()
@@ -96,3 +102,6 @@ def train_model(
                 break
 
         torch.cuda.empty_cache()
+
+    with open("metrics.txt", "w") as f:
+        f.write(metrics_str)
