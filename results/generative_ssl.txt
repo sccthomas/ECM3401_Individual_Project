@@ -1,301 +1,301 @@
 Length of dataset: 18209
 
 Epoch 1/50
-Training: 100%|██████████| 456/456 [14:30<00:00,  1.91s/it]
-Training Loss: 0.3918
-Validation: 100%|██████████| 114/114 [02:14<00:00,  1.18s/it]
-Validation Loss: 0.2427
+Training: 100%|██████████| 456/456 [14:01<00:00,  1.85s/it]
+Training Loss: 0.41572573411752256
+Validation: 100%|██████████| 114/114 [01:34<00:00,  1.21it/s]
+Validation Loss: 0.22042335778997654
 
 Epoch 2/50
-Training: 100%|██████████| 456/456 [11:17<00:00,  1.49s/it]
-Training Loss: 0.1866
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.1358
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.16793815474630447
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.62it/s]
+Validation Loss: 0.1305291342238585
 
 Epoch 3/50
-Training: 100%|██████████| 456/456 [11:17<00:00,  1.49s/it]
-Training Loss: 0.1370
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.1210
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.12482554981844467
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.79it/s]
+Validation Loss: 0.12389039411617998
 
 Epoch 4/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.1173
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.1001
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.10925112846062372
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.62it/s]
+Validation Loss: 0.08734118585523806
 
 Epoch 5/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.1052
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0802
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.45it/s]
+Training Loss: 0.0996709978044556
+Validation: 100%|██████████| 114/114 [00:15<00:00,  7.47it/s]
+Validation Loss: 0.09066288519585342
 
 Epoch 6/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0978
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0768
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.09253482652926132
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.65it/s]
+Validation Loss: 0.07397964230754919
 
 Epoch 7/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0902
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0891
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.08750778523257427
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.70it/s]
+Validation Loss: 0.07017048703212488
 
 Epoch 8/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0861
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0713
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.08296323111770969
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.64it/s]
+Validation Loss: 0.06910227810996666
 
 Epoch 9/50
-Training: 100%|██████████| 456/456 [11:17<00:00,  1.48s/it]
-Training Loss: 0.0822
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0798
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.07954341279375449
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.69it/s]
+Validation Loss: 0.06487867167513621
 
 Epoch 10/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0797
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0628
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.0763910354131408
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.63it/s]
+Validation Loss: 0.061668559549409044
 
 Epoch 11/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0769
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0635
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.07393515694134853
+Validation: 100%|██████████| 114/114 [00:15<00:00,  7.59it/s]
+Validation Loss: 0.06747921791515853
 
 Epoch 12/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0740
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0599
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.07130031763134818
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.62it/s]
+Validation Loss: 0.05688242611001458
 
 Epoch 13/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0733
-Validation: 100%|██████████| 114/114 [00:50<00:00,  2.28it/s]
-Validation Loss: 0.0592
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06993500006858978
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.60it/s]
+Validation Loss: 0.05715176286666017
 
 Epoch 14/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0719
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0573
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06806648096167728
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.69it/s]
+Validation Loss: 0.05540009548789576
 
 Epoch 15/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0697
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0558
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06632770616724565
+Validation: 100%|██████████| 114/114 [00:15<00:00,  7.55it/s]
+Validation Loss: 0.056065503213750686
 
 Epoch 16/50
-Training: 100%|██████████| 456/456 [11:17<00:00,  1.48s/it]
-Training Loss: 0.0685
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0555
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06535271443263219
+Validation: 100%|██████████| 114/114 [00:15<00:00,  7.52it/s]
+Validation Loss: 0.05196822803925004
 
 Epoch 17/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0675
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0539
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06393179544165992
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.75it/s]
+Validation Loss: 0.05108753715952238
 
 Epoch 18/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0663
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0529
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06332659082519904
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.77it/s]
+Validation Loss: 0.04998207046535977
 
 Epoch 19/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0658
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0517
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06245587277634625
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.74it/s]
+Validation Loss: 0.04937486840706123
 
 Epoch 20/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0651
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0526
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.06170706182979701
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.83it/s]
+Validation Loss: 0.048540481349878144
 
 Epoch 21/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0643
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0507
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06144587577957856
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.71it/s]
+Validation Loss: 0.04854819322364372
 
 Epoch 22/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0642
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0510
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.061092496392104706
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.73it/s]
+Validation Loss: 0.04747212197827665
 
 Epoch 23/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0645
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0505
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06072857656532474
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.83it/s]
+Validation Loss: 0.04780287370739276
 
 Epoch 24/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0639
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0512
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.06069738638440245
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.75it/s]
+Validation Loss: 0.047820804248514925
 
 Epoch 25/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0638
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0512
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.06010388292110803
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.85it/s]
+Validation Loss: 0.04761434964051372
 
 Epoch 26/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0694
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0577
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.06498320740565919
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.77it/s]
+Validation Loss: 0.05186116581031105
 
 Epoch 27/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0677
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0538
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.0631937620622155
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.82it/s]
+Validation Loss: 0.05451120099608313
 
 Epoch 28/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0662
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0525
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.06162299399607276
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.80it/s]
+Validation Loss: 0.052739183140689865
 
 Epoch 29/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0646
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0516
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.060210614800126405
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.84it/s]
+Validation Loss: 0.04753691752098108
 
 Epoch 30/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0638
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0502
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.059114712127075905
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.73it/s]
+Validation Loss: 0.04682223995526632
 
 Epoch 31/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0628
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0525
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.057985107504288876
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.76it/s]
+Validation Loss: 0.04604520050710753
 
 Epoch 32/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0617
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0485
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.05703553592524769
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.79it/s]
+Validation Loss: 0.0456976612147532
 
 Epoch 33/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0613
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0480
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.055669021359726525
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.71it/s]
+Validation Loss: 0.04425973209895586
 
 Epoch 34/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0596
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0504
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.054884092130681926
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.78it/s]
+Validation Loss: 0.044607849497544136
 
 Epoch 35/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0589
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0549
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.05406185994414907
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.68it/s]
+Validation Loss: 0.042755273709955965
 
 Epoch 36/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0578
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0462
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.053469069555336445
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.72it/s]
+Validation Loss: 0.04263437516464476
 
 Epoch 37/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0574
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0450
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.052641051388427354
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.75it/s]
+Validation Loss: 0.04229515300769555
 
 Epoch 38/50
-Training: 100%|██████████| 456/456 [11:16<00:00,  1.48s/it]
-Training Loss: 0.0564
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0462
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.05180296137634861
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.83it/s]
+Validation Loss: 0.03971983626354159
 
 Epoch 39/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0563
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0463
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.051106292198885954
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.62it/s]
+Validation Loss: 0.039649869756479016
 
 Epoch 40/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0554
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0421
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.05074336046451017
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.71it/s]
+Validation Loss: 0.03917196491046956
 
 Epoch 41/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0549
-Validation: 100%|██████████| 114/114 [00:50<00:00,  2.28it/s]
-Validation Loss: 0.0427
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.0503292220252517
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.69it/s]
+Validation Loss: 0.038871253954998235
 
 Epoch 42/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0540
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0421
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.04983362709907325
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.67it/s]
+Validation Loss: 0.03951566042215155
 
 Epoch 43/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0538
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0411
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.049502988198870106
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.78it/s]
+Validation Loss: 0.03792427476952996
 
 Epoch 44/50
-Training: 100%|██████████| 456/456 [11:15<00:00,  1.48s/it]
-Training Loss: 0.0535
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.30it/s]
-Validation Loss: 0.0417
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.04892119500589998
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.77it/s]
+Validation Loss: 0.03766704324567527
 
 Epoch 45/50
-Training: 100%|██████████| 456/456 [11:12<00:00,  1.47s/it]
-Training Loss: 0.0529
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.33it/s]
-Validation Loss: 0.0411
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.04835160037404612
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.67it/s]
+Validation Loss: 0.03720689319858426
 
 Epoch 46/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0529
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0409
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.048258693104511814
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.83it/s]
+Validation Loss: 0.037014966438475405
 
 Epoch 47/50
-Training: 100%|██████████| 456/456 [11:13<00:00,  1.48s/it]
-Training Loss: 0.0525
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.31it/s]
-Validation Loss: 0.0405
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.04822444455828844
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.72it/s]
+Validation Loss: 0.036995470033664456
 
 Epoch 48/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0528
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.29it/s]
-Validation Loss: 0.0406
+Training: 100%|██████████| 456/456 [03:05<00:00,  2.46it/s]
+Training Loss: 0.04802276782299343
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.77it/s]
+Validation Loss: 0.03718307080041421
 
 Epoch 49/50
-Training: 100%|██████████| 456/456 [11:14<00:00,  1.48s/it]
-Training Loss: 0.0524
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.28it/s]
-Validation Loss: 0.0408
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.04799099740359867
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.74it/s]
+Validation Loss: 0.037052779605514126
 
 Epoch 50/50
-Training: 100%|██████████| 456/456 [11:13<00:00,  1.48s/it]
-Training Loss: 0.0522
-Validation: 100%|██████████| 114/114 [00:49<00:00,  2.31it/s]
-Validation Loss: 0.0403
+Training: 100%|██████████| 456/456 [03:04<00:00,  2.47it/s]
+Training Loss: 0.04778531939608224
+Validation: 100%|██████████| 114/114 [00:14<00:00,  7.83it/s]
+Validation Loss: 0.037208985308544676
