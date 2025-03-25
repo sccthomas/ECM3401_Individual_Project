@@ -1,450 +1,451 @@
 Length of dataset: 18209
 
  Epoch 1/25
-Training: 100%|██████████| 456/456 [26:50<00:00,  3.53s/it]
+Training: 100%|██████████| 456/456 [23:55<00:00,  3.15s/it]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.17836044062125056
-Average Dice Score: 0.7103099779209547
-Average Mean IoU: 0.5682028211783945
+Average Binary Cross Entropy Loss: 0.20318723824528748
+Average Dice Score: 0.7934761666937878
+Average Mean IoU: 0.6788841802300069
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [04:20<00:00,  2.29s/it]
+Validation: 100%|██████████| 114/114 [03:45<00:00,  1.98s/it]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.13524329740750163
-Average Dice Score: 0.7551801225595307
-Average Mean IoU: 0.6252059481645885
+Average Binary Cross Entropy Loss: 0.1618321500065034
+Average Dice Score: 0.8295880258083344
+Average Mean IoU: 0.7331133992002722
 --------------------------------------------
 
 
  Epoch 2/25
-Training: 100%|██████████| 456/456 [11:17<00:00,  1.48s/it]
+Training: 100%|██████████| 456/456 [03:21<00:00,  2.26it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.13763859902361505
-Average Dice Score: 0.7419861340731905
-Average Mean IoU: 0.608765511136306
+Average Binary Cross Entropy Loss: 0.1633282548241448
+Average Dice Score: 0.8278936675766058
+Average Mean IoU: 0.7295434901065994
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:50<00:00,  2.26it/s]
+Validation: 100%|██████████| 114/114 [00:17<00:00,  6.51it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.12394810579063599
-Average Dice Score: 0.7633045185030553
-Average Mean IoU: 0.6363109799853542
+Average Binary Cross Entropy Loss: 0.14917274544897832
+Average Dice Score: 0.8496591715436232
+Average Mean IoU: 0.7627552538587336
 --------------------------------------------
 
 
  Epoch 3/25
-Training: 100%|██████████| 456/456 [11:22<00:00,  1.50s/it]
+Training: 100%|██████████| 456/456 [03:26<00:00,  2.21it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.1309989797310871
-Average Dice Score: 0.7555548263746396
-Average Mean IoU: 0.6265860003860373
+Average Binary Cross Entropy Loss: 0.15524246700500188
+Average Dice Score: 0.8398508612523999
+Average Mean IoU: 0.7477382037200426
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:50<00:00,  2.25it/s]
+Validation: 100%|██████████| 114/114 [00:18<00:00,  6.27it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11934205412603262
-Average Dice Score: 0.7761528340348026
-Average Mean IoU: 0.6533592803436413
+Average Binary Cross Entropy Loss: 0.1459693935487354
+Average Dice Score: 0.8550783150028765
+Average Mean IoU: 0.7727216978867849
 --------------------------------------------
 
 
  Epoch 4/25
-Training: 100%|██████████| 456/456 [11:30<00:00,  1.51s/it]
+Training: 100%|██████████| 456/456 [03:32<00:00,  2.15it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.12641345577216462
-Average Dice Score: 0.7641307234502676
-Average Mean IoU: 0.637841844506431
+Average Binary Cross Entropy Loss: 0.14940761559103666
+Average Dice Score: 0.846878571860623
+Average Mean IoU: 0.7583095620860133
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:51<00:00,  2.22it/s]
+Validation: 100%|██████████| 114/114 [00:18<00:00,  6.23it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11838396494848687
-Average Dice Score: 0.7843410628929472
-Average Mean IoU: 0.6650259134016538
+Average Binary Cross Entropy Loss: 0.14209716374936857
+Average Dice Score: 0.8564364005599105
+Average Mean IoU: 0.7754260672811877
 --------------------------------------------
 
 
  Epoch 5/25
-Training: 100%|██████████| 456/456 [11:34<00:00,  1.52s/it]
+Training: 100%|██████████| 456/456 [03:39<00:00,  2.08it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.12422499129254568
-Average Dice Score: 0.7687528368673826
-Average Mean IoU: 0.6442915365884179
+Average Binary Cross Entropy Loss: 0.14674355083128862
+Average Dice Score: 0.8506213532466638
+Average Mean IoU: 0.7644074421964193
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:51<00:00,  2.20it/s]
+Validation: 100%|██████████| 114/114 [00:18<00:00,  6.15it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11525625768199302
-Average Dice Score: 0.7900729812028116
-Average Mean IoU: 0.6717365065164733
+Average Binary Cross Entropy Loss: 0.1369448837481047
+Average Dice Score: 0.8659138841587201
+Average Mean IoU: 0.7897788040470659
 --------------------------------------------
 
 
  Epoch 6/25
-Training: 100%|██████████| 456/456 [11:42<00:00,  1.54s/it]
+Training: 100%|██████████| 456/456 [03:43<00:00,  2.04it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.12206498031880249
-Average Dice Score: 0.7727329427735847
-Average Mean IoU: 0.6495433750382641
+Average Binary Cross Entropy Loss: 0.1423319750220368
+Average Dice Score: 0.8543547488618315
+Average Mean IoU: 0.7701261163803569
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:51<00:00,  2.19it/s]
+Validation: 100%|██████████| 114/114 [00:18<00:00,  6.15it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11374825546354578
-Average Dice Score: 0.7928082592654646
-Average Mean IoU: 0.6755932517219008
+Average Binary Cross Entropy Loss: 0.13388367879547572
+Average Dice Score: 0.8685544739689743
+Average Mean IoU: 0.7936009874469355
 --------------------------------------------
 
 
  Epoch 7/25
-Training: 100%|██████████| 456/456 [11:48<00:00,  1.55s/it]
+Training: 100%|██████████| 456/456 [03:48<00:00,  2.00it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11958242201229982
-Average Dice Score: 0.7766911638410467
-Average Mean IoU: 0.6544063384072822
+Average Binary Cross Entropy Loss: 0.13948108187239422
+Average Dice Score: 0.8573679406391946
+Average Mean IoU: 0.774808284222034
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:52<00:00,  2.17it/s]
+Validation: 100%|██████████| 114/114 [00:19<00:00,  5.80it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11136514569322269
-Average Dice Score: 0.7953160060079474
-Average Mean IoU: 0.6793348381393834
+Average Binary Cross Entropy Loss: 0.13275373517944103
+Average Dice Score: 0.8697158584469243
+Average Mean IoU: 0.7960919486848932
 --------------------------------------------
 
 
  Epoch 8/25
-Training: 100%|██████████| 456/456 [11:52<00:00,  1.56s/it]
+Training: 100%|██████████| 456/456 [03:55<00:00,  1.94it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11868422677773133
-Average Dice Score: 0.7780801619876895
-Average Mean IoU: 0.6570631387202364
+Average Binary Cross Entropy Loss: 0.13736356053043874
+Average Dice Score: 0.8592312007881048
+Average Mean IoU: 0.7776035420727312
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:53<00:00,  2.15it/s]
+Validation: 100%|██████████| 114/114 [00:19<00:00,  5.84it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11055808213719151
-Average Dice Score: 0.7946309912623021
-Average Mean IoU: 0.6793224320077059
+Average Binary Cross Entropy Loss: 0.13401963810125986
+Average Dice Score: 0.8700108188286162
+Average Mean IoU: 0.7965154067466134
 --------------------------------------------
 
 
  Epoch 9/25
-Training: 100%|██████████| 456/456 [12:01<00:00,  1.58s/it]
+Training: 100%|██████████| 456/456 [04:01<00:00,  1.89it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11721562424249816
-Average Dice Score: 0.7800570874099146
-Average Mean IoU: 0.659658304824118
+Average Binary Cross Entropy Loss: 0.13647552378671735
+Average Dice Score: 0.8607294388246118
+Average Mean IoU: 0.7802136073771276
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:53<00:00,  2.14it/s]
+Validation: 100%|██████████| 114/114 [00:19<00:00,  5.72it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11123039900210865
-Average Dice Score: 0.7961797740375787
-Average Mean IoU: 0.6817606755515986
+Average Binary Cross Entropy Loss: 0.12863925275833984
+Average Dice Score: 0.8734903011405677
+Average Mean IoU: 0.8016077175475004
 --------------------------------------------
 
 
  Epoch 10/25
-Training: 100%|██████████| 456/456 [12:06<00:00,  1.59s/it]
+Training: 100%|██████████| 456/456 [04:07<00:00,  1.84it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11589542923397139
-Average Dice Score: 0.7819534069613406
-Average Mean IoU: 0.6621573413150352
+Average Binary Cross Entropy Loss: 0.1341080934528196
+Average Dice Score: 0.8622330580102769
+Average Mean IoU: 0.7826399110388338
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:53<00:00,  2.14it/s]
+Validation: 100%|██████████| 114/114 [00:20<00:00,  5.50it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11202174144094451
-Average Dice Score: 0.7982984875377855
-Average Mean IoU: 0.6844865643141562
+Average Binary Cross Entropy Loss: 0.13204069389847287
+Average Dice Score: 0.8732745657887375
+Average Mean IoU: 0.8017295682639406
 --------------------------------------------
 
 
  Epoch 11/25
-Training: 100%|██████████| 456/456 [12:14<00:00,  1.61s/it]
+Training: 100%|██████████| 456/456 [04:10<00:00,  1.82it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11580351759728633
-Average Dice Score: 0.7817624459664027
-Average Mean IoU: 0.6620378504719651
+Average Binary Cross Entropy Loss: 0.13306991461860507
+Average Dice Score: 0.8623383268713951
+Average Mean IoU: 0.7825774424954465
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:54<00:00,  2.11it/s]
+Validation: 100%|██████████| 114/114 [00:20<00:00,  5.48it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11127667834884242
-Average Dice Score: 0.7969488862313723
-Average Mean IoU: 0.6835704858888659
+Average Binary Cross Entropy Loss: 0.1299509694309611
+Average Dice Score: 0.8735189965942449
+Average Mean IoU: 0.8018151981788769
 --------------------------------------------
 
 
  Epoch 12/25
-Training: 100%|██████████| 456/456 [12:20<00:00,  1.62s/it]
+Training: 100%|██████████| 456/456 [04:13<00:00,  1.80it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11527681479786049
-Average Dice Score: 0.7827025542133733
-Average Mean IoU: 0.6631808592039242
+Average Binary Cross Entropy Loss: 0.13111249962004654
+Average Dice Score: 0.8636285742385346
+Average Mean IoU: 0.7842800725708928
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:53<00:00,  2.11it/s]
+Validation: 100%|██████████| 114/114 [00:21<00:00,  5.35it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11034323386194413
-Average Dice Score: 0.7980423292569947
-Average Mean IoU: 0.6843135215734181
+Average Binary Cross Entropy Loss: 0.13202748879006035
+Average Dice Score: 0.873451089127022
+Average Mean IoU: 0.8016734635620787
 --------------------------------------------
 
 
  Epoch 13/25
-Training: 100%|██████████| 456/456 [12:26<00:00,  1.64s/it]
+Training: 100%|██████████| 456/456 [04:22<00:00,  1.74it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11926895907769601
-Average Dice Score: 0.7773213825727764
-Average Mean IoU: 0.6560489472589994
+Average Binary Cross Entropy Loss: 0.1400138497712058
+Average Dice Score: 0.8571766526029821
+Average Mean IoU: 0.7750321895929805
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:54<00:00,  2.10it/s]
+Validation: 100%|██████████| 114/114 [00:21<00:00,  5.27it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11214170356591542
-Average Dice Score: 0.7977480485773923
-Average Mean IoU: 0.6833713880756445
+Average Binary Cross Entropy Loss: 0.13551438377614608
+Average Dice Score: 0.8677555066451692
+Average Mean IoU: 0.7936470984366902
 --------------------------------------------
 
 
  Epoch 14/25
-Training: 100%|██████████| 456/456 [12:30<00:00,  1.65s/it]
+Training: 100%|██████████| 456/456 [04:24<00:00,  1.72it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11838948215243586
-Average Dice Score: 0.779950317583586
-Average Mean IoU: 0.6594285538844895
+Average Binary Cross Entropy Loss: 0.13852269037446954
+Average Dice Score: 0.8583024354618892
+Average Mean IoU: 0.7764491053265438
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:54<00:00,  2.09it/s]
+Validation: 100%|██████████| 114/114 [00:21<00:00,  5.23it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11289925187041885
-Average Dice Score: 0.7967952756505263
-Average Mean IoU: 0.6827945296178785
+Average Binary Cross Entropy Loss: 0.132026869934379
+Average Dice Score: 0.8675887281434578
+Average Mean IoU: 0.7929874878180655
 --------------------------------------------
 
 
  Epoch 15/25
-Training: 100%|██████████| 456/456 [12:38<00:00,  1.66s/it]
+Training: 100%|██████████| 456/456 [04:30<00:00,  1.69it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11720620272190947
-Average Dice Score: 0.7818599892290015
-Average Mean IoU: 0.6619478568696139
+Average Binary Cross Entropy Loss: 0.1368498006966292
+Average Dice Score: 0.8603872816290772
+Average Mean IoU: 0.7795761883781668
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:55<00:00,  2.07it/s]
+Validation: 100%|██████████| 114/114 [00:22<00:00,  4.98it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11209617894992494
-Average Dice Score: 0.7936944083163613
-Average Mean IoU: 0.6781385504362876
+Average Binary Cross Entropy Loss: 0.13935504337413268
+Average Dice Score: 0.8705134632294638
+Average Mean IoU: 0.7980984574870059
 --------------------------------------------
 
 
  Epoch 16/25
-Training: 100%|██████████| 456/456 [12:43<00:00,  1.67s/it]
+Training: 100%|██████████| 456/456 [04:35<00:00,  1.66it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11634348602475304
-Average Dice Score: 0.7831320664600322
-Average Mean IoU: 0.6636356541462112
+Average Binary Cross Entropy Loss: 0.13588456606917215
+Average Dice Score: 0.8602270050007
+Average Mean IoU: 0.7794848450443201
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:55<00:00,  2.04it/s]
+Validation: 100%|██████████| 114/114 [00:23<00:00,  4.92it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11087598292189732
-Average Dice Score: 0.7982692357740904
-Average Mean IoU: 0.6850642499170805
+Average Binary Cross Entropy Loss: 0.13786814492522625
+Average Dice Score: 0.8681144771868723
+Average Mean IoU: 0.7937718619380081
 --------------------------------------------
 
 
  Epoch 17/25
-Training: 100%|██████████| 456/456 [12:50<00:00,  1.69s/it]
+Training: 100%|██████████| 456/456 [04:41<00:00,  1.62it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11492382424573104
-Average Dice Score: 0.7851662671095446
-Average Mean IoU: 0.6662436735473181
+Average Binary Cross Entropy Loss: 0.13521993503366647
+Average Dice Score: 0.860877369579516
+Average Mean IoU: 0.7809875484621316
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:56<00:00,  2.02it/s]
+Validation: 100%|██████████| 114/114 [00:23<00:00,  4.90it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10934170688453473
-Average Dice Score: 0.8041415303422693
-Average Mean IoU: 0.6913240023872309
+Average Binary Cross Entropy Loss: 0.13243805238029413
+Average Dice Score: 0.8720649167111045
+Average Mean IoU: 0.7996497096722586
 --------------------------------------------
 
 
  Epoch 18/25
-Training: 100%|██████████| 456/456 [12:57<00:00,  1.70s/it]
+Training: 100%|██████████| 456/456 [04:46<00:00,  1.59it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11465930169154155
-Average Dice Score: 0.7856944655640083
-Average Mean IoU: 0.6673295442995272
+Average Binary Cross Entropy Loss: 0.1331773180710642
+Average Dice Score: 0.8625354236155226
+Average Mean IoU: 0.783040555814902
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:57<00:00,  2.00it/s]
+Validation: 100%|██████████| 114/114 [00:23<00:00,  4.89it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10979298495671205
-Average Dice Score: 0.8016618092854818
-Average Mean IoU: 0.6892058687251911
+Average Binary Cross Entropy Loss: 0.1348685569276935
+Average Dice Score: 0.873765250047048
+Average Mean IoU: 0.8026050041642105
 --------------------------------------------
 
 
  Epoch 19/25
-Training: 100%|██████████| 456/456 [13:03<00:00,  1.72s/it]
+Training: 100%|██████████| 456/456 [04:52<00:00,  1.56it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.1135390805276601
-Average Dice Score: 0.7869370279082081
-Average Mean IoU: 0.6692029880849939
+Average Binary Cross Entropy Loss: 0.12995489573988475
+Average Dice Score: 0.8642772441370445
+Average Mean IoU: 0.7854773998260498
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:57<00:00,  1.99it/s]
+Validation: 100%|██████████| 114/114 [00:24<00:00,  4.62it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10838516579385389
-Average Dice Score: 0.8019778195180391
-Average Mean IoU: 0.6891111219138429
+Average Binary Cross Entropy Loss: 0.13441753822068372
+Average Dice Score: 0.8743806355877927
+Average Mean IoU: 0.8035741354289808
 --------------------------------------------
 
 
  Epoch 20/25
-Training: 100%|██████████| 456/456 [13:11<00:00,  1.73s/it]
+Training: 100%|██████████| 456/456 [04:56<00:00,  1.54it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11197741104191855
-Average Dice Score: 0.7881489881036574
-Average Mean IoU: 0.6708073602956638
+Average Binary Cross Entropy Loss: 0.12836543748383983
+Average Dice Score: 0.8645398629861966
+Average Mean IoU: 0.7865821070838392
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:58<00:00,  1.96it/s]
+Validation: 100%|██████████| 114/114 [00:24<00:00,  4.62it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10997870904311799
-Average Dice Score: 0.803179976710102
-Average Mean IoU: 0.6916486197396329
+Average Binary Cross Entropy Loss: 0.13138879404256218
+Average Dice Score: 0.8778586115753442
+Average Mean IoU: 0.8080254950021443
 --------------------------------------------
 
 
  Epoch 21/25
-Training: 100%|██████████| 456/456 [13:15<00:00,  1.74s/it]
+Training: 100%|██████████| 456/456 [05:02<00:00,  1.51it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10945504524728708
-Average Dice Score: 0.7907801403811103
-Average Mean IoU: 0.6739485032464329
+Average Binary Cross Entropy Loss: 0.12557589440818942
+Average Dice Score: 0.8659905408296669
+Average Mean IoU: 0.7885128074047858
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:58<00:00,  1.96it/s]
+Validation: 100%|██████████| 114/114 [00:25<00:00,  4.50it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10876849091105294
-Average Dice Score: 0.8034921351232027
-Average Mean IoU: 0.6910804599000696
+Average Binary Cross Entropy Loss: 0.13298624802969003
+Average Dice Score: 0.8769157769387228
+Average Mean IoU: 0.807442773852432
 --------------------------------------------
 
 
  Epoch 22/25
-Training: 100%|██████████| 456/456 [13:21<00:00,  1.76s/it]
+Training: 100%|██████████| 456/456 [05:10<00:00,  1.47it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10903918674509776
-Average Dice Score: 0.7907945524182236
-Average Mean IoU: 0.6741984455209029
+Average Binary Cross Entropy Loss: 0.1214457515202332
+Average Dice Score: 0.8670606245858627
+Average Mean IoU: 0.7900015483038467
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:58<00:00,  1.93it/s]
+Validation: 100%|██████████| 114/114 [00:24<00:00,  4.59it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10809627874639996
-Average Dice Score: 0.8061556272339403
-Average Mean IoU: 0.6942922300414035
+Average Binary Cross Entropy Loss: 0.131826378731874
+Average Dice Score: 0.8766416034154725
+Average Mean IoU: 0.8069350614882352
 --------------------------------------------
 
 
  Epoch 23/25
-Training: 100%|██████████| 456/456 [13:27<00:00,  1.77s/it]
+Training: 100%|██████████| 456/456 [05:14<00:00,  1.45it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10830069173192769
-Average Dice Score: 0.7906786077900937
-Average Mean IoU: 0.674100425290434
+Average Binary Cross Entropy Loss: 0.12065644478915553
+Average Dice Score: 0.8668490252212474
+Average Mean IoU: 0.7899189895966596
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:59<00:00,  1.92it/s]
+Validation: 100%|██████████| 114/114 [00:25<00:00,  4.39it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10935615735095844
-Average Dice Score: 0.8064471326376262
-Average Mean IoU: 0.6953849839536768
+Average Binary Cross Entropy Loss: 0.13759581296982473
+Average Dice Score: 0.8769348237598151
+Average Mean IoU: 0.8075610007110395
 --------------------------------------------
 
 
  Epoch 24/25
-Training: 100%|██████████| 456/456 [13:34<00:00,  1.79s/it]
+Training: 100%|██████████| 456/456 [05:22<00:00,  1.41it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10774613010059846
-Average Dice Score: 0.7910406410432699
-Average Mean IoU: 0.6747100971508444
+Average Binary Cross Entropy Loss: 0.11960859300993514
+Average Dice Score: 0.8669519364310984
+Average Mean IoU: 0.7903060911778819
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [01:00<00:00,  1.89it/s]
+Validation: 100%|██████████| 114/114 [00:25<00:00,  4.41it/s]
 ------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.10867188916656009
-Average Dice Score: 0.8069936941590226
-Average Mean IoU: 0.69559789279051
+Average Binary Cross Entropy Loss: 0.13233807290855207
+Average Dice Score: 0.8765763389436823
+Average Mean IoU: 0.8067720694500103
 --------------------------------------------
 
 
  Epoch 25/25
-Training: 100%|██████████| 456/456 [13:41<00:00,  1.80s/it]
+Training: 100%|██████████| 456/456 [05:27<00:00,  1.39it/s]
 ------- Training Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11321908459394124
-Average Dice Score: 0.7860684449735441
-Average Mean IoU: 0.6681757407230243
+Average Binary Cross Entropy Loss: 0.13021308835595846
+Average Dice Score: 0.8616894190771538
+Average Mean IoU: 0.7818930018366429
 --------------------------------------------
 
-Validation: 100%|██████████| 114/114 [00:59<00:00,  1.90it/s]------- Validation Metrics -------
+Validation: 100%|██████████| 114/114 [00:26<00:00,  4.25it/s]
+------- Validation Metrics -------
 --------------------------------------------
-Average Binary Cross Entropy Loss: 0.11009879606334787
-Average Dice Score: 0.8061854734755399
-Average Mean IoU: 0.6937274582553328
+Average Binary Cross Entropy Loss: 0.1345868827611731
+Average Dice Score: 0.8722385042592099
+Average Mean IoU: 0.8001067779566112
 --------------------------------------------
 
