@@ -82,7 +82,7 @@ def display_attention_weights(
     n_rows_total = len(rows)
     fig = _plt.figure(figsize=(max_layers * 15, n_rows_total * 10), facecolor="white")
     fig.suptitle("Attention Maps", fontsize=32, fontweight="bold")
-    outer_grid = _gridspec.GridSpec(n_rows_total, max_layers, hspace=0.01, wspace=0.05, figure=fig)
+    outer_grid = _gridspec.GridSpec(n_rows_total, max_layers, hspace=0.01, wspace=0.01, figure=fig)
 
     for grid_row, (scale, patch_size, stage, layer_list) in enumerate(rows):
         num_layers = len(layer_list)
@@ -94,7 +94,7 @@ def display_attention_weights(
                 nested = _gridspec.GridSpecFromSubplotSpec(
                     3, 4,
                     subplot_spec=outer_grid[grid_row, l],
-                    height_ratios=[15, 7.5, 7.5], hspace=0.075, wspace=0.015
+                    height_ratios=[15, 15, 15], hspace=0.15
                 )
                 ax_avg = fig.add_subplot(nested[0, :])
                 ax_avg.set_facecolor("white")
@@ -112,7 +112,7 @@ def display_attention_weights(
                     ax_head = fig.add_subplot(nested[row, h % 4])
                     ax_head.set_facecolor("white")
                     im_head = ax_head.imshow(attn[h], aspect="equal", cmap="inferno")
-                    ax_head.set_title(f"Head {h + 1}", fontsize=8)
+                    ax_head.set_title(f"Head {h + 1}", fontsize=15, fontweight='bold')
                     ax_head.axis("off")
                     if h % 4 == 3:
                         row += 1
