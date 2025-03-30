@@ -66,7 +66,7 @@ def display_attention_weights(
     H, W = image.size()[-2:]
 
     # Process the attention scores
-    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling, }
+    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling}
     attentions = {
         (scale, patch_size): _process_attention_scores(attentions=attentions_scale, patch_size=patch_size, **kwargs)
         for (scale, patch_size), attentions_scale in attention_scores.items()
@@ -74,58 +74,98 @@ def display_attention_weights(
 
     # Plot the attention scores
     rows = [
-        (scale, patch_size, stage, layer_list)
+        (scale, patch_size, stage, layer_dict)
         for (scale, patch_size), stage_dict in attentions.items()
-        for stage, layer_list in stage_dict.items()
+        for stage, layer_dict in stage_dict.items()
     ]
     max_layers = max(len(layer_list) for (_, _, _, layer_list) in rows)
     n_rows_total = len(rows)
-    fig = _plt.figure(figsize=(max_layers * 15, n_rows_total * 10), facecolor="white")
+    fig = plt.figure(figsize=(max_layers * 10, n_rows_total * 5), facecolor="white")
     fig.suptitle("Attention Maps", fontsize=32, fontweight="bold")
-    outer_grid = _gridspec.GridSpec(n_rows_total, max_layers, hspace=0.01, wspace=0.01, figure=fig)
+    outer_grid = _gridspec._gridspec(n_rows_total, max_layers, wspace=0.1, hspace=0.05, figure=fig)
 
-    for grid_row, (scale, patch_size, stage, layer_list) in enumerate(rows):
-        num_layers = len(layer_list)
+    for grid_row, (scale, patch_size, stage, layer_dict) in enumerate(rows):
+        for layer_idx, layer in layer_dict.items():
+            inner_grid = _gridspec.GridSpecFromSubplotSpec(2, 4, subplot_spec=outer_grid[grid_row, layer_idx],
+                                                           wspace=0.275, hspace=0.005)
+            # Plot the attention scores
+            for head_idx in range(layer.shape[0]):
+                ax = fig.add_subplot(inner_grid[head_idx // 4, head_idx % 4])
+                img = ax.imshow(layer[head_idx], cmap='inferno', aspect='equal')
+                ax.set_title(f'Head {head_idx + 1}', fontsize=15, fontweight='bold')
+                ax.axis('off')
 
-        for l in range(max_layers):
-            if l < num_layers:
-                attn = layer_list[l]
-                num_heads = attn.shape[0]
-                nested = _gridspec.GridSpecFromSubplotSpec(
-                    3, 4,
-                    subplot_spec=outer_grid[grid_row, l],
-                    height_ratios=[15, 15, 15], hspace=0.15
-                )
-                ax_avg = fig.add_subplot(nested[0, :])
-                ax_avg.set_facecolor("white")
-                avg_attn = attn.mean(axis=0)
-                im_avg = ax_avg.imshow(avg_attn, aspect="equal", cmap="inferno")
-                ax_avg.set_title(
-                    f"{scale} | Patch Size {patch_size} | {stage} | Layer {l + 1}\nAvg",
-                    fontsize=20, fontweight="bold"
-                )
-                ax_avg.axis("off")
-                _plt.colorbar(im_avg, ax=ax_avg, fraction=0.02, pad=0.015)
-
-                row = 1
-                for h in range(num_heads):
-                    ax_head = fig.add_subplot(nested[row, h % 4])
-                    ax_head.set_facecolor("white")
-                    im_head = ax_head.imshow(attn[h], aspect="equal", cmap="inferno")
-                    ax_head.set_title(f"Head {h + 1}", fontsize=15, fontweight='bold')
-                    ax_head.axis("off")
-                    if h % 4 == 3:
-                        row += 1
-            else:
-                ax_dummy = fig.add_subplot(outer_grid[grid_row, l])
-                ax_dummy.set_facecolor("white")
-                ax_dummy.axis("off")
+                # Add vertical color bar to each subplot and replace values with 'High' and 'Low'
+                cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.04, pad=0.02)
+                cbar.set_ticks([layer[head_idx].min(), layer[head_idx].max()])
+                cbar.set_ticklabels(['Low', 'High'], fontweight="bold", fontsize=8)
 
     if path is not None:
         _os.makedirs(f"{path}/attention_scores", exist_ok=True)
-        _plt.savefig(f"{path}/attention_scores/{name}.png")
+        fig.savefig(f"{path}/attention_scores/{name}.png")
     else:
-        _plt.show()
+        plt.show()
+
+
+def display_attention_weights_summary(
+        image: _torch.Tensor,
+        attention_scores: _t.Dict[_t.Tuple[str, int], _t.Dict[str, _t.List[_torch.Tensor]]],
+        head_indices: _t.Dict[str, _t.List[int]],
+        use_max_pooling: bool = False,
+        path: _t.Optional[str] = None,
+        name: _t.Optional[str] = None,
+) -> None:
+    """
+    Function to visualize the attention of the model.
+
+    :param image: The original image.
+    :param attention_scores: The attention scores.
+    :param head_indices: Dictionary with the indexes of attention heads to include in the plot.
+    :param use_max_pooling: Whether to use max pooling.
+    :param path: The path to save the image.
+    :param name: The name of the image.
+    """
+    H, W = image.size()[-2:]
+
+    # Process the attention scores
+    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling}
+    attentions = {
+        (scale, patch_size): _process_attention_scores(attentions=attentions_scale, patch_size=patch_size, **kwargs)
+        for (scale, patch_size), attentions_scale in attention_scores.items()
+    }
+
+    # Plot the attention scores
+    rows = [
+        (scale, patch_size, stage, layer_dict)
+        for (scale, patch_size), stage_dict in attentions.items()
+        for stage, layer_dict in stage_dict.items()
+    ]
+
+    fig = plt.figure(figsize=(8, len(rows) * 5), facecolor="white")
+    fig.suptitle("Attention Maps", fontsize=32, fontweight="bold")
+    outer_grid = _gridspec._gridspec(len(rows), 1, wspace=0.1, hspace=0.2, figure=fig)
+
+    for grid_row, (scale, patch_size, stage, layer_dict) in enumerate(rows):
+        inner_grid = _gridspec.GridSpecFromSubplotSpec(2, 3, subplot_spec=outer_grid[grid_row, 0],
+                                                       wspace=0.1, hspace=0.2)
+        for layer_idx, layer in layer_dict.items():
+            head_idx = head_indices[scale][layer_idx] - 1
+            # Plot the attention scores for the given head
+            ax = fig.add_subplot(inner_grid[layer_idx // 3, layer_idx % 3])
+            img = ax.imshow(layer[head_idx], cmap='inferno', aspect='equal')
+            ax.set_title(f'Layer {layer_idx + 1} - Head {head_idx + 1}', fontsize=12, fontweight='bold')
+            ax.axis('off')
+
+            # Add vertical color bar to each subplot and replace values with 'High' and 'Low'
+            cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.04, pad=0.02)
+            cbar.set_ticks([layer[head_idx].min(), layer[head_idx].max()])
+            cbar.set_ticklabels(['Low', 'High'], fontweight="bold", fontsize=8)
+
+    if path is not None:
+        _os.makedirs(f"{path}/attention_scores_summary", exist_ok=True)
+        fig.savefig(f"{path}/attention_scores_summary/{name}.png")
+    else:
+        plt.show()
 
 
 def display_training_metrics(file_name: str) -> None:

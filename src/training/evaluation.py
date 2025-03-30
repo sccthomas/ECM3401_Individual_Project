@@ -1,5 +1,6 @@
 import os as _os
 import random as _random
+import typing as _t
 
 import matplotlib.pyplot as _plt
 import torch as _torch
@@ -21,6 +22,7 @@ def evaluate_with_no_modifications(
         normalise: bool = True,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -33,6 +35,7 @@ def evaluate_with_no_modifications(
     :param normalise: Whether to normalise the image.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -42,7 +45,7 @@ def evaluate_with_no_modifications(
     fig, axes = _plt.subplots(1, 3, figsize=(12, 5))
 
     # Display the unmodified image.
-    axes[0].set_title("Original Image", fontsize=10)
+    axes[0].set_title("Original Image", fontsize=15, fontweight='bold')
     _visualisation.display_tensor_image(image, ax=axes[0])
 
     # Evaluate the model.
@@ -63,15 +66,15 @@ def evaluate_with_no_modifications(
     ).to(device)(outputs, mask.int()).item()
     # - Set the title
     fig.suptitle(
-        f"Evaluation of the Vision Transformer With No Modifications | BCE Loss: {bce_loss:.4f} | Dice Loss {dice_loss:.4f} | IoU Loss {IoU_loss:.4f}",
-        fontsize=10
+        f"BCE Loss: {bce_loss:.4f} | Dice Score {dice_loss:.4f} | IoU Score {IoU_loss:.4f}",
+        fontsize=20, fontweight='bold'
     )
 
     # Display the masks
     outputs = _torch.sigmoid(outputs).squeeze(0)
-    axes[1].set_title("Target Mask", fontsize=10)
+    axes[1].set_title("Target Mask", fontsize=15, fontweight='bold')
     _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[1])
-    axes[2].set_title("Predicted Mask", fontsize=10)
+    axes[2].set_title("Predicted Mask", fontsize=15, fontweight='bold')
     _visualisation.display_tensor_mask(outputs > 0.5, ax=axes[2])
 
     _plt.tight_layout()
@@ -83,13 +86,23 @@ def evaluate_with_no_modifications(
     else:
         _plt.show()
 
-    _visualisation.display_attention_weights(
-        image=image,
-        attention_scores=model.get_attention_scores(),
-        use_max_pooling=use_max_pooling,
-        path=path,
-        name=name,
-    )
+    if head_indices is not None:
+        _visualisation.display_attention_weights_summary(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            head_indices=head_indices,
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
+    else:
+        _visualisation.display_attention_weights(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
 
 
 def evaluate_with_color_jitter(
@@ -102,6 +115,7 @@ def evaluate_with_color_jitter(
         background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with color jitter modifications.
@@ -115,6 +129,7 @@ def evaluate_with_color_jitter(
     :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -150,6 +165,7 @@ def evaluate_with_color_jitter(
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
     )
 
 
@@ -163,6 +179,7 @@ def evaluate_with_noise_addition(
         background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with noise added to the background.
@@ -176,6 +193,7 @@ def evaluate_with_noise_addition(
     :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -206,6 +224,7 @@ def evaluate_with_noise_addition(
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
     )
 
 
@@ -219,6 +238,7 @@ def evaluate_with_blur(
         background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with blur modifications.
@@ -232,6 +252,7 @@ def evaluate_with_blur(
     :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -263,6 +284,7 @@ def evaluate_with_blur(
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
     )
 
 
@@ -276,6 +298,7 @@ def evaluate_with_synthetic_background(
         background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with a synthetic plain background color.
@@ -289,33 +312,22 @@ def evaluate_with_synthetic_background(
     :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
     mask = mask.to(device)
 
     background_color = _torch.tensor(
-        [
-            _random.uniform(0, 1.0),
-            _random.uniform(0, 1.0),
-            _random.uniform(0, 1.0)
-        ],
+        [0.4, 0.6, 0.4],
         device=device,
         dtype=image.dtype,
     ).view(3, 1, 1)
     new_background = (1 - mask) * background_color
 
     if background_and_cells:
-        cell_color = _torch.tensor(
-            [
-                _random.uniform(0, 1.0),
-                _random.uniform(0, 1.0),
-                _random.uniform(0, 1.0)
-            ],
-            device=device,
-            dtype=image.dtype,
-        ).view(3, 1, 1)
-        new_foreground = mask * cell_color
+        blurred_tensor = _transforms.GaussianBlur(kernel_size=7, sigma=(1, 2))(image)
+        new_foreground = mask * blurred_tensor
         image_modified = new_foreground + new_background
         name = f"{name}_background_and_cells"
     else:
@@ -335,6 +347,7 @@ def evaluate_with_synthetic_background(
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
     )
 
 
@@ -348,6 +361,7 @@ def evaluate_with_stain_variation(
         background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with stain variation simulation.
@@ -361,6 +375,7 @@ def evaluate_with_stain_variation(
     :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -395,6 +410,7 @@ def evaluate_with_stain_variation(
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
     )
 
 
@@ -408,6 +424,7 @@ def evaluate_with_illumination_modifications(
         background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with illumination modifications
@@ -421,6 +438,7 @@ def evaluate_with_illumination_modifications(
     :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
@@ -453,6 +471,7 @@ def evaluate_with_illumination_modifications(
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
     )
 
 
@@ -471,6 +490,7 @@ def _evaluate(
         normalise: bool = True,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with the modified image
@@ -485,6 +505,7 @@ def _evaluate(
     :param normalise: Whether to normalise the image.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visual
     """
     # Create a figure with 4 subplots in one row.
     fig, axes = _plt.subplots(1, 8, figsize=(20, 5))
@@ -543,10 +564,20 @@ def _evaluate(
     else:
         _plt.show()
 
-    _visualisation.display_attention_weights(
-        image=image,
-        attention_scores=model.get_attention_scores(),
-        use_max_pooling=use_max_pooling,
-        path=path,
-        name=name,
-    )
+    if head_indices is not None:
+        _visualisation.display_attention_weights_summary(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            head_indices=head_indices,
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
+    else:
+        _visualisation.display_attention_weights(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
