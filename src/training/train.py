@@ -100,3 +100,10 @@ def train_model(
         # - Reset Metrics
         train_metrics.reset_metrics()
         val_metrics.reset_metrics()
+
+    # Export Metrics
+    with open("train_metrics.txt", "w") as f:
+        f.write(train_metrics.memory)
+
+    with open("val_metrics.txt", "w") as f:
+        f.write(val_metrics.memory)

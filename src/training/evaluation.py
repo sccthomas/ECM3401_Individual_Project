@@ -1,8 +1,8 @@
+import os as _os
 import random as _random
+import typing as _t
 
-import cv2 as _cv2
 import matplotlib.pyplot as _plt
-import numpy as _np
 import torch as _torch
 import torch.nn as _nn
 import torchmetrics.segmentation as _metrics
@@ -22,6 +22,7 @@ def evaluate_with_no_modifications(
         normalise: bool = True,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with texture modifications
@@ -34,16 +35,17 @@ def evaluate_with_no_modifications(
     :param normalise: Whether to normalise the image.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
     mask = mask.to(device)
 
     # Create a figure with 4 subplots in one row.
-    fig, axes = _plt.subplots(1, 3, figsize=(20, 5))
+    fig, axes = _plt.subplots(1, 3, figsize=(12, 5))
 
     # Display the unmodified image.
-    axes[0].set_title("Original Image", fontsize=10)
+    axes[0].set_title("Original Image", fontsize=15, fontweight='bold')
     _visualisation.display_tensor_image(image, ax=axes[0])
 
     # Evaluate the model.
@@ -64,95 +66,93 @@ def evaluate_with_no_modifications(
     ).to(device)(outputs, mask.int()).item()
     # - Set the title
     fig.suptitle(
-        f"Evaluation of the Vision Transformer With No Modifications | BCE Loss: {bce_loss:.4f} | Dice Loss {dice_loss:.4f} | IoU Loss {IoU_loss:.4f}",
-        fontsize=16
+        f"BCE Loss: {bce_loss:.4f} | Dice Score {dice_loss:.4f} | IoU Score {IoU_loss:.4f}",
+        fontsize=20, fontweight='bold'
     )
 
     # Display the masks
     outputs = _torch.sigmoid(outputs).squeeze(0)
-    axes[1].set_title("Target Mask", fontsize=10)
+    axes[1].set_title("Target Mask", fontsize=15, fontweight='bold')
     _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[1])
-    axes[2].set_title("Predicted Mask", fontsize=10)
+    axes[2].set_title("Predicted Mask", fontsize=15, fontweight='bold')
     _visualisation.display_tensor_mask(outputs > 0.5, ax=axes[2])
 
     _plt.tight_layout()
 
     if path is not None:
+        path = f"{path}/no_modifications"
+        _os.makedirs(f"{path}/predictions", exist_ok=True)
         _plt.savefig(f"{path}/predictions/{name}.png")
     else:
         _plt.show()
 
-    _visualisation.display_attention_weights(
-        image=image,
-        attention_scores=model.get_attention_scores(),
-        use_max_pooling=use_max_pooling,
-        path=path,
-        name=name,
-    )
+    if head_indices is not None:
+        _visualisation.display_attention_weights_summary(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            head_indices=head_indices,
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
+    else:
+        _visualisation.display_attention_weights(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
 
 
-def evaluate_with_texture_modifications(
+def evaluate_with_color_jitter(
         model: _model.SemanticSegmentationVisionTransformer,
         image: _torch.Tensor,
         mask: _torch.Tensor,
         device: _torch.device,
-        texture_type: str = "Staining",
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
-    Evaluate the model with texture modifications
+    Evaluate the model with color jitter modifications.
 
     :param model: The model to evaluate.
     :param image: The input image, shape (3, H, W).
     :param mask: The target mask, shape (1, H, W).
     :param device: The device to use.
-    :param texture_type: The type of texture modification. Options are:
-        "Staining", "Background Artifacts", "Microscopic Artifacts", "Cellular Variability".
     :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
     mask = mask.to(device)
 
-    # Modify and image
-    H, W = image.shape[-2:]
-    if texture_type == "Staining":
-        factor = _np.random.uniform(0.8, 1.5)
-        color_shift = _np.random.uniform(0.8, 1.2, size=(3, 1, 1))
-        noise_texture = (image * factor * _torch.tensor(color_shift, device=device, dtype=image.dtype))
-        noise_texture = noise_texture.clamp(0, 1)
+    transform_colour = _transforms.ColorJitter(
+        contrast=_random.uniform(0.5, 1.5),
+        saturation=_random.uniform(0.5, 1.5),
+        hue=_random.uniform(0, 0.1)
+    )
+    jitter_tensor = transform_colour(image)
+    new_background = (1 - mask) * jitter_tensor
 
-    elif texture_type == "Background Artifacts":
-        noise = _np.random.normal(loc=0, scale=0.1, size=(128, 128))
-        noise = _cv2.resize(noise, (H, W), interpolation=_cv2.INTER_CUBIC)
-        noise_texture = _torch.tensor(noise, device=device, dtype=image.dtype).squeeze(0).repeat(3, 1, 1)
-        noise_texture = noise_texture + (_torch.rand_like(noise_texture) * 0.1)
-
-    elif texture_type == "Microscopic Artifacts":
-        artifact = _np.random.normal(loc=0, scale=0.05, size=(128, 128))
-        artifact = _cv2.resize(artifact, (H, W), interpolation=_cv2.INTER_CUBIC)
-        noise_texture = _torch.tensor(artifact, device=device, dtype=image.dtype).squeeze(0).repeat(3, 1, 1)
-        gradient = _np.linspace(0, 1, H).reshape(-1, 1)
-        gradient = _torch.tensor(gradient, device=device, dtype=image.dtype)
-        noise_texture = noise_texture * gradient
-
-    elif texture_type == "Cellular Variability":
-        cell_size = _np.random.randint(5, 15)
-        cells = _np.random.randint(0, 2, (H // cell_size, W // cell_size))
-        cells = _cv2.resize(cells.astype(_np.float32), (H, W), interpolation=_cv2.INTER_NEAREST)
-        cells = cells + (_np.random.randn(H, W) * 0.05)
-        noise_texture = _torch.tensor(cells, device=device, dtype=image.dtype).squeeze(0).repeat(3, 1, 1)
-
+    if background_and_cells:
+        jitter_tensor = transform_colour(image)
+        new_foreground = mask * jitter_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
     else:
-        raise ValueError("Invalid type")
-    new_background = (1 - mask) * noise_texture
-    image_modified = mask * image + new_background
+        image_modified = mask * image + new_background
+
+    if path is not None:
+        path = f"{path}/color_jitter"
 
     _evaluate(
         model=model,
@@ -160,11 +160,257 @@ def evaluate_with_texture_modifications(
         image_modified=image_modified,
         mask=mask,
         device=device,
-        title=f"Evaluation of the Vision Transformer With Texture Modification: {texture_type}",
+        title="Evaluation with Color Jitter",
         use_max_pooling=use_max_pooling,
         normalise=normalise,
         path=path,
         name=name,
+        head_indices=head_indices,
+    )
+
+
+def evaluate_with_noise_addition(
+        model: _model.SemanticSegmentationVisionTransformer,
+        image: _torch.Tensor,
+        mask: _torch.Tensor,
+        device: _torch.device,
+        use_max_pooling: bool = True,
+        normalise: bool = True,
+        background_and_cells: bool = False,
+        path: str = None,
+        name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
+) -> None:
+    """
+    Evaluate the model with noise added to the background.
+
+    :param model: The model to evaluate.
+    :param image: The input image, shape (3, H, W).
+    :param mask: The target mask, shape (1, H, W).
+    :param device: The device to use.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
+    """
+    model = model.to(device).eval()
+    image = image.to(device)
+    mask = mask.to(device)
+
+    noise_tensor = _transforms.GaussianNoise(mean=_snow.MEAN[0], sigma=_snow.STD[0])(image)
+    new_background = (1 - mask) * noise_tensor
+
+    if background_and_cells:
+        noise_tensor = _transforms.GaussianNoise()(image)
+        new_foreground = mask * noise_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
+
+    if path is not None:
+        path = f"{path}/noise_addition"
+
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title="Evaluation with Noise Addition",
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
+        path=path,
+        name=name,
+        head_indices=head_indices,
+    )
+
+
+def evaluate_with_blur(
+        model: _model.SemanticSegmentationVisionTransformer,
+        image: _torch.Tensor,
+        mask: _torch.Tensor,
+        device: _torch.device,
+        use_max_pooling: bool = True,
+        normalise: bool = True,
+        background_and_cells: bool = False,
+        path: str = None,
+        name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
+) -> None:
+    """
+    Evaluate the model with blur modifications.
+
+    :param model: The model to evaluate.
+    :param image: The input image, shape (3, H, W).
+    :param mask: The target mask, shape (1, H, W).
+    :param device: The device to use.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
+    """
+    model = model.to(device).eval()
+    image = image.to(device)
+    mask = mask.to(device)
+
+    transform_blur = _transforms.GaussianBlur(kernel_size=7, sigma=(1, 2))
+    blurred_tensor = transform_blur(image)
+    new_background = (1 - mask) * blurred_tensor
+
+    if background_and_cells:
+        blurred_tensor = transform_blur(image)
+        new_foreground = mask * blurred_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
+
+    if path is not None:
+        path = f"{path}/blur"
+
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title="Evaluation with Blur",
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
+        path=path,
+        name=name,
+        head_indices=head_indices,
+    )
+
+
+def evaluate_with_synthetic_background(
+        model: _model.SemanticSegmentationVisionTransformer,
+        image: _torch.Tensor,
+        mask: _torch.Tensor,
+        device: _torch.device,
+        use_max_pooling: bool = True,
+        normalise: bool = True,
+        background_and_cells: bool = False,
+        path: str = None,
+        name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
+) -> None:
+    """
+    Evaluate the model with a synthetic plain background color.
+
+    :param model: The model to evaluate.
+    :param image: The input image, shape (3, H, W).
+    :param mask: The target mask, shape (1, H, W).
+    :param device: The device to use.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
+    """
+    model = model.to(device).eval()
+    image = image.to(device)
+    mask = mask.to(device)
+
+    background_color = _torch.tensor(
+        [0.4, 0.6, 0.4],
+        device=device,
+        dtype=image.dtype,
+    ).view(3, 1, 1)
+    new_background = (1 - mask) * background_color
+
+    if background_and_cells:
+        blurred_tensor = _transforms.GaussianBlur(kernel_size=7, sigma=(1, 2))(image)
+        new_foreground = mask * blurred_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
+
+    if path is not None:
+        path = f"{path}/synthetic_background"
+
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title="Evaluation with Synthetic Background",
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
+        path=path,
+        name=name,
+        head_indices=head_indices,
+    )
+
+
+def evaluate_with_stain_variation(
+        model: _model.SemanticSegmentationVisionTransformer,
+        image: _torch.Tensor,
+        mask: _torch.Tensor,
+        device: _torch.device,
+        use_max_pooling: bool = True,
+        normalise: bool = True,
+        background_and_cells: bool = False,
+        path: str = None,
+        name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
+) -> None:
+    """
+    Evaluate the model with stain variation simulation.
+
+    :param model: The model to evaluate.
+    :param image: The input image, shape (3, H, W).
+    :param mask: The target mask, shape (1, H, W).
+    :param device: The device to use.
+    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
+    :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
+    :param path: The path to save the figure.
+    :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
+    """
+    model = model.to(device).eval()
+    image = image.to(device)
+    mask = mask.to(device)
+
+    transform_stain_variation = _transforms.ColorJitter(
+        brightness=_random.uniform(0.8, 1.2),
+        contrast=_random.uniform(0.8, 1.2)
+    )
+    stain_variation = transform_stain_variation(image)
+    new_background = (1 - mask) * stain_variation
+
+    if background_and_cells:
+        stain_variation = transform_stain_variation(image)
+        new_foreground = mask * stain_variation
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
+
+    if path is not None:
+        path = f"{path}/stain_variation"
+
+    _evaluate(
+        model=model,
+        image=image,
+        image_modified=image_modified,
+        mask=mask,
+        device=device,
+        title="Evaluation with Stain Variation",
+        use_max_pooling=use_max_pooling,
+        normalise=normalise,
+        path=path,
+        name=name,
+        head_indices=head_indices,
     )
 
 
@@ -175,8 +421,10 @@ def evaluate_with_illumination_modifications(
         device: _torch.device,
         use_max_pooling: bool = True,
         normalise: bool = True,
+        background_and_cells: bool = False,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with illumination modifications
@@ -187,17 +435,30 @@ def evaluate_with_illumination_modifications(
     :param device: The device to use.
     :param use_max_pooling: Whether to use max pooling to downsample the attention
     :param normalise: Whether to normalise the image.
+    :param background_and_cells: Whether to modify the background and cells together.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visualise.
     """
     model = model.to(device).eval()
     image = image.to(device)
     mask = mask.to(device)
 
     # Modify and image
-    brightened_tensor = _transforms.ColorJitter(brightness=_random.uniform(0.5, 1.5))(image)
+    transform_illumination = _transforms.ColorJitter(brightness=_random.uniform(0.5, 1.5))
+    brightened_tensor = transform_illumination(image)
     new_background = (1 - mask) * brightened_tensor
-    image_modified = mask * image + new_background
+
+    if background_and_cells:
+        brightened_tensor = transform_illumination(image)
+        new_foreground = mask * brightened_tensor
+        image_modified = new_foreground + new_background
+        name = f"{name}_background_and_cells"
+    else:
+        image_modified = mask * image + new_background
+
+    if path is not None:
+        path = f"{path}/illumination_modifications"
 
     _evaluate(
         model=model,
@@ -210,68 +471,7 @@ def evaluate_with_illumination_modifications(
         normalise=normalise,
         path=path,
         name=name,
-    )
-
-
-def evaluate_with_background_modifications(
-        model: _model.SemanticSegmentationVisionTransformer,
-        image: _torch.Tensor,
-        mask: _torch.Tensor,
-        device: _torch.device,
-        mtype: str = "Simple",
-        use_max_pooling: bool = True,
-        normalise: bool = True,
-        path: str = None,
-        name: str = None,
-) -> None:
-    """
-    Evaluate the model with background modifications
-
-    :param model: The model to evaluate.
-    :param image: The input image, shape (3, H, W).
-    :param mask: The target mask, shape (1, H, W).
-    :param device: The device to use.
-    :param mtype: The type of background modification. Options are: "Simple", "Gaussian Blur", "Gaussian Noise", "Contrast", "Invert".
-    :param use_max_pooling: Whether to use max pooling to downsample the attention scores.
-    :param normalise: Whether to normalise the image.
-    :param path: The path to save the figure.
-    :param name: The name of the figure.
-    """
-    model = model.to(device).eval()
-    image = image.to(device)
-    mask = mask.to(device)
-
-    # Modify and image
-    if mtype == "Simple":
-        modified_tensor = _torch.rand(3, 1, 1).to(device)
-    elif mtype == "Gaussian Blur":
-        modified_tensor = _transforms.GaussianBlur(kernel_size=5, sigma=1.5)(image)
-    elif mtype == "Gaussian Noise":
-        modified_tensor = _transforms.GaussianNoise(mean=0.5, sigma=0.25)(image)
-    elif mtype == "Contrast":
-        modified_tensor = _transforms.ColorJitter(contrast=_random.uniform(0.5, 1.5))(image)
-    elif mtype == "Invert":
-        modified_tensor = _transforms.RandomInvert(p=1)(image)
-    elif mtype == "Sharpness":
-        modified_tensor = _transforms.RandomAdjustSharpness(
-            sharpness_factor=0, p=1
-        )(image)
-    else:
-        raise ValueError("Invalid type")
-    new_background = (1 - mask) * modified_tensor
-    image_modified = mask * image + new_background
-
-    _evaluate(
-        model=model,
-        image=image,
-        image_modified=image_modified,
-        mask=mask,
-        device=device,
-        title=f"Evaluation of the Vision Transformer With Background Modification: {mtype}",
-        use_max_pooling=use_max_pooling,
-        normalise=normalise,
-        path=path,
-        name=name,
+        head_indices=head_indices,
     )
 
 
@@ -290,6 +490,7 @@ def _evaluate(
         normalise: bool = True,
         path: str = None,
         name: str = None,
+        head_indices: _t.Optional[_t.Dict[str, _t.List[int]]] = None,
 ) -> None:
     """
     Evaluate the model with the modified image
@@ -304,17 +505,26 @@ def _evaluate(
     :param normalise: Whether to normalise the image.
     :param path: The path to save the figure.
     :param name: The name of the figure.
+    :param head_indices: The indices of the heads to visual
     """
     # Create a figure with 4 subplots in one row.
-    fig, axes = _plt.subplots(1, 4, figsize=(20, 5))
+    fig, axes = _plt.subplots(1, 8, figsize=(20, 5))
 
     # Display the unmodified image.
     axes[0].set_title("Original Image", fontsize=10)
     _visualisation.display_tensor_image(image, ax=axes[0])
+    axes[1].set_title("Original Image - Background Context", fontsize=10)
+    _visualisation.display_tensor_image(image * (1 - mask), ax=axes[1])
+    axes[2].set_title("Original Image - Cells", fontsize=10)
+    _visualisation.display_tensor_image(image * mask, ax=axes[2])
 
     # Display the modified image.
-    axes[1].set_title("Modified Image", fontsize=10)
-    _visualisation.display_tensor_image(image_modified, ax=axes[1])
+    axes[3].set_title("Modified Image", fontsize=10)
+    _visualisation.display_tensor_image(image_modified, ax=axes[3])
+    axes[4].set_title("Modified Image - Background Context", fontsize=10)
+    _visualisation.display_tensor_image(image_modified * (1 - mask), ax=axes[4])
+    axes[5].set_title("Modified Image - Cells", fontsize=10)
+    _visualisation.display_tensor_image(image_modified * mask, ax=axes[5])
 
     # Test the robustness of the model.
     image_modified_ = (
@@ -336,26 +546,38 @@ def _evaluate(
         num_classes=1,
     ).to(device)(outputs, mask.int()).item()
     # - Set the title
-    fig.suptitle(f"{title} | BCE Loss: {bce_loss:.4f} | Dice Loss {dice_loss:.4f} | IoU Loss {IoU_loss:.4f}",
+    fig.suptitle(f"{title} | BCE Loss: {bce_loss:.4f} | Dice Score {dice_loss:.4f} | IoU Score {IoU_loss:.4f}",
                  fontsize=16)
 
     # Display the masks
-    axes[2].set_title("Target Mask", fontsize=10)
-    _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[2])
-    axes[3].set_title("Predicted Mask", fontsize=10)
-    _visualisation.display_tensor_mask(outputs.squeeze(0), ax=axes[3])
+    axes[6].set_title("Target Mask", fontsize=10)
+    _visualisation.display_tensor_mask(mask.squeeze(0), ax=axes[6])
+    axes[7].set_title("Predicted Mask", fontsize=10)
+    _visualisation.display_tensor_mask(outputs.squeeze(0), ax=axes[7])
 
     _plt.tight_layout()
 
     if path is not None:
-        _plt.savefig(f"{path}/predictions/{name}.png")
+        path_ = f"{path}/predictions"
+        _os.makedirs(path_, exist_ok=True)
+        _plt.savefig(f"{path_}/{name}.png")
     else:
         _plt.show()
 
-    _visualisation.display_attention_weights(
-        image=image,
-        attention_scores=model.get_attention_scores(),
-        use_max_pooling=use_max_pooling,
-        path=path,
-        name=name,
-    )
+    if head_indices is not None:
+        _visualisation.display_attention_weights_summary(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            head_indices=head_indices,
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )
+    else:
+        _visualisation.display_attention_weights(
+            image=image,
+            attention_scores=model.get_attention_scores(),
+            use_max_pooling=use_max_pooling,
+            path=path,
+            name=name,
+        )

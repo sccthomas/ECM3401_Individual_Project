@@ -5,10 +5,13 @@ import matplotlib.pyplot as _plt
 import torch
 
 from src.training.evaluation import (
-    evaluate_with_texture_modifications,
+    evaluate_with_color_jitter,
     evaluate_with_illumination_modifications,
-    evaluate_with_background_modifications,
+    evaluate_with_noise_addition,
     evaluate_with_no_modifications,
+    evaluate_with_blur,
+    evaluate_with_synthetic_background,
+    evaluate_with_stain_variation,
 )
 from src.vision_transformer.model import SemanticSegmentationVisionTransformer
 
@@ -20,7 +23,7 @@ class TestEvaluate(unittest.TestCase):
             image_dims=(3, 128, 128),
             num_encoder_layers=4,
             use_swin_transformer=False,
-            use_heavyweight_decoder=False,
+            use_heavyweight_decoder=True,
             skip_layer_ratio=2,
             use_learnable_skip_layers=True,
             use_skip_layer_gated_attention=True,
@@ -42,14 +45,14 @@ class TestEvaluate(unittest.TestCase):
             evaluate_with_no_modifications(model, image, mask, device)
             mock_show.assert_called()
 
-    def test_evaluate_with_texture_modifications(self) -> None:
+    def test_evaluate_with_color_jitter(self) -> None:
         model = self.model
         device = self.device
 
         image = torch.rand(3, 128, 128)
         mask = torch.rand(1, 128, 128)
         with unittest.mock.patch.object(_plt, 'show') as mock_show:
-            evaluate_with_texture_modifications(model, image, mask, device)
+            evaluate_with_color_jitter(model, image, mask, device)
             mock_show.assert_called()
 
     def test_evaluate_with_illumination_modifications(self) -> None:
@@ -62,19 +65,44 @@ class TestEvaluate(unittest.TestCase):
             evaluate_with_illumination_modifications(model, image, mask, device)
             mock_show.assert_called()
 
-    def test_evaluate_with_background_modifications(self) -> None:
+    def test_evaluate_with_noise_addition(self) -> None:
         model = self.model
         device = self.device
 
         image = torch.rand(3, 128, 128)
         mask = torch.rand(1, 128, 128)
         with unittest.mock.patch.object(_plt, 'show') as mock_show:
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Simple")
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Gaussian Blur")
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Gaussian Noise")
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Contrast")
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Invert")
-            evaluate_with_background_modifications(model, image, mask, device, mtype="Sharpness")
+            evaluate_with_noise_addition(model, image, mask, device)
+            mock_show.assert_called()
+
+    def test_evaluate_with_blur(self) -> None:
+        model = self.model
+        device = self.device
+
+        image = torch.rand(3, 128, 128)
+        mask = torch.rand(1, 128, 128)
+        with unittest.mock.patch.object(_plt, 'show') as mock_show:
+            evaluate_with_blur(model, image, mask, device)
+            mock_show.assert_called()
+
+    def test_evaluate_with_synthetic_background(self) -> None:
+        model = self.model
+        device = self.device
+
+        image = torch.rand(3, 128, 128)
+        mask = torch.rand(1, 128, 128)
+        with unittest.mock.patch.object(_plt, 'show') as mock_show:
+            evaluate_with_synthetic_background(model, image, mask, device)
+            mock_show.assert_called()
+
+    def test_evaluate_with_stain_variation(self) -> None:
+        model = self.model
+        device = self.device
+
+        image = torch.rand(3, 128, 128)
+        mask = torch.rand(1, 128, 128)
+        with unittest.mock.patch.object(_plt, 'show') as mock_show:
+            evaluate_with_stain_variation(model, image, mask, device)
             mock_show.assert_called()
 
 

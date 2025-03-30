@@ -1,8 +1,11 @@
 import math as _math
+import os as _os
+import re
 import typing as _t
 
 import matplotlib.gridspec as _gridspec
 import matplotlib.pyplot as _plt
+import matplotlib.pyplot as plt
 import numpy as _np
 import torch as _torch
 import torch.nn as _nn
@@ -63,7 +66,7 @@ def display_attention_weights(
     H, W = image.size()[-2:]
 
     # Process the attention scores
-    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling, }
+    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling}
     attentions = {
         (scale, patch_size): _process_attention_scores(attentions=attentions_scale, patch_size=patch_size, **kwargs)
         for (scale, patch_size), attentions_scale in attention_scores.items()
@@ -71,57 +74,218 @@ def display_attention_weights(
 
     # Plot the attention scores
     rows = [
-        (scale, patch_size, stage, layer_list)
+        (scale, patch_size, stage, layer_dict)
         for (scale, patch_size), stage_dict in attentions.items()
-        for stage, layer_list in stage_dict.items()
+        for stage, layer_dict in stage_dict.items()
     ]
     max_layers = max(len(layer_list) for (_, _, _, layer_list) in rows)
     n_rows_total = len(rows)
-    fig = _plt.figure(figsize=(max_layers * 15, n_rows_total * 10), facecolor="white")
+    fig = plt.figure(figsize=(max_layers * 10, n_rows_total * 5), facecolor="white")
     fig.suptitle("Attention Maps", fontsize=32, fontweight="bold")
-    outer_grid = _gridspec.GridSpec(n_rows_total, max_layers, hspace=0.01, wspace=0.05, figure=fig)
+    outer_grid = _gridspec._gridspec(n_rows_total, max_layers, wspace=0.1, hspace=0.05, figure=fig)
 
-    for grid_row, (scale, patch_size, stage, layer_list) in enumerate(rows):
-        num_layers = len(layer_list)
+    for grid_row, (scale, patch_size, stage, layer_dict) in enumerate(rows):
+        for layer_idx, layer in layer_dict.items():
+            inner_grid = _gridspec.GridSpecFromSubplotSpec(2, 4, subplot_spec=outer_grid[grid_row, layer_idx],
+                                                           wspace=0.275, hspace=0.005)
+            # Plot the attention scores
+            for head_idx in range(layer.shape[0]):
+                ax = fig.add_subplot(inner_grid[head_idx // 4, head_idx % 4])
+                img = ax.imshow(layer[head_idx], cmap='inferno', aspect='equal')
+                ax.set_title(f'Head {head_idx + 1}', fontsize=15, fontweight='bold')
+                ax.axis('off')
 
-        for l in range(max_layers):
-            if l < num_layers:
-                attn = layer_list[l]
-                num_heads = attn.shape[0]
-                nested = _gridspec.GridSpecFromSubplotSpec(
-                    3, 4,
-                    subplot_spec=outer_grid[grid_row, l],
-                    height_ratios=[15, 7.5, 7.5], hspace=0.075, wspace=0.015
-                )
-                ax_avg = fig.add_subplot(nested[0, :])
-                ax_avg.set_facecolor("white")
-                avg_attn = attn.mean(axis=0)
-                im_avg = ax_avg.imshow(avg_attn, aspect="equal", cmap="inferno")
-                ax_avg.set_title(
-                    f"{scale} | Patch Size {patch_size} | {stage} | Layer {l + 1}\nAvg",
-                    fontsize=20, fontweight="bold"
-                )
-                ax_avg.axis("off")
-                _plt.colorbar(im_avg, ax=ax_avg, fraction=0.02, pad=0.015)
-
-                row = 1
-                for h in range(num_heads):
-                    ax_head = fig.add_subplot(nested[row, h % 4])
-                    ax_head.set_facecolor("white")
-                    im_head = ax_head.imshow(attn[h], aspect="equal", cmap="inferno")
-                    ax_head.set_title(f"Head {h + 1}", fontsize=16)
-                    ax_head.axis("off")
-                    if h % 4 == 3:
-                        row += 1
-            else:
-                ax_dummy = fig.add_subplot(outer_grid[grid_row, l])
-                ax_dummy.set_facecolor("white")
-                ax_dummy.axis("off")
+                # Add vertical color bar to each subplot and replace values with 'High' and 'Low'
+                cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.04, pad=0.02)
+                cbar.set_ticks([layer[head_idx].min(), layer[head_idx].max()])
+                cbar.set_ticklabels(['Low', 'High'], fontweight="bold", fontsize=8)
 
     if path is not None:
-        _plt.savefig(f"{path}/attention_scores/{name}.png")
+        _os.makedirs(f"{path}/attention_scores", exist_ok=True)
+        fig.savefig(f"{path}/attention_scores/{name}.png")
     else:
-        _plt.show()
+        plt.show()
+
+
+def display_attention_weights_summary(
+        image: _torch.Tensor,
+        attention_scores: _t.Dict[_t.Tuple[str, int], _t.Dict[str, _t.List[_torch.Tensor]]],
+        head_indices: _t.Dict[str, _t.List[int]],
+        use_max_pooling: bool = False,
+        path: _t.Optional[str] = None,
+        name: _t.Optional[str] = None,
+) -> None:
+    """
+    Function to visualize the attention of the model.
+
+    :param image: The original image.
+    :param attention_scores: The attention scores.
+    :param head_indices: Dictionary with the indexes of attention heads to include in the plot.
+    :param use_max_pooling: Whether to use max pooling.
+    :param path: The path to save the image.
+    :param name: The name of the image.
+    """
+    H, W = image.size()[-2:]
+
+    # Process the attention scores
+    kwargs = {"H": H, "W": W, "use_max_pooling": use_max_pooling}
+    attentions = {
+        (scale, patch_size): _process_attention_scores(attentions=attentions_scale, patch_size=patch_size, **kwargs)
+        for (scale, patch_size), attentions_scale in attention_scores.items()
+    }
+
+    # Plot the attention scores
+    rows = [
+        (scale, patch_size, stage, layer_dict)
+        for (scale, patch_size), stage_dict in attentions.items()
+        for stage, layer_dict in stage_dict.items()
+    ]
+
+    fig = plt.figure(figsize=(8, len(rows) * 5), facecolor="white")
+    fig.suptitle("Attention Maps", fontsize=32, fontweight="bold")
+    outer_grid = _gridspec._gridspec(len(rows), 1, wspace=0.1, hspace=0.2, figure=fig)
+
+    for grid_row, (scale, patch_size, stage, layer_dict) in enumerate(rows):
+        inner_grid = _gridspec.GridSpecFromSubplotSpec(2, 3, subplot_spec=outer_grid[grid_row, 0],
+                                                       wspace=0.1, hspace=0.2)
+        for layer_idx, layer in layer_dict.items():
+            head_idx = head_indices[scale][layer_idx] - 1
+            # Plot the attention scores for the given head
+            ax = fig.add_subplot(inner_grid[layer_idx // 3, layer_idx % 3])
+            img = ax.imshow(layer[head_idx], cmap='inferno', aspect='equal')
+            ax.set_title(f'Layer {layer_idx + 1} - Head {head_idx + 1}', fontsize=12, fontweight='bold')
+            ax.axis('off')
+
+            # Add vertical color bar to each subplot and replace values with 'High' and 'Low'
+            cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.04, pad=0.02)
+            cbar.set_ticks([layer[head_idx].min(), layer[head_idx].max()])
+            cbar.set_ticklabels(['Low', 'High'], fontweight="bold", fontsize=8)
+
+    if path is not None:
+        _os.makedirs(f"{path}/attention_scores_summary", exist_ok=True)
+        fig.savefig(f"{path}/attention_scores_summary/{name}.png")
+    else:
+        plt.show()
+
+
+def display_training_metrics(file_name: str) -> None:
+    """
+    Plot the training metrics.
+
+    :param file_name: The file name.
+    """
+    parsed_file = _parse_log_file(file_name)
+    epochs = parsed_file[0]
+    training_losses = parsed_file[1]
+    validation_losses = parsed_file[2]
+    training_dice_scores = parsed_file[3]
+    validation_dice_scores = parsed_file[4]
+    training_miou = parsed_file[5]
+    validation_miou = parsed_file[6]
+
+    if len(epochs) == 0:
+        print("No epochs found in the log file.")
+        return
+    if len(validation_losses) == 0:
+        print("No validation losses found in the log file.")
+        return
+
+    # Find the epoch where validation loss is lowest
+    best_epoch_idx = validation_losses.index(min(validation_losses))
+    best_epoch = epochs[best_epoch_idx]
+
+    plt.figure(figsize=(20, 8))
+
+    # Loss Plot
+    plt.subplot(1, 3, 1)
+    plt.plot(epochs, training_losses, label='Training Loss', marker='o')
+    plt.plot(epochs, validation_losses, label='Validation Loss', marker='s')
+    plt.axvline(x=best_epoch, linestyle='--', color='red', alpha=0.6)
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Over Epochs')
+    plt.legend()
+    plt.grid()
+
+    # Annotate values at best validation loss epoch
+    if training_losses[best_epoch_idx] > validation_losses[best_epoch_idx]:
+        plt.annotate(f"{training_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, training_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, 30), ha='center', fontsize=10, fontweight='bold')
+
+        plt.annotate(f"{validation_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, validation_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, -15), ha='center', fontsize=10, fontweight='bold')
+    else:
+        plt.annotate(f"{training_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, training_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, -15), ha='center', fontsize=10, fontweight='bold')
+
+        plt.annotate(f"{validation_losses[best_epoch_idx]:.4f}",
+                     (best_epoch, validation_losses[best_epoch_idx]),
+                     textcoords="offset points", xytext=(-15, 30), ha='center', fontsize=10, fontweight='bold')
+
+    # Dice Score Plot
+    if len(training_dice_scores) > 0:
+        plt.subplot(1, 3, 2)
+        plt.plot(epochs, training_dice_scores, label='Training Dice', marker='o')
+        plt.plot(epochs, validation_dice_scores, label='Validation Dice', marker='s')
+        plt.axvline(x=best_epoch, linestyle='--', color='red', alpha=0.6)
+        plt.xlabel('Epochs')
+        plt.ylabel('Dice Score')
+        plt.title('Dice Score Over Epochs')
+        plt.legend()
+        plt.grid()
+
+        # Annotate values at best validation loss epoch
+        if training_dice_scores[best_epoch_idx] > validation_dice_scores[best_epoch_idx]:
+            plt.annotate(f"{training_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, training_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 20), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+        else:
+            plt.annotate(f"{training_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, training_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_dice_scores[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_dice_scores[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 10), ha='center', fontsize=10, fontweight='bold')
+
+    # Mean IoU Plot
+    if len(training_miou) > 0:
+        plt.subplot(1, 3, 3)
+        plt.plot(epochs, training_miou, label='Training mIoU', marker='o')
+        plt.plot(epochs, validation_miou, label='Validation mIoU', marker='s')
+        plt.axvline(x=best_epoch, linestyle='--', color='red', alpha=0.6)
+        plt.xlabel('Epochs')
+        plt.ylabel('Mean IoU')
+        plt.title('Mean IoU Over Epochs')
+        plt.legend()
+        plt.grid()
+
+        # Annotate values at best validation loss epoch
+        if training_miou[best_epoch_idx] > validation_miou[best_epoch_idx]:
+            plt.annotate(f"{training_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, training_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 20), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+        else:
+            plt.annotate(f"{training_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, training_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, -30), ha='center', fontsize=10, fontweight='bold')
+
+            plt.annotate(f"{validation_miou[best_epoch_idx]:.4f}",
+                         (best_epoch, validation_miou[best_epoch_idx]),
+                         textcoords="offset points", xytext=(-15, 10), ha='center', fontsize=10, fontweight='bold')
+
+    plt.show()
 
 
 ########################################################################################################################
@@ -209,3 +373,76 @@ def _upsample_attention(
     )
 
     return attention
+
+
+def _parse_log_file(
+        file_name: str
+) -> _t.Tuple[
+    _t.List[int], _t.List[float], _t.List[float], _t.List[float], _t.List[float], _t.List[float], _t.List[float]
+]:
+    """
+    Parse the log file.
+
+    :param file_name: The file name.
+    :return: The parsed log file.
+    """
+    epochs = []
+    training_losses = []
+    validation_losses = []
+    training_dice_scores = []
+    validation_dice_scores = []
+    training_miou = []
+    validation_miou = []
+
+    with open(file_name, 'r') as file:
+        lines = file.readlines()
+
+    current_phase = None  # Track whether we're in Training or Validation section
+
+    for line in lines:
+        if "Early stopping triggered" in line:
+            break
+        epoch_match = re.match(r"\s*Epoch (\d+)/", line)
+        if epoch_match:
+            epochs.append(int(epoch_match.group(1)))
+            continue
+
+        if "Training Metrics" in line or "Training:" in line:
+            current_phase = "training"
+            continue
+        elif "Validation Metrics" in line or "Validation:" in line:
+            current_phase = "validation"
+            continue
+
+        loss_match = re.match(
+            r"\s*(?:Average Binary Cross Entropy Loss|Average Loss|Training Loss|Validation Loss): ([0-9\.]+)",
+            line
+        )
+        dice_match = re.match(r"\s*Average Dice Score: ([0-9\.]+)", line)
+        miou_match = re.match(r"\s*Average Mean IoU: ([0-9\.]+)", line)
+
+        if loss_match:
+            if current_phase == "training":
+                training_losses.append(float(loss_match.group(1)))
+            elif current_phase == "validation":
+                validation_losses.append(float(loss_match.group(1)))
+        elif dice_match:
+            if current_phase == "training":
+                training_dice_scores.append(float(dice_match.group(1)))
+            elif current_phase == "validation":
+                validation_dice_scores.append(float(dice_match.group(1)))
+        elif miou_match:
+            if current_phase == "training":
+                training_miou.append(float(miou_match.group(1)))
+            elif current_phase == "validation":
+                validation_miou.append(float(miou_match.group(1)))
+
+    return (
+        epochs,
+        training_losses,
+        validation_losses,
+        training_dice_scores,
+        validation_dice_scores,
+        training_miou,
+        validation_miou
+    )

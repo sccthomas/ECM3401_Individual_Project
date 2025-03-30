@@ -88,7 +88,7 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
             image_dims=(3, 128, 128),
             num_encoder_layers=6,
             use_swin_transformer=False,
-            use_heavyweight_decoder=False,
+            use_heavyweight_decoder=True,
             skip_layer_ratio=2,
             use_learnable_skip_layers=True,
             use_skip_layer_gated_attention=True,
@@ -174,11 +174,11 @@ class TestSemanticSegmentationVisionTransformer(unittest.TestCase):
             decoder_dropout_rate=0.25,
             num_encoder_heads=4,
             num_classes=1,
-            patch_embedding_scale_1=(32, 1024),
-            patch_embedding_scale_2=(16, 768),
-            patch_embedding_scale_3=(8, 512),
-            patch_embedding_scale_4=(4, 256),
-            patch_embedding_scale_5=(2, 128),
+            patch_embedding_scale_1=(64, 1024),
+            patch_embedding_scale_2=(32, 768),
+            patch_embedding_scale_3=(16, 512),
+            patch_embedding_scale_4=(8, 256),
+            patch_embedding_scale_5=(4, 128),
         ).to(device)
 
         # Test the forward pass

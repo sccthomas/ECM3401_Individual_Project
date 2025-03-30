@@ -145,11 +145,8 @@ class PatchFusionLearnable(PatchFusion):
             in_resolution = int(in_patches ** 0.5)
             if in_patches < out_patches:
                 scale = out_resolution // in_resolution
-                operation = _nn.Sequential(
-                    _nn.Conv2d(
-                        in_channels=in_embed, out_channels=out_embed, kernel_size=1, stride=1
-                    ),
-                    _nn.Upsample(scale_factor=scale, mode="nearest")
+                operation = _nn.ConvTranspose2d(
+                    in_channels=in_embed, out_channels=out_embed, kernel_size=scale, stride=scale
                 )
             elif in_patches > out_patches:
                 scale = in_resolution // out_resolution
@@ -160,7 +157,7 @@ class PatchFusionLearnable(PatchFusion):
                 operation = _nn.Identity()
 
             patch_embedding_projectors.append(
-                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate))
+                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.GELU(), _nn.Dropout2d(dropout_rate))
             )
             in_resolutions.append(in_resolution)
 
@@ -245,7 +242,7 @@ class PatchFusionNonLearnable(PatchFusion):
                 )
 
             patch_embedding_projectors.append(
-                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout(dropout_rate))
+                _nn.Sequential(operation, _nn.BatchNorm2d(out_embed), _nn.ReLU(), _nn.Dropout2d(dropout_rate))
             )
             in_resolutions.append(in_resolution)
 
